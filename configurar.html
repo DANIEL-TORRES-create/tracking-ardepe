@@ -3,67 +3,76 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: sans-serif; padding: 10px; }
-        .container { border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
-        th { background: #3498db; color: white; }
-        .loading-text { color: #e67e22; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; color: #333; }
+        .container { border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #fff; max-width: 800px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; margin-top: 0; }
+        .status-box { padding: 10px; margin-bottom: 15px; border-radius: 4px; font-weight: bold; }
+        .loading { background: #fff3e0; color: #e65100; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #1a73e8; color: white; }
+        input[type="number"] { width: 60px; padding: 5px; }
+        button { background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+        button:hover { background: #1557b0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h3>🛠️ 1. Configuración de Ruta Maestra</h3>
-        <p id="info">Estado: <span class="loading-text">Buscando datos en MyGeotab...</span></p>
+        <h2>🛠️ 1. Configuración de Ruta Maestra</h2>
+        <div id="status" class="status-box loading">Conectando con Geotab y buscando ID: bB...</div>
         
-        <table id="miTabla" style="display:none;">
+        <table id="tablaRuta" style="display:none;">
             <thead>
                 <tr>
                     <th>#</th>
                     <th>Punto de Control</th>
                     <th>Viaje (Min)</th>
-                    <th>Pernocte (Min)</th>
+                    <th>Parada Máx (Min)</th>
                 </tr>
             </thead>
-            <tbody id="cuerpo"></tbody>
+            <tbody id="cuerpoTabla"></tbody>
         </table>
-        <button id="btn" style="margin-top:10px; display:none;">Guardar Configuración</button>
+        <button id="btnGuardar" style="display:none;">Guardar Tiempos Maestros</button>
     </div>
 
     <script>
         geotab.addin.configurar = (api, state) => {
             return {
                 initialize(api, state, callback) {
-                    // Buscamos la ruta - Cambié la búsqueda para que sea más flexible
+                    // Llamada directa por ID bB
                     api.call("Get", {
                         typeName: "Route",
-                        search: { name: "%LIMA - HUANCAVELICA%" } 
+                        search: { id: "bB" } 
                     }, (rutas) => {
-                        const info = document.getElementById("info");
+                        const status = document.getElementById("status");
                         if (rutas && rutas.length > 0) {
                             const puntos = rutas[0].routePlanItem;
-                            const tabla = document.getElementById("miTabla");
-                            const cuerpo = document.getElementById("cuerpo");
+                            const tabla = document.getElementById("tablaRuta");
+                            const cuerpo = document.getElementById("cuerpoTabla");
                             
                             puntos.forEach((p, i) => {
                                 let row = cuerpo.insertRow();
                                 row.innerHTML = `
                                     <td>${i + 1}</td>
-                                    <td>${p.zone.name}</td>
-                                    <td><input type="number" value="60" style="width:50px"></td>
-                                    <td><input type="number" value="30" style="width:50px"></td>
+                                    <td><strong>${p.zone.name}</strong></td>
+                                    <td><input type="number" value="60"></td>
+                                    <td><input type="number" value="30"></td>
                                 `;
                             });
                             
-                            info.innerHTML = "✅ Ruta conectada: <strong>" + rutas[0].name + "</strong>";
+                            status.className = "status-box success";
+                            status.innerHTML = "✅ Ruta encontrada: " + rutas[0].name;
                             tabla.style.display = "table";
-                            document.getElementById("btn").style.display = "block";
+                            document.getElementById("btnGuardar").style.display = "block";
                         } else {
-                            info.innerHTML = "❌ Error: No encontré la ruta. Revisa que el nombre en Geotab sea exacto.";
+                            status.innerHTML = "❌ Error: No se encontró la ruta con ID 'bB'.";
+                            status.style.background = "#ffebee";
+                            status.style.color = "#c62828";
                         }
                         callback();
                     }, (error) => {
-                        document.getElementById("info").innerHTML = "❌ Error de API: " + error;
+                        document.getElementById("status").innerHTML = "❌ Error de API: " + error;
                         callback();
                     });
                 }
