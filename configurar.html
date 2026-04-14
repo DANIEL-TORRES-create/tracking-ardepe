@@ -3,51 +3,89 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: #00ff00; }
-        .box { border: 2px solid #00ff00; padding: 20px; border-radius: 10px; }
-        .dato { color: white; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f0f2f5; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 900px; margin: auto; }
+        h2 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; margin-top: 0; }
+        .info-ruta { background: #e8f0fe; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #1967d2; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background-color: #f8f9fa; color: #5f6368; padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        input[type="number"] { width: 70px; padding: 6px; border: 1px solid #dadce0; border-radius: 4px; }
+        .btn-save { background-color: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; float: right; margin-top: 20px; }
+        .warning { color: #856404; background-color: #fff3cd; padding: 15px; border-radius: 4px; border: 1px solid #ffeeba; text-align: center; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>🔍 VERIFICACIÓN DE RUTA</h2>
-        <div id="resultado">Conectando con MyGeotab...</div>
+
+<div class="card">
+    <h2>🛠️ 1. Configuración de Ruta Maestra</h2>
+    <div id="status">Cargando datos de MyGeotab...</div>
+
+    <div id="contenedor-tabla" style="display:none;">
+        <div class="info-ruta">
+            Ruta: <strong id="nombre-ruta"></strong> | ID: <strong>bB</strong>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Punto de Control (Geocerca)</th>
+                    <th>Tiempo Tramo (Min)</th>
+                    <th>Parada Máx (Min)</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-tabla"></tbody>
+        </table>
+        <button class="btn-save" id="btnGuardar">Guardar Configuración</button>
     </div>
+</div>
 
-    <script>
-        geotab.addin.configurar = (api, state) => {
-            return {
-                initialize(api, state, callback) {
-                    api.call("Get", {
-                        typeName: "Route",
-                        search: { id: "bB" }
-                    }, function(result) {
-                        var res = document.getElementById("resultado");
-                        
-                        if (result && result.length > 0) {
-                            var r = result[0];
-                            var nombre = r.name || "Sin nombre";
-                            // Usamos un bucle clásico de toda la vida, no forEach
-                            var puntos = r.routePlanItem || [];
-                            var totalPuntos = puntos.length;
+<script>
+    geotab.addin.configurar = (api, state) => {
+        return {
+            initialize(api, state, callback) {
+                api.call("Get", {
+                    typeName: "Route",
+                    search: { id: "bB" }
+                }, (rutas) => {
+                    const status = document.getElementById("status");
+                    const contenedor = document.getElementById("contenedor-tabla");
+                    
+                    if (rutas && rutas.length > 0) {
+                        const ruta = rutas[0];
+                        const puntos = ruta.routePlanItem || [];
 
-                            res.innerHTML = `
-                                <p>✅ RUTA ENCONTRADA</p>
-                                <p>Nombre: <span class="dato">${nombre}</span></p>
-                                <p>ID: <span class="dato">${r.id}</span></p>
-                                <p>Total Geocercas: <span class="dato">${totalPuntos}</span></p>
-                            `;
+                        if (puntos.length > 0) {
+                            status.style.display = "none";
+                            contenedor.style.display = "block";
+                            document.getElementById("nombre-ruta").innerText = ruta.name;
+                            
+                            const cuerpo = document.getElementById("cuerpo-tabla");
+                            puntos.forEach((p, i) => {
+                                let fila = cuerpo.insertRow();
+                                fila.innerHTML = `
+                                    <td>${i + 1}</td>
+                                    <td><strong>${p.zone.name}</strong></td>
+                                    <td><input type="number" value="60"></td>
+                                    <td><input type="number" value="30"></td>
+                                `;
+                            });
                         } else {
-                            res.innerHTML = "❌ No existe la ruta con ID: bB";
+                            status.innerHTML = `<div class="warning">⚠️ La ruta existe pero tiene 0 geocercas. <br> Por favor, agrega las paradas en el menú <b>Productividad > Rutas</b> de Geotab.</div>`;
                         }
-                        callback();
-                    }, function(err) {
-                        document.getElementById("resultado").innerHTML = "⚠️ Error: " + err;
-                        callback();
-                    });
-                }
-            };
+                    } else {
+                        status.innerHTML = "❌ No se encontró la ruta con ID bB.";
+                    }
+                    callback();
+                });
+
+                document.getElementById("btnGuardar").addEventListener("click", () => {
+                    alert("¡Tiempos maestros capturados! (En el siguiente paso activaremos el guardado en la base de datos)");
+                });
+            }
         };
-    </script>
+    };
+</script>
+
 </body>
 </html>
