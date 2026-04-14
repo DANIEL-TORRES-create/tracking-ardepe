@@ -2,76 +2,73 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Configuración ARDEPE</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f7f6; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #3498db; color: white; }
-        input[type="number"] { width: 80px; padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
-        .btn-save { background-color: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; float: right; margin-top: 20px; }
+        body { font-family: sans-serif; padding: 10px; }
+        .container { border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
+        th { background: #3498db; color: white; }
+        .loading-text { color: #e67e22; font-weight: bold; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h3>🛠️ 1. Configuración de Ruta Maestra</h3>
+        <p id="info">Estado: <span class="loading-text">Buscando datos en MyGeotab...</span></p>
+        
+        <table id="miTabla" style="display:none;">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Punto de Control</th>
+                    <th>Viaje (Min)</th>
+                    <th>Pernocte (Min)</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo"></tbody>
+        </table>
+        <button id="btn" style="margin-top:10px; display:none;">Guardar Configuración</button>
+    </div>
 
-<div class="card">
-    <h2>🛠️ 1. Configuración de Ruta Maestra</h2>
-    <p>Ruta: <strong>(ARDEPE) LIMA - HUANCAVELICA</strong></p>
-    
-    <div id="status">Buscando zonas en MyGeotab...</div>
-
-    <table id="tablaConfig" style="display:none;">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Zona / Punto de Control</th>
-                <th>Tiempo Viaje (Min)</th>
-                <th>Pernocte Máx (Min)</th>
-            </tr>
-        </thead>
-        <tbody id="cuerpoTabla"></tbody>
-    </table>
-
-    <button class="btn-save" id="btnGuardar">Guardar Cambios</button>
-</div>
-
-<script>
-    geotab.addin.configurar = (api, state) => {
-        return {
-            initialize(api, state, callback) {
-                api.call("Get", {
-                    typeName: "Route",
-                    search: { name: "(ARDEPE) LIMA - HUANCAVELICA" }
-                }, (rutas) => {
-                    if (rutas.length > 0) {
-                        const items = rutas[0].routePlanItem;
-                        const body = document.getElementById("cuerpoTabla");
-                        document.getElementById("status").style.display = "none";
-                        document.getElementById("tablaConfig").style.display = "table";
-
-                        items.forEach((item, i) => {
-                            let row = body.insertRow();
-                            row.innerHTML = `
-                                <td>${i + 1}</td>
-                                <td>${item.zone.name}</td>
-                                <td><input type="number" value="60"></td>
-                                <td><input type="number" value="30"></td>
-                            `;
-                        });
-                    } else {
-                        document.getElementById("status").innerText = "❌ Ruta no encontrada.";
-                    }
-                    callback();
-                });
-
-                document.getElementById("btnGuardar").addEventListener("click", () => {
-                    alert("Configuración Guardada localmente.");
-                });
-            }
+    <script>
+        geotab.addin.configurar = (api, state) => {
+            return {
+                initialize(api, state, callback) {
+                    // Buscamos la ruta - Cambié la búsqueda para que sea más flexible
+                    api.call("Get", {
+                        typeName: "Route",
+                        search: { name: "%LIMA - HUANCAVELICA%" } 
+                    }, (rutas) => {
+                        const info = document.getElementById("info");
+                        if (rutas && rutas.length > 0) {
+                            const puntos = rutas[0].routePlanItem;
+                            const tabla = document.getElementById("miTabla");
+                            const cuerpo = document.getElementById("cuerpo");
+                            
+                            puntos.forEach((p, i) => {
+                                let row = cuerpo.insertRow();
+                                row.innerHTML = `
+                                    <td>${i + 1}</td>
+                                    <td>${p.zone.name}</td>
+                                    <td><input type="number" value="60" style="width:50px"></td>
+                                    <td><input type="number" value="30" style="width:50px"></td>
+                                `;
+                            });
+                            
+                            info.innerHTML = "✅ Ruta conectada: <strong>" + rutas[0].name + "</strong>";
+                            tabla.style.display = "table";
+                            document.getElementById("btn").style.display = "block";
+                        } else {
+                            info.innerHTML = "❌ Error: No encontré la ruta. Revisa que el nombre en Geotab sea exacto.";
+                        }
+                        callback();
+                    }, (error) => {
+                        document.getElementById("info").innerHTML = "❌ Error de API: " + error;
+                        callback();
+                    });
+                }
+            };
         };
-    };
-</script>
+    </script>
 </body>
 </html>
