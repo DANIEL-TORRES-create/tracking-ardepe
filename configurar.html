@@ -3,81 +3,48 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f8f9fa; }
-        .box { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 850px; margin: auto; }
-        h3 { color: #004a99; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .alert { padding: 15px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; }
-        .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
-        th { background: #004a99; color: white; }
-        input { width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
-        .btn-save { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; float: right; margin-top: 15px; font-weight: bold; }
+        body { font-family: monospace; background: #222; color: #00ff00; padding: 20px; }
+        .console { border: 1px solid #00ff00; padding: 15px; border-radius: 5px; }
+        .label { color: #fff; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h3>🛠️ Módulo 1: Configuración de Tiempos Maestros</h3>
-        <div id="status">⏳ Iniciando conexión con MyGeotab...</div>
-        
-        <table id="tablaRuta" style="display:none;">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Punto de Control (Geocerca)</th>
-                    <th>Viaje Est. (Min)</th>
-                    <th>Parada Máx. (Min)</th>
-                </tr>
-            </thead>
-            <tbody id="cuerpoTabla"></tbody>
-        </table>
-        <button id="btnGuardar" class="btn-save" style="display:none;">Guardar Configuración</button>
+    <div class="console">
+        <h3>🔍 DIAGNÓSTICO DE RUTA (ID: bB)</h3>
+        <p id="res">Consultando a MyGeotab...</p>
+        <hr>
+        <div id="debug"></div>
     </div>
 
     <script>
         geotab.addin.configurar = (api, state) => {
             return {
                 initialize(api, state, callback) {
-                    const status = document.getElementById("status");
-                    const tabla = document.getElementById("tablaRuta");
-                    const cuerpo = document.getElementById("cuerpoTabla");
-                    const boton = document.getElementById("btnGuardar");
-
-                    // Consultamos la ruta bB
                     api.call("Get", {
                         typeName: "Route",
                         search: { id: "bB" }
                     }, function(result) {
+                        var res = document.getElementById("res");
+                        var debug = document.getElementById("debug");
+                        
                         if (result && result.length > 0) {
-                            let ruta = result[0];
-                            // Usamos el operador opcional ?. o validamos manualmente para evitar el error de forEach
-                            let puntos = ruta.routePlanItem || [];
-
-                            status.innerHTML = `<div class="alert alert-success">✅ Ruta Detectada: <strong>${ruta.name}</strong></div>`;
-
-                            if (puntos.length > 0) {
-                                puntos.forEach((item, index) => {
-                                    let zonaNombre = item.zone ? item.zone.name : "Zona desconocida";
-                                    let fila = cuerpo.insertRow();
-                                    fila.innerHTML = `
-                                        <td>${index + 1}</td>
-                                        <td><strong>${zonaNombre}</strong></td>
-                                        <td><input type="number" value="60"></td>
-                                        <td><input type="number" value="30"></td>
-                                    `;
-                                });
-                                tabla.style.display = "table";
-                                boton.style.display = "block";
-                            } else {
-                                status.innerHTML += `<div class="alert alert-warning">⚠️ La ruta existe pero no tiene un 'Plan de Ruta' con zonas asignadas. <br><br> Por favor, ve a <strong>Mapa > Rutas</strong> y asegúrate de que la ruta LIMA-HUANCAVELICA tenga paradas añadidas.</div>`;
-                            }
+                            var r = result[0];
+                            // Aquí sacamos la verdad:
+                            res.innerHTML = "✅ RUTA ENCONTRADA";
+                            debug.innerHTML = `
+                                <p><span class="label">Nombre Oficial:</span> ${r.name}</p>
+                                <p><span class="label">ID Interno:</span> ${r.id}</p>
+                                <p><span class="label">¿Tiene paradas?:</span> ${r.routePlanItem ? 'SÍ (' + r.routePlanItem.length + ' puntos)' : 'NO (Viene como undefined)'}</p>
+                                <p><span class="label">Comentario:</span> ${r.comment || 'Sin comentarios'}</p>
+                            `;
+                            
+                            console.log("Objeto completo de la ruta:", r);
                         } else {
-                            status.innerHTML = `<div class="alert alert-warning">❌ No se encontró la ruta con ID 'bB'.</div>`;
+                            res.innerHTML = "❌ NO SE ENCONTRÓ NADA con el ID 'bB'.";
                         }
                         callback();
                     }, function(error) {
-                        status.innerHTML = "⚠️ Error de Geotab: " + error;
+                        document.getElementById("res").innerHTML = "⚠️ Error de API: " + error;
                         callback();
                     });
                 }
