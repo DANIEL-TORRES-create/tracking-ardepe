@@ -13,19 +13,19 @@
         .btn-save { background: #28a745; color: white; padding: 12px 30px; float: right; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #1a73e8; color: white; padding: 12px; text-align: center; }
-        th:nth-child(2) { text-align: left; } /* Nombre de zona a la izquierda */
+        th:nth-child(2) { text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; vertical-align: middle; }
         td:nth-child(2) { text-align: left; }
         .input-edit { width: 80px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px; display: inline-block; }
         .km-val { color: #666; font-family: monospace; font-weight: bold; }
         .delete-btn { color: #e74c3c; background: none; font-size: 18px; }
-        .guion { color: #ccc; font-weight: bold; display: block; width: 100%; text-align: center; }
+        .guion { color: #ccc; font-weight: bold; display: block; width: 100%; text-align: center; font-size: 18px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🛠️ Constructor de Ruta Inteligente (ARDEPE)</h2>
+    <h2>🛠️ Constructor de Ruta Inteligente (ARDEPE) V4</h2>
     
     <div class="header-tools">
         <div class="input-group">
@@ -102,20 +102,26 @@
                     
                     if (!zonaSel) return;
 
-                    // CORRECCIÓN DE COORDENADAS: Buscamos en todas las ubicaciones posibles de la API
-                    const latActual = (zonaSel.center) ? zonaSel.center.y : (zonaSel.y ? zonaSel.y : 0);
-                    const lonActual = (zonaSel.center) ? zonaSel.center.x : (zonaSel.x ? zonaSel.x : 0);
+                    // BUSQUEDA DE COORDENADAS REFORZADA
+                    let lat = 0, lon = 0;
+                    if (zonaSel.center) {
+                        lat = zonaSel.center.y;
+                        lon = zonaSel.center.x;
+                    } else if (zonaSel.points && zonaSel.points.length > 0) {
+                        lat = zonaSel.points[0].y;
+                        lon = zonaSel.points[0].x;
+                    }
 
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = 0;
-                    if (previo && latActual !== 0) {
-                        km = getHaversine(previo.lat, previo.lon, latActual, lonActual);
+                    if (previo && lat !== 0) {
+                        km = getHaversine(previo.lat, previo.lon, lat, lon);
                     }
 
                     rutaActual.push({
                         name: zonaSel.name,
-                        lat: latActual,
-                        lon: lonActual,
+                        lat: lat,
+                        lon: lon,
                         km: km,
                         tiempo: formatTime(km / 60)
                     });
@@ -131,9 +137,8 @@
                         const row = cuerpo.insertRow();
                         const esPrimero = (i === 0);
                         
-                        // Centrado y manejo de guiones
-                        const distContenido = (esPrimero || item.km <= 0) ? '<span class="guion">-</span>' : `<span class="km-val">${item.km.toFixed(2)} km</span>`;
-                        const tiempoContenido = (esPrimero || item.km <= 0) ? '<span class="guion">-</span>' : `<input type="text" class="input-edit" value="${item.tiempo}">`;
+                        const distContenido = (esPrimero || item.km === 0) ? '<span class="guion">-</span>' : `<span class="km-val">${item.km.toFixed(2)} km</span>`;
+                        const tiempoContenido = (esPrimero || item.km === 0) ? '<span class="guion">-</span>' : `<input type="text" class="input-edit" value="${item.tiempo}">`;
                         
                         row.innerHTML = `
                             <td>${i + 1}</td>
