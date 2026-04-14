@@ -13,10 +13,12 @@
         .btn-save { background: #28a745; color: white; padding: 12px 30px; float: right; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #1a73e8; color: white; padding: 12px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-        .input-edit { width: 90px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px; }
-        .km-val { color: #666; font-family: monospace; font-weight: bold; background: #eee; padding: 3px 6px; border-radius: 4px; }
+        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+        td:nth-child(2) { text-align: left; } /* Nombre de zona a la izquierda */
+        .input-edit { width: 80px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px; }
+        .km-val { color: #666; font-family: monospace; font-weight: bold; }
         .delete-btn { color: #e74c3c; background: none; font-size: 18px; }
+        .guion { color: #ccc; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -30,7 +32,7 @@
             <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 220px;">
         </div>
         <div class="input-group">
-            <label id="labelBusqueda">Escribe para buscar zona (Cargando...):</label>
+            <label id="lblZonas">Cargando zonas...</label>
             <input list="listaZonas" id="buscadorZonas" placeholder="Escribe nombre de la zona..." style="width: 350px;">
             <datalist id="listaZonas"></datalist>
         </div>
@@ -42,9 +44,9 @@
             <tr>
                 <th style="width: 50px;">Orden</th>
                 <th>Punto de Control</th>
-                <th style="width: 150px;">Distancia (Km)</th>
-                <th style="width: 150px;">Tiempo Tramo (HH:mm)</th>
-                <th style="width: 150px;">Pernocte (HH:mm)</th>
+                <th style="width: 140px;">Distancia (Km)</th>
+                <th style="width: 140px;">Tiempo Tramo (HH:mm)</th>
+                <th style="width: 140px;">Pernocte (HH:mm)</th>
                 <th style="width: 50px;"></th>
             </tr>
         </thead>
@@ -59,12 +61,14 @@
     let rutaActual = [];
 
     function formatTime(decimal) {
+        if (isNaN(decimal) || decimal === 0) return "00:00";
         let h = Math.floor(decimal);
         let m = Math.round((decimal - h) * 60);
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     }
 
     function getHaversine(lat1, lon1, lat2, lon2) {
+        if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
         const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -79,17 +83,11 @@
                     typeName: "Zone",
                     search: { zoneTypeIds: ["b4A3"] }
                 }, (result) => {
-                    // FILTRO ESTRICTO: Solo zonas que tengan el ID de tipo b4A3 en su lista de tipos
-                    zonasFiltradas = result.filter(z => {
-                        return z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3");
-                    }).sort((a, b) => a.name.localeCompare(b.name));
-
+                    zonasFiltradas = result.filter(z => z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3"))
+                                           .sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    document.getElementById("lblZonas").innerText = `Escribe para buscar zona (${zonasFiltradas.length} disponibles):`;
                     const datalist = document.getElementById("listaZonas");
-                    const label = document.getElementById("labelBusqueda");
-                    
-                    label.innerText = `Escribe para buscar zona (${zonasFiltradas.length} disponibles):`;
-                    
-                    datalist.innerHTML = "";
                     zonasFiltradas.forEach(z => {
                         let opt = document.createElement("option");
                         opt.value = z.name;
@@ -101,25 +99,23 @@
                     const inputBusqueda = document.getElementById("buscadorZonas");
                     const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
                     
-                    if (!zonaSel) {
-                        alert("Por favor, selecciona una zona válida de la lista de ARDEPE.");
-                        return;
-                    }
+                    if (!zonaSel) return;
 
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = 0;
                     if (previo) {
+                        // Geotab usa x para Longitud y y para Latitud
                         km = getHaversine(previo.y, previo.x, zonaSel.y, zonaSel.x);
                     }
 
-                    const hito = {
+                    rutaActual.push({
                         name: zonaSel.name,
-                        y: zonaSel.y, x: zonaSel.x,
-                        km: km.toFixed(2),
+                        y: zonaSel.y, 
+                        x: zonaSel.x,
+                        km: km,
                         tiempo: formatTime(km / 60)
-                    };
+                    });
 
-                    rutaActual.push(hito);
                     inputBusqueda.value = "";
                     updateUI();
                 });
@@ -129,11 +125,17 @@
                     cuerpo.innerHTML = "";
                     rutaActual.forEach((item, i) => {
                         const row = cuerpo.insertRow();
+                        const esPrimero = (i === 0);
+                        
+                        // Si es el primero, mostrar guion. Si el cálculo falló (0), también mostrar guion.
+                        const distMostrada = (esPrimero || item.km === 0) ? '<span class="guion">--</span>' : `<span class="km-val">${item.km.toFixed(2)} km</span>`;
+                        const tiempoMostrado = (esPrimero || item.km === 0) ? '<span class="guion">--</span>' : `<input type="text" class="input-edit" value="${item.tiempo}">`;
+                        
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td><strong>${item.name}</strong></td>
-                            <td><span class="km-val">${item.km} km</span></td>
-                            <td><input type="text" class="input-edit" value="${item.tiempo}"></td>
+                            <td>${distMostrada}</td>
+                            <td>${tiempoMostrado}</td>
                             <td><input type="text" class="input-edit" value="00:30"></td>
                             <td><button class="delete-btn" onclick="borrar(${i})">🗑️</button></td>
                         `;
