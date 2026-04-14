@@ -73,8 +73,7 @@
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
 
     async function cargarRutas() {
@@ -93,7 +92,7 @@
                     <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
                 `;
             });
-        } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando con la nube...</td></tr>"; }
+        } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando...</td></tr>"; }
     }
 
     geotab.addin.configurar = (api, state) => {
@@ -111,11 +110,20 @@
                 cargarRutas();
 
                 document.getElementById("btnAgregar").addEventListener("click", () => {
+                    const inputNombre = document.getElementById("nombreRuta");
                     const inputBusqueda = document.getElementById("buscadorZonas");
+                    
+                    // SEGURIDAD REINSTALADA: Validar nombre antes de añadir puntos
+                    if (!inputNombre.value.trim()) {
+                        alert("⚠️ Debes asignar un Nombre a la Ruta antes de añadir puntos.");
+                        inputNombre.focus();
+                        return;
+                    }
+
                     const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
                     if (!zonaSel) return;
 
-                    // CORRECCIÓN DE COORDENADAS: Buscamos en todas las propiedades posibles de Geotab
+                    // EXTRACCIÓN DE COORDENADAS MEJORADA
                     let lat = 0, lon = 0;
                     if (zonaSel.center) { lat = zonaSel.center.y; lon = zonaSel.center.x; }
                     else if (zonaSel.y) { lat = zonaSel.y; lon = zonaSel.x; }
@@ -123,14 +131,13 @@
 
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = (previo && lat !== 0) ? getHaversine(previo.lat, previo.lon, lat, lon) : 0;
-                    let tiempoCalculado = formatTime(km / 60);
 
                     rutaActual.push({ 
                         name: zonaSel.name, 
                         lat: lat, 
                         lon: lon, 
                         km: km.toFixed(2), 
-                        tiempo: tiempoCalculado,
+                        tiempo: formatTime(km / 60),
                         pernocte: "00:30" 
                     });
 
@@ -147,7 +154,7 @@
                         const inputs = filas[i].querySelectorAll("input");
                         return {
                             ...p,
-                            tiempo: inputs[0] ? inputs[0].value : (p.tiempo || "00:00"),
+                            tiempo: inputs[0] ? inputs[0].value : p.tiempo,
                             pernocte: inputs[1] ? inputs[1].value : "00:30"
                         };
                     });
@@ -175,8 +182,8 @@
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td style="text-align: left; font-weight: bold;">${item.name}</td>
-                            <td>${esPrimero ? '-' : item.km + ' km'}</td>
-                            <td>${esPrimero ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
+                            <td>${esPrimero ? '<span style="color:#ccc; font-weight:bold; font-size:18px;">-</span>' : '<span style="color:#333; font-weight:bold; font-size:13px;">' + item.km + ' km</span>'}</td>
+                            <td>${esPrimero ? '<span style="color:#ccc; font-weight:bold; font-size:18px;">-</span>' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
                             <td><input type="text" class="input-tiempo" value="${item.pernocte}"></td>
                             <td><button onclick="borrar(${i})" style="color:red; background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button></td>
                         `;
