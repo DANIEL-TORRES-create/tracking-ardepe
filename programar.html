@@ -20,12 +20,13 @@
                     <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿VIAJE RETORNO?
                 </label>
             </div>
+            
             <label style="font-weight: bold; font-size: 13px;">2. Salida Programada (ETD Origen):</label>
             <input type="datetime-local" id="fechaSalida" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Solo Tractos Activos):</label>
+            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Placas con Serial Activo):</label>
             <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
@@ -39,16 +40,14 @@
     <table class="tabla-constructor">
         <thead>
             <tr>
-                <th style="width: 50px;">Orden</th>
+                <th>Orden</th>
                 <th style="text-align: left;">Punto de Control</th>
                 <th>Distancia Acum.</th>
                 <th>Llegada (ETA)</th>
                 <th>Salida (ETD)</th>
             </tr>
         </thead>
-        <tbody id="cuerpoItinerario">
-            <tr><td colspan="5" style="text-align:center; padding:20px; color:#999;">Seleccione ruta y fecha para calcular itinerario</td></tr>
-        </tbody>
+        <tbody id="cuerpoItinerario"></tbody>
     </table>
 
     <div style="margin-top: 20px; display: flex; gap: 10px;">
@@ -65,34 +64,27 @@
         return {
             initialize(api, state, callback) {
                 
-                // 1. CARGAR VEHÍCULOS (Filtrando remolques y archivados)
+                // 1. CARGAR VEHÍCULOS (Filtrando estrictamente por Serial y Activos)
                 api.call("Get", { 
-                    typeName: "Device"
+                    typeName: "Device",
+                    search: { 
+                        terminationDateTime: "9999-12-31T23:59:59.000Z" 
+                    } 
                 }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
                     dl.innerHTML = "";
                     
-                    const tractosActivos = result.filter(d => {
-                        // A. No debe estar archivado (año 9999)
-                        const esActivo = !d.terminationDateTime || d.terminationDateTime.indexOf("9999") > -1;
-                        
-                        // B. No debe ser un remolque (Trailer)
-                        // En Geotab, los trailers suelen tener una propiedad 'serial' que empieza con 'T' 
-                        // o pertenecen a un tipo de dispositivo específico.
-                        const esTrailer = d.deviceType === "Trailer" || (d.serial && d.serial.startsWith("T"));
-                        
-                        // C. Solo queremos dispositivos GO (que tienen número de serie real)
-                        const esVehiculoReal = d.serial && d.serial !== "000-000-0000";
-
-                        return esActivo && !esTrailer && esVehiculoReal;
+                    // FILTRO: Debe tener serial, que no sea "000-000-0000" y que no esté vacío
+                    const soloConSerial = result.filter(d => {
+                        return d.serial && d.serial !== "000-000-0000" && d.serial.trim() !== "";
                     });
 
-                    tractosActivos.forEach(d => {
+                    soloConSerial.forEach(d => {
                         let opt = document.createElement("option");
-                        opt.value = d.name;
+                        opt.value = d.name; 
                         dl.appendChild(opt);
                     });
-                });
+                }, (e) => console.error("Error en placas:", e));
 
                 // 2. CARGAR CONDUCTORES
                 api.call("Get", { typeName: "User" }, (result) => {
@@ -104,7 +96,7 @@
                     });
                 });
 
-                // 3. CARGAR RUTAS MAESTRAS
+                // 3. CARGAR RUTAS
                 fetch(WEB_APP_URL).then(res => res.json()).then(data => {
                     rutasMaestras = data;
                     const sel = document.getElementById("selectRuta");
@@ -150,7 +142,7 @@
                             kmAcum += parseFloat(p.km || 0);
                         }
                         const row = cuerpo.insertRow();
-                        row.innerHTML = `<td>${i+1}</td><td style="text-align:left; font-weight:bold;">${p.name}</td><td>${kmAcum.toFixed(1)} km</td><td style="color:#1a73e8;">${new Date(etaMs).toLocaleString()}</td><td style="font-weight:bold;">${new Date(etdMs).toLocaleString()}</td>`;
+                        row.innerHTML = `<td>${i+1}</td><td style="text-align:left; font-weight:bold;">${p.name}</td><td>${kmAcum.toFixed(1)} km</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
                         tiempoBaseMs = etdMs;
                     });
                 }
@@ -159,18 +151,13 @@
                     const vehiculo = document.getElementById("inputVehiculo").value;
                     const conductor = document.getElementById("inputConductor").value;
                     const rutaIdx = document.getElementById("selectRuta").value;
-                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Datos incompletos");
+                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Completa los datos.");
                     
                     document.getElementById("btnProgramar").innerText = "⏳ Guardando...";
-                    const filas = document.querySelectorAll("#cuerpoItinerario tr");
-                    let itinerarioArray = [];
-                    filas.forEach(f => {
-                        if(f.cells.length > 1) {
-                            itinerarioArray.push({
-                                orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
-                            });
-                        }
-                    });
+                    const filas = Array.from(document.querySelectorAll("#cuerpoItinerario tr"));
+                    let itinerarioArray = filas.map(f => ({
+                        orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
+                    }));
 
                     fetch(WEB_APP_URL, {
                         method: "POST",
