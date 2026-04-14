@@ -102,13 +102,13 @@
                     
                     if (!zonaSel) return;
 
-                    // Acceder a coordenadas según estructura de la API
-                    const latActual = zonaSel.center ? zonaSel.center.y : zonaSel.y;
-                    const lonActual = zonaSel.center ? zonaSel.center.x : zonaSel.x;
+                    // CORRECCIÓN DE COORDENADAS: Buscamos en todas las ubicaciones posibles de la API
+                    const latActual = (zonaSel.center) ? zonaSel.center.y : (zonaSel.y ? zonaSel.y : 0);
+                    const lonActual = (zonaSel.center) ? zonaSel.center.x : (zonaSel.x ? zonaSel.x : 0);
 
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = 0;
-                    if (previo) {
+                    if (previo && latActual !== 0) {
                         km = getHaversine(previo.lat, previo.lon, latActual, lonActual);
                     }
 
