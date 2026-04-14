@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="estilos.css">
@@ -11,30 +11,30 @@
     
     <div class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="font-weight: bold;">1. Ruta Maestra:</label>
+            <label style="font-weight: bold; font-size: 13px;">1. Ruta Maestra:</label>
             <div style="display: flex; gap: 5px;">
-                <select id="selectRuta" style="padding: 10px; border-radius: 6px; flex-grow: 1;">
+                <select id="selectRuta" style="padding: 10px; border-radius: 6px; flex-grow: 1; border: 1px solid #ccc;">
                     <option value="">Cargando rutas...</option>
                 </select>
-                <button id="btnRetorno" style="background: #f39c12; color: white; border: none; border-radius: 6px; padding: 0 10px; cursor: pointer; font-weight: bold;" title="Invertir Ruta">🔄 Retorno</button>
+                <button id="btnRetorno" style="background: #f39c12; color: white; border: none; border-radius: 6px; padding: 0 15px; cursor: pointer; font-weight: bold;" title="Invertir Ruta">🔄 Retorno</button>
             </div>
             
-            <label style="font-weight: bold;">2. Salida Programada (ETD Origen):</label>
+            <label style="font-weight: bold; font-size: 13px;">2. Salida Programada (ETD Origen):</label>
             <input type="datetime-local" id="fechaSalida" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="font-weight: bold;">3. Vehículo (Solo Activos):</label>
+            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Activos):</label>
             <input list="listaVehiculos" id="inputVehiculo" placeholder="Buscar placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
-            <label style="font-weight: bold;">4. Conductor:</label>
+            <label style="font-weight: bold; font-size: 13px;">4. Conductor:</label>
             <input list="listaConductores" id="inputConductor" placeholder="Buscar conductor..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaConductores"></datalist>
         </div>
     </div>
 
-    <h3 style="color: #1a73e8; margin-top: 20px;">📋 Itinerario Estimado <span id="modoRuta" style="font-size: 12px; color: #666;">(Normal)</span></h3>
+    <h3 style="color: #1a73e8; margin-top: 20px;">📋 Itinerario Estimado <span id="modoRuta" style="font-size: 12px; color: #666;">(NORMAL)</span></h3>
     <table class="tabla-constructor">
         <thead>
             <tr>
@@ -57,25 +57,31 @@
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwwtduJaS6lhzLqEE323RxMs8_NCVrTlpOiRtKMiDIsXhZr_e5e0ppH3WGExJ04z5fT/exec";
     let rutasMaestras = [];
-    let rutaSeleccionada = null;
     let esRetorno = false;
 
     geotab.addin.programar = (api, state) => {
         return {
             initialize(api, state, callback) {
-                // FILTRO DE VEHÍCULOS ACTIVOS
+                
+                // CARGAR VEHÍCULOS ACTIVOS (FILTRO POR PLAN Y ESTADO)
                 api.call("Get", { 
                     typeName: "Device",
-                    search: { terminationDateTime: "9999-12-31T23:59:59.000Z" } // Solo dispositivos no dados de baja
+                    search: { terminationDateTime: "9999-12-31T23:59:59.000Z" } 
                 }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
-                    result.forEach(d => {
+                    result.filter(d => {
+                        const plan = d.devicePlan ? d.devicePlan.toLowerCase() : "";
+                        const esActivo = !d.activeTo || d.activeTo === "9999-12-31T23:59:59.000Z";
+                        const tienePlanValido = plan.includes("go") || plan.includes("pro") || plan.includes("plus");
+                        return esActivo && tienePlanValido;
+                    }).forEach(d => {
                         let opt = document.createElement("option");
                         opt.value = d.name;
                         dl.appendChild(opt);
                     });
                 });
 
+                // CARGAR CONDUCTORES ACTIVOS
                 api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
                     result.filter(u => u.isDriver).forEach(u => {
@@ -85,6 +91,7 @@
                     });
                 });
 
+                // CARGAR RUTAS DESDE GOOGLE SHEETS
                 fetch(WEB_APP_URL).then(res => res.json()).then(data => {
                     rutasMaestras = data;
                     const sel = document.getElementById("selectRuta");
@@ -110,7 +117,7 @@
                     if (idx === "" || !salidaUser) return;
 
                     let puntos = JSON.parse(rutasMaestras[idx].puntos);
-                    if (esRetorno) puntos = [...puntos].reverse(); // Invertir si es retorno
+                    if (esRetorno) puntos = [...puntos].reverse();
 
                     const cuerpo = document.getElementById("cuerpoItinerario");
                     cuerpo.innerHTML = "";
@@ -120,20 +127,15 @@
 
                     puntos.forEach((p, i) => {
                         let etaMs, etdMs;
-
                         if (i === 0) {
-                            // LÓGICA PUNTO 1: El ETD es la hora del cliente. ETA es ETD menos su propio pernocte.
                             const [hP, mP] = p.pernocte.split(":").map(Number);
                             etdMs = tiempoBaseMs;
                             etaMs = etdMs - ((hP * 3600000) + (mP * 60000));
                         } else {
-                            // LÓGICA RESTO: ETA = ETD anterior + tiempo tramo. ETD = ETA + pernocte.
                             const [hT, mT] = p.tiempo.split(":").map(Number);
                             etaMs = tiempoBaseMs + ((hT * 3600000) + (mT * 60000));
-                            
                             const [hP, mP] = p.pernocte.split(":").map(Number);
                             etdMs = etaMs + ((hP * 3600000) + (mP * 60000));
-                            
                             kmAcum += parseFloat(p.km || 0);
                         }
 
@@ -148,7 +150,51 @@
                         tiempoBaseMs = etdMs;
                     });
                 }
-                
+
+                document.getElementById("btnProgramar").addEventListener("click", () => {
+                    const vehiculo = document.getElementById("inputVehiculo").value;
+                    const conductor = document.getElementById("inputConductor").value;
+                    const rutaIdx = document.getElementById("selectRuta").value;
+
+                    if (!vehiculo || !conductor || rutaIdx === "") {
+                        return alert("⚠️ Por favor completa Vehículo, Conductor y Ruta.");
+                    }
+
+                    const filas = document.querySelectorAll("#cuerpoItinerario tr");
+                    let itinerarioArray = [];
+                    filas.forEach(fila => {
+                        const c = fila.cells;
+                        itinerarioArray.push({
+                            orden: c[0].innerText,
+                            punto: c[1].innerText,
+                            km: c[2].innerText,
+                            eta: c[3].innerText,
+                            etd: c[4].innerText
+                        });
+                    });
+
+                    document.getElementById("btnProgramar").innerText = "⏳ Guardando...";
+
+                    fetch(WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({
+                            action: "programarViaje",
+                            vehiculo: vehiculo,
+                            conductor: conductor,
+                            nombreRuta: rutasMaestras[rutaIdx].nombre + (esRetorno ? " (RETORNO)" : ""),
+                            itinerario: JSON.stringify(itinerarioArray)
+                        })
+                    }).then(() => {
+                        alert("✅ Viaje Programado con éxito");
+                        location.reload();
+                    }).catch(err => {
+                        alert("Error al guardar");
+                        document.getElementById("btnProgramar").innerText = "🚀 Confirmar Viaje";
+                    });
+                });
+
+                document.getElementById("btnCancelar").addEventListener("click", () => location.reload());
+
                 callback();
             }
         };
