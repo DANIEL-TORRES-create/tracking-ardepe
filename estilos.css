@@ -74,9 +74,46 @@ body {
     margin-top: 20px !important; 
 }
 
+/* --- BOTÓN CANCELAR --- */
+.btn-cancelar { 
+    background: #6c757d !important; 
+    color: white !important; 
+    padding: 12px 30px !important; 
+    border: none !important; 
+    border-radius: 6px !important; 
+    font-weight: bold !important; 
+    cursor: pointer !important; 
+    float: right !important; 
+    margin-top: 20px !important; 
+    margin-right: 10px !important; 
+}
+
 /* Gestión de rutas guardadas */
-.seccion-lista { margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px; }
-.tabla-rutas-guardadas th { background: #5c6bc0 !important; }
-.btn-accion { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; transition: 0.2s; }
-.btn-accion:hover { transform: scale(1.2); }
-.guion { color: #ccc; font-weight: bold; font-size: 18px; }
+.seccion-lista { 
+    margin-top: 40px !important; 
+    border-top: 2px dashed #ccc !important; 
+    padding-top: 20px !important; 
+}
+
+.tabla-rutas-guardadas th { 
+    background: #5c6bc0 !important; 
+}
+
+.btn-accion { 
+    background: none !important; 
+    border: none !important; 
+    cursor: pointer !important; 
+    font-size: 18px !important; 
+    padding: 5px !important; 
+    transition: 0.2s !important; 
+}
+
+.btn-accion:hover { 
+    transform: scale(1.2) !important; 
+}
+
+.guion { 
+    color: #ccc !important; 
+    font-weight: bold !important; 
+    font-size: 18px !important; 
+}
