@@ -12,13 +12,14 @@
         .btn-add { background: #1a73e8; color: white; padding: 10px 20px; height: 40px; }
         .btn-save { background: #28a745; color: white; padding: 12px 30px; float: right; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #1a73e8; color: white; padding: 12px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
-        td:nth-child(2) { text-align: left; } /* Nombre de zona a la izquierda */
-        .input-edit { width: 80px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px; }
+        th { background: #1a73e8; color: white; padding: 12px; text-align: center; }
+        th:nth-child(2) { text-align: left; } /* Nombre de zona a la izquierda */
+        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; vertical-align: middle; }
+        td:nth-child(2) { text-align: left; }
+        .input-edit { width: 80px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px; display: inline-block; }
         .km-val { color: #666; font-family: monospace; font-weight: bold; }
         .delete-btn { color: #e74c3c; background: none; font-size: 18px; }
-        .guion { color: #ccc; font-weight: bold; }
+        .guion { color: #ccc; font-weight: bold; display: block; width: 100%; text-align: center; }
     </style>
 </head>
 <body>
@@ -47,7 +48,7 @@
                 <th style="width: 140px;">Distancia (Km)</th>
                 <th style="width: 140px;">Tiempo Tramo (HH:mm)</th>
                 <th style="width: 140px;">Pernocte (HH:mm)</th>
-                <th style="width: 50px;"></th>
+                <th style="width: 50px;">Acción</th>
             </tr>
         </thead>
         <tbody id="cuerpoRuta"></tbody>
@@ -61,14 +62,14 @@
     let rutaActual = [];
 
     function formatTime(decimal) {
-        if (isNaN(decimal) || decimal === 0) return "00:00";
+        if (!decimal || isNaN(decimal) || decimal <= 0) return "00:00";
         let h = Math.floor(decimal);
         let m = Math.round((decimal - h) * 60);
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     }
 
     function getHaversine(lat1, lon1, lat2, lon2) {
-        if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+        if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return 0;
         const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -101,17 +102,20 @@
                     
                     if (!zonaSel) return;
 
+                    // Acceder a coordenadas según estructura de la API
+                    const latActual = zonaSel.center ? zonaSel.center.y : zonaSel.y;
+                    const lonActual = zonaSel.center ? zonaSel.center.x : zonaSel.x;
+
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = 0;
                     if (previo) {
-                        // Geotab usa x para Longitud y y para Latitud
-                        km = getHaversine(previo.y, previo.x, zonaSel.y, zonaSel.x);
+                        km = getHaversine(previo.lat, previo.lon, latActual, lonActual);
                     }
 
                     rutaActual.push({
                         name: zonaSel.name,
-                        y: zonaSel.y, 
-                        x: zonaSel.x,
+                        lat: latActual,
+                        lon: lonActual,
                         km: km,
                         tiempo: formatTime(km / 60)
                     });
@@ -127,15 +131,15 @@
                         const row = cuerpo.insertRow();
                         const esPrimero = (i === 0);
                         
-                        // Si es el primero, mostrar guion. Si el cálculo falló (0), también mostrar guion.
-                        const distMostrada = (esPrimero || item.km === 0) ? '<span class="guion">--</span>' : `<span class="km-val">${item.km.toFixed(2)} km</span>`;
-                        const tiempoMostrado = (esPrimero || item.km === 0) ? '<span class="guion">--</span>' : `<input type="text" class="input-edit" value="${item.tiempo}">`;
+                        // Centrado y manejo de guiones
+                        const distContenido = (esPrimero || item.km <= 0) ? '<span class="guion">-</span>' : `<span class="km-val">${item.km.toFixed(2)} km</span>`;
+                        const tiempoContenido = (esPrimero || item.km <= 0) ? '<span class="guion">-</span>' : `<input type="text" class="input-edit" value="${item.tiempo}">`;
                         
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td><strong>${item.name}</strong></td>
-                            <td>${distMostrada}</td>
-                            <td>${tiempoMostrado}</td>
+                            <td>${distContenido}</td>
+                            <td>${tiempoContenido}</td>
                             <td><input type="text" class="input-edit" value="00:30"></td>
                             <td><button class="delete-btn" onclick="borrar(${i})">🗑️</button></td>
                         `;
