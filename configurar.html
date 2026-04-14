@@ -4,55 +4,54 @@
     <meta charset="utf-8">
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f2f5; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1100px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
         .header-tools { display: flex; gap: 15px; margin-bottom: 20px; background: #e8f0fe; padding: 15px; border-radius: 8px; align-items: flex-end; border-left: 5px solid #1a73e8; }
         .input-group { display: flex; flex-direction: column; gap: 5px; }
-        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
         button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; }
         .btn-add { background: #1a73e8; color: white; padding: 10px 20px; height: 40px; }
-        .btn-save { background: #28a745; color: white; padding: 12px 30px; float: right; margin-top: 20px; font-size: 16px; }
+        .btn-save { background: #28a745; color: white; padding: 12px 30px; float: right; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #1a73e8; color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
-        .calc-val { color: #1a73e8; font-weight: bold; font-family: monospace; }
-        .input-human { width: 85px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #d35400; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        .input-edit { width: 90px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px; }
+        .km-val { color: #666; font-family: monospace; font-weight: bold; }
+        .delete-btn { color: #e74c3c; background: none; font-size: 18px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🛠️ Constructor de Ruta ARDEPE (Filtro ID: b4A3)</h2>
+    <h2>🛠️ Constructor de Ruta Inteligente (ARDEPE)</h2>
     
     <div class="header-tools">
         <div class="input-group">
             <label>Nombre de la Ruta:</label>
-            <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 250px;">
+            <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 220px;">
         </div>
         <div class="input-group">
-            <label>Seleccionar Zona del Tipo b4A3:</label>
-            <select id="selectorZonas" style="width: 400px;">
-                <option value="">Cargando zonas autorizadas...</option>
-            </select>
+            <label>Escribe para buscar zona (46 disponibles):</label>
+            <input list="listaZonas" id="buscadorZonas" placeholder="Escribe nombre de la zona..." style="width: 350px;">
+            <datalist id="listaZonas"></datalist>
         </div>
         <button class="btn-add" id="btnAgregar">➕ Añadir Punto</button>
     </div>
 
-    <table id="tablaRuta">
+    <table>
         <thead>
             <tr>
-                <th>Orden</th>
+                <th style="width: 50px;">Orden</th>
                 <th>Punto de Control</th>
-                <th>Distancia (Km)</th>
-                <th>Sistema (HH:mm)</th>
-                <th>Ajuste Humano (HH:mm)</th>
-                <th>Pernocte (HH:mm)</th>
-                <th>Acción</th>
+                <th style="width: 150px;">Distancia (Km)</th>
+                <th style="width: 150px;">Tiempo Tramo (HH:mm)</th>
+                <th style="width: 150px;">Pernocte (HH:mm)</th>
+                <th style="width: 50px;"></th>
             </tr>
         </thead>
         <tbody id="cuerpoRuta"></tbody>
     </table>
 
-    <button class="btn-save">💾 Guardar Configuración</button>
+    <button class="btn-save" id="btnGuardar">💾 Guardar Ruta Maestra</button>
 </div>
 
 <script>
@@ -76,50 +75,43 @@
     geotab.addin.configurar = (api, state) => {
         return {
             initialize(api, state, callback) {
-                // LLAMADA ESTRICTA: Solo zonas que pertenezcan al ID b4A3
                 api.call("Get", {
                     typeName: "Zone",
-                    search: { 
-                        zoneTypeIds: ["b4A3"] // Este es el filtro de ID que me pasaste
-                    }
+                    search: { zoneTypeIds: ["b4A3"] }
                 }, (result) => {
-                    const select = document.getElementById("selectorZonas");
-                    
-                    // Doble validación en el cliente por si la API devuelve de más
-                    zonasFiltradas = result.filter(z => {
-                        return z.zoneTypes.some(t => t.id === "b4A3");
-                    }).sort((a, b) => a.name.localeCompare(b.name));
-
-                    select.innerHTML = `<option value="">-- Selecciona entre las ${zonasFiltradas.length} zonas de ARDEPE --</option>`;
+                    zonasFiltradas = result.sort((a, b) => a.name.localeCompare(b.name));
+                    const datalist = document.getElementById("listaZonas");
                     zonasFiltradas.forEach(z => {
                         let opt = document.createElement("option");
-                        opt.value = z.id;
-                        opt.text = z.name;
-                        select.appendChild(opt);
+                        opt.value = z.name; // El buscador funciona por nombre
+                        datalist.appendChild(opt);
                     });
                 });
 
                 document.getElementById("btnAgregar").addEventListener("click", () => {
-                    const idSel = document.getElementById("selectorZonas").value;
-                    if (!idSel) return;
-
-                    const zonaData = zonasFiltradas.find(z => z.id === idSel);
-                    const previo = rutaActual[rutaActual.length - 1];
+                    const inputBusqueda = document.getElementById("buscadorZonas");
+                    const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
                     
-                    let km = 0;
-                    if (previo) {
-                        km = getHaversine(previo.y, previo.x, zonaData.y, zonaData.x);
+                    if (!zonaSel) {
+                        alert("Por favor, selecciona una zona válida de la lista.");
+                        return;
                     }
 
-                    const tSist = km / 60; 
+                    const previo = rutaActual[rutaActual.length - 1];
+                    let km = 0;
+                    if (previo) {
+                        km = getHaversine(previo.y, previo.x, zonaSel.y, zonaSel.x);
+                    }
+
                     const hito = {
-                        name: zonaData.name,
-                        y: zonaData.y, x: zonaData.x,
-                        km: km,
-                        tiempo: formatTime(tSist)
+                        name: zonaSel.name,
+                        y: zonaSel.y, x: zonaSel.x,
+                        km: km.toFixed(2),
+                        tiempo: formatTime(km / 60)
                     };
 
                     rutaActual.push(hito);
+                    inputBusqueda.value = ""; // Limpiar buscador
                     updateUI();
                 });
 
@@ -131,11 +123,10 @@
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td><strong>${item.name}</strong></td>
-                            <td class="calc-val">${item.km.toFixed(2)} km</td>
-                            <td class="calc-val">${item.tiempo}</td>
-                            <td><input type="text" class="input-human" value="${item.tiempo}"></td>
-                            <td><input type="text" class="input-human" value="00:30"></td>
-                            <td><button onclick="borrar(${i})" style="background:none; color:red;">🗑️</button></td>
+                            <td class="km-val">${item.km} km</td>
+                            <td><input type="text" class="input-edit" value="${item.tiempo}"></td>
+                            <td><input type="text" class="input-edit" value="00:30"></td>
+                            <td><button class="delete-btn" onclick="borrar(${i})">🗑️</button></td>
                         `;
                     });
                 }
