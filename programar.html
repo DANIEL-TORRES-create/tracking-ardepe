@@ -26,7 +26,7 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Solo Unidades GO Activas):</label>
+            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Solo Unidades Plan GO):</label>
             <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
@@ -64,24 +64,21 @@
         return {
             initialize(api, state, callback) {
                 
-                // 1. CARGAR VEHÍCULOS (Filtrando por Plan GO y Activos)
+                // 1. CARGAR VEHÍCULOS (Filtro estricto por Plan GO)
                 api.call("Get", { 
                     typeName: "Device",
-                    search: { 
-                        terminationDateTime: "9999-12-31T23:59:59.000Z" 
-                    } 
+                    search: { terminationDateTime: "9999-12-31T23:59:59.000Z" } 
                 }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
                     dl.innerHTML = "";
                     
-                    // FILTRO CRÍTICO: 
-                    // 1. Que tenga un plan asignado activo.
-                    // 2. Que el nombre del plan no sea "Base" o "Asset" (que son de remolques).
-                    // 3. Que tenga un número de serie real.
+                    // Solo permitimos dispositivos cuyo plan contenga la palabra "GO"
                     const unidadesGO = result.filter(d => {
-                        const tienePlanGO = d.activeWorkload && d.activeWorkload !== "None" && d.activeWorkload !== "Base";
-                        const tieneSerial = d.serial && d.serial !== "000-000-0000";
-                        return tienePlanGO && tieneSerial;
+                        const nombrePlan = (d.devicePlan || "").toUpperCase();
+                        const nombreDispositivo = (d.name || "").toUpperCase();
+                        
+                        // Filtramos: Que el plan diga GO y que no sea un remolque por nombre
+                        return nombrePlan.includes("GO") && !nombreDispositivo.includes("REMOLQUE");
                     });
 
                     unidadesGO.forEach(d => {
@@ -112,7 +109,6 @@
                     });
                 });
 
-                // Eventos de cálculo... (el resto del código se mantiene igual)
                 document.getElementById("checkRetorno").addEventListener("change", () => {
                     document.getElementById("modoRuta").innerText = document.getElementById("checkRetorno").checked ? "(VIAJE RETORNO)" : "";
                     calcular();
