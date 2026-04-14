@@ -2,14 +2,14 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="estilos.css">
 </head>
-<body style="font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f0f2f5;">
+<body>
 
-<div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1000px; margin: auto;">
+<div class="card-container">
+    <h2 class="titulo-seccion">🛠️ Constructor de Ruta</h2>
     
-    <h2 style="color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; margin-top: 0;">🛠️ Constructor de Ruta</h2>
-    
-    <div style="display: flex; gap: 15px; margin-bottom: 20px; background: #e8f0fe; padding: 15px; border-radius: 8px; align-items: flex-end; border-left: 5px solid #1a73e8;">
+    <div class="barra-herramientas">
         <div style="display: flex; flex-direction: column; gap: 5px;">
             <label style="font-weight: bold; font-size: 13px;">Nombre de la Ruta:</label>
             <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 220px;">
@@ -22,21 +22,21 @@
         <button id="btnAgregar" style="background: #1a73e8; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; height: 40px;">➕ Añadir Punto</button>
     </div>
 
-    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    <table class="tabla-constructor">
         <thead>
-            <tr style="background: #1a73e8; color: white;">
-                <th style="padding: 12px; text-align: center; border-radius: 6px 0 0 0;">Orden</th>
-                <th style="padding: 12px; text-align: left;">Punto de Control</th>
-                <th style="padding: 12px; text-align: center;">Distancia (Km)</th>
-                <th style="padding: 12px; text-align: center;">Tiempo Tramo (HH:mm)</th>
-                <th style="padding: 12px; text-align: center;">Pernocte (HH:mm)</th>
-                <th style="padding: 12px; text-align: center; border-radius: 0 6px 0 0;">Acción</th>
+            <tr>
+                <th style="border-radius: 6px 0 0 0;">Orden</th>
+                <th style="text-align: left;">Punto de Control</th>
+                <th>Distancia (Km)</th>
+                <th>Tiempo Tramo (HH:mm)</th>
+                <th>Pernocte (HH:mm)</th>
+                <th style="border-radius: 0 6px 0 0;">Acción</th>
             </tr>
         </thead>
         <tbody id="cuerpoRuta"></tbody>
     </table>
 
-    <button id="btnGuardar" style="background: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; float: right; margin-top: 20px;">💾 Guardar Ruta Maestra</button>
+    <button id="btnGuardar" class="btn-guardar">💾 Guardar Ruta Maestra</button>
     <div style="clear: both;"></div>
 </div>
 
@@ -103,18 +103,13 @@
                         const row = cuerpo.insertRow();
                         const esPrimero = (i === 0);
                         
-                        // Estilos de celda centrados
-                        const cellStyle = "padding: 10px; border-bottom: 1px solid #eee; text-align: center; vertical-align: middle;";
-                        const nameStyle = "padding: 10px; border-bottom: 1px solid #eee; text-align: left; font-weight: bold;";
-                        const inputStyle = "width: 80px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px;";
-
                         row.innerHTML = `
-                            <td style="${cellStyle}">${i + 1}</td>
-                            <td style="${nameStyle}">${item.name}</td>
-                            <td style="${cellStyle}">${(esPrimero || item.km === 0) ? '-' : '<span style="color:#666; font-family:monospace;">' + item.km.toFixed(2) + ' km</span>'}</td>
-                            <td style="${cellStyle}">${(esPrimero || item.km === 0) ? '-' : '<input type="text" style="' + inputStyle + '" value="' + item.tiempo + '">'}</td>
-                            <td style="${cellStyle}"><input type="text" style="${inputStyle}" value="00:30"></td>
-                            <td style="${cellStyle}"><button onclick="borrar(${i})" style="color: #e74c3c; background: none; border: none; font-size: 18px; cursor: pointer;">🗑️</button></td>
+                            <td>${i + 1}</td>
+                            <td style="text-align: left; font-weight: bold;">${item.name}</td>
+                            <td>${(esPrimero || item.km === 0) ? '-' : '<span style="color:#666; font-family:monospace;">' + item.km.toFixed(2) + ' km</span>'}</td>
+                            <td>${(esPrimero || item.km === 0) ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
+                            <td><input type="text" class="input-tiempo" value="00:30"></td>
+                            <td><button onclick="borrar(${i})" style="color: #e74c3c; background: none; border: none; font-size: 18px; cursor: pointer;">🗑️</button></td>
                         `;
                     });
                 }
