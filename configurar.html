@@ -80,7 +80,16 @@
                 });
 
                 document.getElementById("btnAgregar").addEventListener("click", () => {
+                    const inputNombre = document.getElementById("nombreRuta");
                     const inputBusqueda = document.getElementById("buscadorZonas");
+                    
+                    // SEGURIDAD: Validar que el nombre de la ruta no esté vacío
+                    if (!inputNombre.value.trim()) {
+                        alert("⚠️ Debes asignar un Nombre a la Ruta antes de añadir puntos.");
+                        inputNombre.focus();
+                        return;
+                    }
+
                     const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
                     if (!zonaSel) return;
 
@@ -109,7 +118,6 @@
                         const row = cuerpo.insertRow();
                         const esPrimero = (i === 0);
                         
-                        // He aplicado color negro (#333) y bajado a 13px el tamaño
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td style="text-align: left; font-weight: bold;">${item.name}</td>
