@@ -3,74 +3,69 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f2f5; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1100px; margin: auto; }
         .header-tools { display: flex; gap: 15px; margin-bottom: 20px; background: #e8f0fe; padding: 15px; border-radius: 8px; align-items: flex-end; border-left: 5px solid #1a73e8; }
         .input-group { display: flex; flex-direction: column; gap: 5px; }
         input, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
         button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; }
         .btn-add { background: #1a73e8; color: white; padding: 10px 20px; height: 40px; }
-        .btn-add:hover { background: #1557b0; }
         .btn-save { background: #28a745; color: white; padding: 12px 30px; float: right; margin-top: 20px; font-size: 16px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #1a73e8; color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-        .calc-val { color: #1a73e8; font-weight: bold; font-family: monospace; font-size: 15px; background: #eef2ff; padding: 4px 8px; border-radius: 4px; }
-        .input-human { width: 90px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #d35400; padding: 5px; }
-        .delete-btn { color: #e74c3c; background: none; font-size: 18px; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        .calc-val { color: #1a73e8; font-weight: bold; font-family: monospace; }
+        .input-human { width: 85px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #d35400; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🛠️ Constructor de Ruta Personalizada (ARDEPE)</h2>
+    <h2>🛠️ Constructor de Ruta ARDEPE (Filtro ID: b4A3)</h2>
     
     <div class="header-tools">
         <div class="input-group">
             <label>Nombre de la Ruta:</label>
-            <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA V2" style="width: 250px;">
+            <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 250px;">
         </div>
         <div class="input-group">
-            <label>Buscar Zona (Tipo b4A3):</label>
-            <select id="selectorZonas" style="width: 350px;">
-                <option value="">Cargando zonas del servidor...</option>
+            <label>Seleccionar Zona del Tipo b4A3:</label>
+            <select id="selectorZonas" style="width: 400px;">
+                <option value="">Cargando zonas autorizadas...</option>
             </select>
         </div>
-        <button class="btn-add" id="btnAgregar">➕ Agregar a la Ruta</button>
+        <button class="btn-add" id="btnAgregar">➕ Añadir Punto</button>
     </div>
 
-    <table>
+    <table id="tablaRuta">
         <thead>
             <tr>
-                <th style="width: 50px;">Orden</th>
-                <th>Punto de Control (Hito)</th>
-                <th style="width: 140px;">Distancia (Km)</th>
-                <th style="width: 140px;">Sistema (HH:mm)</th>
-                <th style="width: 140px;">Ajuste Humano (HH:mm)</th>
-                <th style="width: 140px;">Pernocte (HH:mm)</th>
-                <th style="width: 50px;"></th>
+                <th>Orden</th>
+                <th>Punto de Control</th>
+                <th>Distancia (Km)</th>
+                <th>Sistema (HH:mm)</th>
+                <th>Ajuste Humano (HH:mm)</th>
+                <th>Pernocte (HH:mm)</th>
+                <th>Acción</th>
             </tr>
         </thead>
-        <tbody id="cuerpoRuta">
-            </tbody>
+        <tbody id="cuerpoRuta"></tbody>
     </table>
 
-    <button class="btn-save" id="btnGuardarFinal">💾 Guardar Ruta Maestra</button>
+    <button class="btn-save">💾 Guardar Configuración</button>
 </div>
 
 <script>
-    let zonasDisponibles = [];
-    let rutaEnConstruccion = [];
+    let zonasFiltradas = [];
+    let rutaActual = [];
 
-    // Convierte decimales (1.5) a reloj (01:30)
-    function formatHHmm(decimal) {
-        let hrs = Math.floor(decimal);
-        let mins = Math.round((decimal - hrs) * 60);
-        return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    function formatTime(decimal) {
+        let h = Math.floor(decimal);
+        let m = Math.round((decimal - h) * 60);
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     }
 
-    // Calcula distancia real entre coordenadas
-    function getDistance(lat1, lon1, lat2, lon2) {
+    function getHaversine(lat1, lon1, lat2, lon2) {
         const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -81,68 +76,73 @@
     geotab.addin.configurar = (api, state) => {
         return {
             initialize(api, state, callback) {
-                // Traemos las zonas b4A3 solo para llenar el buscador
+                // LLAMADA ESTRICTA: Solo zonas que pertenezcan al ID b4A3
                 api.call("Get", {
                     typeName: "Zone",
-                    search: { zoneTypeIds: ["b4A3"] }
+                    search: { 
+                        zoneTypeIds: ["b4A3"] // Este es el filtro de ID que me pasaste
+                    }
                 }, (result) => {
-                    zonasDisponibles = result.sort((a, b) => a.name.localeCompare(b.name));
                     const select = document.getElementById("selectorZonas");
-                    select.innerHTML = '<option value="">-- Selecciona una zona para añadir --</option>';
-                    zonasDisponibles.forEach(z => {
-                        let option = document.createElement("option");
-                        option.value = z.id;
-                        option.text = z.name;
-                        select.appendChild(option);
+                    
+                    // Doble validación en el cliente por si la API devuelve de más
+                    zonasFiltradas = result.filter(z => {
+                        return z.zoneTypes.some(t => t.id === "b4A3");
+                    }).sort((a, b) => a.name.localeCompare(b.name));
+
+                    select.innerHTML = `<option value="">-- Selecciona entre las ${zonasFiltradas.length} zonas de ARDEPE --</option>`;
+                    zonasFiltradas.forEach(z => {
+                        let opt = document.createElement("option");
+                        opt.value = z.id;
+                        opt.text = z.name;
+                        select.appendChild(opt);
                     });
                 });
 
                 document.getElementById("btnAgregar").addEventListener("click", () => {
-                    const select = document.getElementById("selectorZonas");
-                    if (!select.value) return;
+                    const idSel = document.getElementById("selectorZonas").value;
+                    if (!idSel) return;
 
-                    const zonaSel = zonasDisponibles.find(z => z.id === select.value);
-                    const ultimoPunto = rutaEnConstruccion[rutaEnConstruccion.length - 1];
+                    const zonaData = zonasFiltradas.find(z => z.id === idSel);
+                    const previo = rutaActual[rutaActual.length - 1];
                     
-                    let distanciaCalculada = 0;
-                    if (ultimoPunto) {
-                        distanciaCalculada = getDistance(ultimoPunto.y, ultimoPunto.x, zonaSel.y, zonaSel.x);
+                    let km = 0;
+                    if (previo) {
+                        km = getHaversine(previo.y, previo.x, zonaData.y, zonaData.x);
                     }
 
-                    const horasDecimal = distanciaCalculada / 60; // Base: 60km/h
-                    const nuevoHito = {
-                        id: zonaSel.id,
-                        name: zonaSel.name,
-                        y: zonaSel.y,
-                        x: zonaSel.x,
-                        km: distanciaCalculada,
-                        tiempo: formatHHmm(horasDecimal)
+                    const tSist = km / 60; 
+                    const hito = {
+                        name: zonaData.name,
+                        y: zonaData.y, x: zonaData.x,
+                        km: km,
+                        tiempo: formatTime(tSist)
                     };
 
-                    rutaEnConstruccion.push(nuevoHito);
-                    dibujarTabla();
+                    rutaActual.push(hito);
+                    updateUI();
                 });
 
-                function dibujarTabla() {
+                function updateUI() {
                     const cuerpo = document.getElementById("cuerpoRuta");
                     cuerpo.innerHTML = "";
-                    rutaEnConstruccion.forEach((item, i) => {
+                    rutaActual.forEach((item, i) => {
                         const row = cuerpo.insertRow();
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td><strong>${item.name}</strong></td>
-                            <td><span class="calc-val">${item.km.toFixed(2)} km</span></td>
-                            <td><span class="calc-val">${item.tiempo}</span></td>
+                            <td class="calc-val">${item.km.toFixed(2)} km</td>
+                            <td class="calc-val">${item.tiempo}</td>
                             <td><input type="text" class="input-human" value="${item.tiempo}"></td>
                             <td><input type="text" class="input-human" value="00:30"></td>
-                            <td><button class="delete-btn" onclick="quitarPunto(${i})">🗑️</button></td>
+                            <td><button onclick="borrar(${i})" style="background:none; color:red;">🗑️</button></td>
                         `;
                     });
                 }
 
-                window.quitarPunto = (index) => {
-                    rutaEnConstruccion.splice(index, 1);
-                    dibujarTabla();
+                window.borrar = (idx) => {
+                    rutaActual.splice(idx, 1);
+                    updateUI();
                 };
 
                 callback();
@@ -150,6 +150,5 @@
         };
     };
 </script>
-
 </body>
 </html>
