@@ -11,17 +11,20 @@
     
     <div class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="font-weight: bold;">1. Seleccionar Ruta Maestra:</label>
-            <select id="selectRutaMaestra" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
-                <option value="">Cargando rutas...</option>
-            </select>
+            <label style="font-weight: bold;">1. Ruta Maestra:</label>
+            <div style="display: flex; gap: 5px;">
+                <select id="selectRuta" style="padding: 10px; border-radius: 6px; flex-grow: 1;">
+                    <option value="">Cargando rutas...</option>
+                </select>
+                <button id="btnRetorno" style="background: #f39c12; color: white; border: none; border-radius: 6px; padding: 0 10px; cursor: pointer; font-weight: bold;" title="Invertir Ruta">🔄 Retorno</button>
+            </div>
             
-            <label style="font-weight: bold;">2. Fecha y Hora de Salida:</label>
+            <label style="font-weight: bold;">2. Salida Programada (ETD Origen):</label>
             <input type="datetime-local" id="fechaSalida" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="font-weight: bold;">3. Vehículo (Placa):</label>
+            <label style="font-weight: bold;">3. Vehículo (Solo Activos):</label>
             <input list="listaVehiculos" id="inputVehiculo" placeholder="Buscar placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
@@ -31,122 +34,121 @@
         </div>
     </div>
 
-    <h3 style="color: #1a73e8; margin-top: 20px;">📋 Itinerario Estimado del Viaje</h3>
+    <h3 style="color: #1a73e8; margin-top: 20px;">📋 Itinerario Estimado <span id="modoRuta" style="font-size: 12px; color: #666;">(Normal)</span></h3>
     <table class="tabla-constructor">
         <thead>
             <tr>
                 <th>Orden</th>
                 <th style="text-align: left;">Punto de Control</th>
                 <th>Distancia Acum.</th>
-                <th>Llegada Estimada (ETA)</th>
-                <th>Salida Estimada (ETD)</th>
+                <th>Llegada (ETA)</th>
+                <th>Salida (ETD)</th>
             </tr>
         </thead>
-        <tbody id="cuerpoItinerario">
-            <tr><td colspan="5" style="padding: 20px; color: #666;">Selecciona una ruta y fecha para calcular...</td></tr>
-        </tbody>
+        <tbody id="cuerpoItinerario"></tbody>
     </table>
 
-    <div style="margin-top: 20px;">
-        <button id="btnProgramar" class="btn-guardar" style="width: 100%; float: none;">🚀 Confirmar y Programar Viaje</button>
+    <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button id="btnProgramar" class="btn-guardar" style="flex-grow: 2; float: none;">🚀 Confirmar Viaje</button>
+        <button id="btnCancelar" class="btn-cancelar" style="flex-grow: 1; float: none; margin: 0;">❌ Limpiar</button>
     </div>
 </div>
 
 <script>
-    // Aquí irá la lógica de Geotab y la conexión con el Sheet
-    // Usaremos la misma WEB_APP_URL que en el Add-in 1
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwwtduJaS6lhzLqEE323RxMs8_NCVrTlpOiRtKMiDIsXhZr_e5e0ppH3WGExJ04z5fT/exec";
-    
-    let vehículos = [];
-    let conductores = [];
     let rutasMaestras = [];
+    let rutaSeleccionada = null;
+    let esRetorno = false;
 
     geotab.addin.programar = (api, state) => {
         return {
             initialize(api, state, callback) {
-                // 1. Cargar Vehículos de Geotab
-                api.call("Get", { typeName: "Device" }, (result) => {
+                // FILTRO DE VEHÍCULOS ACTIVOS
+                api.call("Get", { 
+                    typeName: "Device",
+                    search: { terminationDateTime: "9999-12-31T23:59:59.000Z" } // Solo dispositivos no dados de baja
+                }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
                     result.forEach(d => {
                         let opt = document.createElement("option");
-                        opt.value = d.name; // Placa/Nombre
+                        opt.value = d.name;
                         dl.appendChild(opt);
                     });
                 });
 
-                // 2. Cargar Conductores (Usuarios)
                 api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
-                    result.forEach(u => {
-                        if(u.isDriver) {
-                            let opt = document.createElement("option");
-                            opt.value = `${u.firstName} ${u.lastName}`;
-                            dl.appendChild(opt);
-                        }
+                    result.filter(u => u.isDriver).forEach(u => {
+                        let opt = document.createElement("option");
+                        opt.value = `${u.firstName} ${u.lastName}`;
+                        dl.appendChild(opt);
                     });
                 });
 
-                // 3. Cargar Rutas desde Google Sheets
-                fetch(WEB_APP_URL)
-                    .then(res => res.json())
-                    .then(data => {
-                        rutasMaestras = data;
-                        const sel = document.getElementById("selectRutaMaestra");
-                        sel.innerHTML = '<option value="">-- Seleccionar Ruta --</option>';
-                        data.forEach((r, index) => {
-                            let opt = document.createElement("option");
-                            opt.value = index;
-                            opt.textContent = r.nombre;
-                            sel.appendChild(opt);
-                        });
+                fetch(WEB_APP_URL).then(res => res.json()).then(data => {
+                    rutasMaestras = data;
+                    const sel = document.getElementById("selectRuta");
+                    sel.innerHTML = '<option value="">-- Seleccionar --</option>';
+                    data.forEach((r, i) => {
+                        let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre;
+                        sel.appendChild(opt);
                     });
+                });
 
-                // Evento al cambiar ruta o fecha para calcular ETA
-                document.getElementById("selectRutaMaestra").addEventListener("change", calcularItinerario);
-                document.getElementById("fechaSalida").addEventListener("change", calcularItinerario);
+                document.getElementById("btnRetorno").addEventListener("click", () => {
+                    esRetorno = !esRetorno;
+                    document.getElementById("modoRuta").innerText = esRetorno ? "(RETORNO)" : "(NORMAL)";
+                    calcular();
+                });
 
-                function calcularItinerario() {
-                    const rutaIdx = document.getElementById("selectRutaMaestra").value;
-                    const salidaStr = document.getElementById("fechaSalida").value;
-                    if (rutaIdx === "" || !salidaStr) return;
+                document.getElementById("selectRuta").addEventListener("change", calcular);
+                document.getElementById("fechaSalida").addEventListener("change", calcular);
 
-                    const rutaSel = rutasMaestras[rutaIdx];
-                    const puntos = JSON.parse(rutaSel.puntos);
+                function calcular() {
+                    const idx = document.getElementById("selectRuta").value;
+                    const salidaUser = document.getElementById("fechaSalida").value;
+                    if (idx === "" || !salidaUser) return;
+
+                    let puntos = JSON.parse(rutasMaestras[idx].puntos);
+                    if (esRetorno) puntos = [...puntos].reverse(); // Invertir si es retorno
+
                     const cuerpo = document.getElementById("cuerpoItinerario");
                     cuerpo.innerHTML = "";
 
-                    let tiempoAcumuladoMs = new Date(salidaStr).getTime();
-                    let kmAcumulados = 0;
+                    let tiempoBaseMs = new Date(salidaUser).getTime();
+                    let kmAcum = 0;
 
                     puntos.forEach((p, i) => {
-                        // Sumar tiempo de tramo (excepto al primero)
-                        if (i > 0) {
-                            const [hTramo, mTramo] = p.tiempo.split(":").map(Number);
-                            tiempoAcumuladoMs += (hTramo * 3600000) + (mTramo * 60000);
-                        }
-                        
-                        let eta = new Date(tiempoAcumuladoMs);
-                        kmAcumulados += parseFloat(p.km || 0);
+                        let etaMs, etdMs;
 
-                        // Sumar tiempo de pernocte/parada para el ETD
-                        const [hParada, mParada] = p.pernocte.split(":").map(Number);
-                        let etdMs = tiempoAcumuladoMs + (hParada * 3600000) + (mParada * 60000);
-                        let etd = new Date(etdMs);
+                        if (i === 0) {
+                            // LÓGICA PUNTO 1: El ETD es la hora del cliente. ETA es ETD menos su propio pernocte.
+                            const [hP, mP] = p.pernocte.split(":").map(Number);
+                            etdMs = tiempoBaseMs;
+                            etaMs = etdMs - ((hP * 3600000) + (mP * 60000));
+                        } else {
+                            // LÓGICA RESTO: ETA = ETD anterior + tiempo tramo. ETD = ETA + pernocte.
+                            const [hT, mT] = p.tiempo.split(":").map(Number);
+                            etaMs = tiempoBaseMs + ((hT * 3600000) + (mT * 60000));
+                            
+                            const [hP, mP] = p.pernocte.split(":").map(Number);
+                            etdMs = etaMs + ((hP * 3600000) + (mP * 60000));
+                            
+                            kmAcum += parseFloat(p.km || 0);
+                        }
 
                         const row = cuerpo.insertRow();
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td style="text-align: left; font-weight: bold;">${p.name}</td>
-                            <td>${kmAcumulados.toFixed(1)} km</td>
-                            <td style="color: #1a73e8; font-weight: bold;">${eta.toLocaleString()}</td>
-                            <td style="color: #666;">${etd.toLocaleString()}</td>
+                            <td>${kmAcum.toFixed(1)} km</td>
+                            <td style="color: #1a73e8;">${new Date(etaMs).toLocaleString()}</td>
+                            <td style="font-weight: bold;">${new Date(etdMs).toLocaleString()}</td>
                         `;
-                        
-                        // El ETD de este punto es la base para el tramo siguiente
-                        tiempoAcumuladoMs = etdMs;
+                        tiempoBaseMs = etdMs;
                     });
                 }
-
+                
                 callback();
             }
         };
