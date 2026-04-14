@@ -84,12 +84,15 @@
                     const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
                     if (!zonaSel) return;
 
-                    let lat = (zonaSel.center) ? zonaSel.center.y : (zonaSel.y || 0);
-                    let lon = (zonaSel.center) ? zonaSel.center.x : (zonaSel.x || 0);
+                    // VOLVEMOS A LA LÓGICA QUE SÍ FUNCIONABA
+                    let lat = zonaSel.y;
+                    let lon = zonaSel.x;
 
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = 0;
-                    if (previo && lat !== 0) km = getHaversine(previo.lat, previo.lon, lat, lon);
+                    if (previo) {
+                        km = getHaversine(previo.lat, previo.lon, lat, lon);
+                    }
 
                     rutaActual.push({ name: zonaSel.name, lat: lat, lon: lon, km: km, tiempo: formatTime(km / 60) });
                     inputBusqueda.value = "";
@@ -106,7 +109,7 @@
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td style="text-align: left; font-weight: bold;">${item.name}</td>
-                            <td>${(esPrimero || item.km === 0) ? '-' : '<span style="color:#666; font-family:monospace;">' + item.km.toFixed(2) + ' km</span>'}</td>
+                            <td>${(esPrimero || item.km === 0) ? '-' : '<span style="color:#666; font-family:monospace;">' + parseFloat(item.km).toFixed(2) + ' km</span>'}</td>
                             <td>${(esPrimero || item.km === 0) ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
                             <td><input type="text" class="input-tiempo" value="00:30"></td>
                             <td><button onclick="borrar(${i})" style="color: #e74c3c; background: none; border: none; font-size: 18px; cursor: pointer;">🗑️</button></td>
