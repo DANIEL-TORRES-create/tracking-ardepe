@@ -15,7 +15,7 @@
         th { background: #1a73e8; color: white; padding: 12px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #eee; }
         .input-edit { width: 90px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px; }
-        .km-val { color: #666; font-family: monospace; font-weight: bold; }
+        .km-val { color: #666; font-family: monospace; font-weight: bold; background: #eee; padding: 3px 6px; border-radius: 4px; }
         .delete-btn { color: #e74c3c; background: none; font-size: 18px; }
     </style>
 </head>
@@ -30,7 +30,7 @@
             <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 220px;">
         </div>
         <div class="input-group">
-            <label>Escribe para buscar zona (46 disponibles):</label>
+            <label id="labelBusqueda">Escribe para buscar zona (Cargando...):</label>
             <input list="listaZonas" id="buscadorZonas" placeholder="Escribe nombre de la zona..." style="width: 350px;">
             <datalist id="listaZonas"></datalist>
         </div>
@@ -79,11 +79,20 @@
                     typeName: "Zone",
                     search: { zoneTypeIds: ["b4A3"] }
                 }, (result) => {
-                    zonasFiltradas = result.sort((a, b) => a.name.localeCompare(b.name));
+                    // FILTRO ESTRICTO: Solo zonas que tengan el ID de tipo b4A3 en su lista de tipos
+                    zonasFiltradas = result.filter(z => {
+                        return z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3");
+                    }).sort((a, b) => a.name.localeCompare(b.name));
+
                     const datalist = document.getElementById("listaZonas");
+                    const label = document.getElementById("labelBusqueda");
+                    
+                    label.innerText = `Escribe para buscar zona (${zonasFiltradas.length} disponibles):`;
+                    
+                    datalist.innerHTML = "";
                     zonasFiltradas.forEach(z => {
                         let opt = document.createElement("option");
-                        opt.value = z.name; // El buscador funciona por nombre
+                        opt.value = z.name;
                         datalist.appendChild(opt);
                     });
                 });
@@ -93,7 +102,7 @@
                     const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
                     
                     if (!zonaSel) {
-                        alert("Por favor, selecciona una zona válida de la lista.");
+                        alert("Por favor, selecciona una zona válida de la lista de ARDEPE.");
                         return;
                     }
 
@@ -111,7 +120,7 @@
                     };
 
                     rutaActual.push(hito);
-                    inputBusqueda.value = ""; // Limpiar buscador
+                    inputBusqueda.value = "";
                     updateUI();
                 });
 
@@ -123,7 +132,7 @@
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td><strong>${item.name}</strong></td>
-                            <td class="km-val">${item.km} km</td>
+                            <td><span class="km-val">${item.km} km</span></td>
                             <td><input type="text" class="input-edit" value="${item.tiempo}"></td>
                             <td><input type="text" class="input-edit" value="00:30"></td>
                             <td><button class="delete-btn" onclick="borrar(${i})">🗑️</button></td>
