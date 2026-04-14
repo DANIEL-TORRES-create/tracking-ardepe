@@ -3,68 +3,81 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f9f9f9; }
-        .box { border: 1px solid #ccc; padding: 15px; border-radius: 5px; background: white; max-width: 800px; margin: auto; }
-        h3 { color: #004a99; margin-top: 0; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f8f9fa; }
+        .box { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 850px; margin: auto; }
+        h3 { color: #004a99; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .alert { padding: 15px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; }
+        .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
         th { background: #004a99; color: white; }
-        .warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin: 10px 0; border: 1px solid #ffeeba; }
+        input { width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-save { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; float: right; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="box">
-        <h3>🛠️ Configuración de Ruta (ID: bB)</h3>
-        <div id="status">⏳ Validando datos de ruta...</div>
+        <h3>🛠️ Módulo 1: Configuración de Tiempos Maestros</h3>
+        <div id="status">⏳ Iniciando conexión con MyGeotab...</div>
         
-        <table id="tabla" style="display:none;">
+        <table id="tablaRuta" style="display:none;">
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Punto de Control (Zona)</th>
-                    <th>Viaje (Min)</th>
-                    <th>Pernocte (Min)</th>
+                    <th>Punto de Control (Geocerca)</th>
+                    <th>Viaje Est. (Min)</th>
+                    <th>Parada Máx. (Min)</th>
                 </tr>
             </thead>
-            <tbody id="cuerpo"></tbody>
+            <tbody id="cuerpoTabla"></tbody>
         </table>
+        <button id="btnGuardar" class="btn-save" style="display:none;">Guardar Configuración</button>
     </div>
 
     <script>
         geotab.addin.configurar = (api, state) => {
             return {
                 initialize(api, state, callback) {
+                    const status = document.getElementById("status");
+                    const tabla = document.getElementById("tablaRuta");
+                    const cuerpo = document.getElementById("cuerpoTabla");
+                    const boton = document.getElementById("btnGuardar");
+
+                    // Consultamos la ruta bB
                     api.call("Get", {
                         typeName: "Route",
                         search: { id: "bB" }
                     }, function(result) {
-                        var status = document.getElementById("status");
-                        var cuerpo = document.getElementById("cuerpo");
-                        var tabla = document.getElementById("tabla");
-
                         if (result && result.length > 0) {
-                            var ruta = result[0];
-                            // Verificamos si existen los items de la ruta
-                            var puntos = ruta.routePlanItem || []; 
-                            
-                            status.innerHTML = "✅ <strong>Ruta detectada:</strong> " + ruta.name;
+                            let ruta = result[0];
+                            // Usamos el operador opcional ?. o validamos manualmente para evitar el error de forEach
+                            let puntos = ruta.routePlanItem || [];
+
+                            status.innerHTML = `<div class="alert alert-success">✅ Ruta Detectada: <strong>${ruta.name}</strong></div>`;
 
                             if (puntos.length > 0) {
-                                puntos.forEach(function(p, i) {
-                                    var nombreZona = (p.zone && p.zone.name) ? p.zone.name : "Zona sin nombre";
-                                    var row = cuerpo.insertRow();
-                                    row.innerHTML = "<td>"+(i+1)+"</td><td><strong>"+nombreZona+"</strong></td><td><input type='number' value='60' style='width:50px'></td><td><input type='number' value='30' style='width:50px'></td>";
+                                puntos.forEach((item, index) => {
+                                    let zonaNombre = item.zone ? item.zone.name : "Zona desconocida";
+                                    let fila = cuerpo.insertRow();
+                                    fila.innerHTML = `
+                                        <td>${index + 1}</td>
+                                        <td><strong>${zonaNombre}</strong></td>
+                                        <td><input type="number" value="60"></td>
+                                        <td><input type="number" value="30"></td>
+                                    `;
                                 });
                                 tabla.style.display = "table";
+                                boton.style.display = "block";
                             } else {
-                                status.innerHTML += "<div class='warning'>⚠️ La ruta existe, pero <strong>no tiene puntos o zonas asignadas</strong>. Agrégalas en MyGeotab > Rutas.</div>";
+                                status.innerHTML += `<div class="alert alert-warning">⚠️ La ruta existe pero no tiene un 'Plan de Ruta' con zonas asignadas. <br><br> Por favor, ve a <strong>Mapa > Rutas</strong> y asegúrate de que la ruta LIMA-HUANCAVELICA tenga paradas añadidas.</div>`;
                             }
                         } else {
-                            status.innerHTML = "❌ No se encontró ninguna ruta con el ID: bB";
+                            status.innerHTML = `<div class="alert alert-warning">❌ No se encontró la ruta con ID 'bB'.</div>`;
                         }
                         callback();
                     }, function(error) {
-                        document.getElementById("status").innerHTML = "⚠️ Error de API: " + error;
+                        status.innerHTML = "⚠️ Error de Geotab: " + error;
                         callback();
                     });
                 }
