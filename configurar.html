@@ -4,31 +4,28 @@
     <meta charset="utf-8">
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 1100px; margin: auto; }
         h2 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #eee; text-align: left; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+        th, td { padding: 10px; border: 1px solid #eee; text-align: left; }
         th { background: #1a73e8; color: white; }
-        input[type="number"] { width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
-        .btn-calc { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+        input[type="number"] { width: 70px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #d35400; }
+        .auto-val { background: #e8f0fe; color: #1967d2; padding: 3px 6px; border-radius: 4px; font-weight: bold; }
         .btn-save { background: #27ae60; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; float: right; margin-top: 20px; font-weight: bold; }
-        .tag { background: #e8f0fe; color: #1967d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>🛠️ Módulo 1: Constructor de Rutas Inteligente</h2>
-        <p>Filtrando por Tipo de Zona: <span class="tag">id: b4A3</span></p>
-        
-        <div id="status">Buscando geocercas de ARDEPE...</div>
+        <h2>🛠️ Módulo 1: Arquitecto de Rutas (Tipo: b4A3)</h2>
+        <div id="status">Buscando geocercas en el grupo b4A3...</div>
 
         <table id="tabla" style="display:none;">
             <thead>
                 <tr>
                     <th>Orden</th>
                     <th>Punto de Control</th>
-                    <th>Distancia Est. (Km)</th>
-                    <th>Tiempo Promedio (Hrs)</th>
+                    <th>Distancia Tramo (Km)</th>
+                    <th>Tiempo Est. (Hrs)</th>
                     <th>Ajuste Humano (Hrs)</th>
                     <th>Pernocte (Hrs)</th>
                 </tr>
@@ -40,10 +37,21 @@
     </div>
 
     <script>
+        // Función matemática para calcular distancia entre coordenadas (Haversine)
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la Tierra en km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
         geotab.addin.configurar = (api, state) => {
             return {
                 initialize(api, state, callback) {
-                    // 1. Buscamos zonas por Tipo (b4A3)
                     api.call("Get", {
                         typeName: "Zone",
                         search: { zoneTypeIds: ["b4A3"] } 
@@ -56,26 +64,31 @@
                             document.getElementById("tabla").style.display = "table";
                             document.getElementById("btnGuardar").style.display = "block";
 
-                            // Ordenar por nombre inicialmente
+                            // Ordenar alfabéticamente (puedes ajustar el orden después)
                             zonas.sort((a, b) => a.name.localeCompare(b.name));
 
                             zonas.forEach((z, i) => {
+                                let distKm = 0;
+                                if (i > 0) {
+                                    // Calculamos distancia real entre este punto y el anterior
+                                    distKm = calcularDistancia(zonas[i-1].y, zonas[i-1].x, z.y, z.x);
+                                }
+                                
+                                // Estimamos tiempo a 60km/h promedio
+                                let tiempoEstimado = (distKm / 60).toFixed(2);
+                                
                                 let row = cuerpo.insertRow();
-                                // Aquí calcularemos distancia vs la zona anterior en el siguiente paso
-                                let distBase = (i === 0) ? 0 : (Math.random() * 50 + 10).toFixed(2); 
-                                let tiempoBase = (distBase / 60).toFixed(2);
-
                                 row.innerHTML = `
                                     <td>${i + 1}</td>
                                     <td><strong>${z.name}</strong></td>
-                                    <td><span class="tag">${distBase} km</span></td>
-                                    <td><span class="tag">${tiempoBase} hrs</span></td>
-                                    <td><input type="number" value="${tiempoBase}" step="0.1"></td>
+                                    <td><span class="auto-val">${distKm.toFixed(2)} km</span></td>
+                                    <td><span class="auto-val">${tiempoEstimado} hrs</span></td>
+                                    <td><input type="number" value="${tiempoEstimado}" step="0.1"></td>
                                     <td><input type="number" value="0.5" step="0.1"></td>
                                 `;
                             });
                         } else {
-                            status.innerHTML = "❌ No se encontraron zonas con el tipo b4A3.";
+                            status.innerHTML = "❌ No se encontraron zonas con el ID de tipo b4A3.";
                         }
                         callback();
                     });
