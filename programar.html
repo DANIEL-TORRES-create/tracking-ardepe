@@ -16,8 +16,8 @@
                 <select id="selectRuta" style="padding: 10px; border-radius: 6px; flex-grow: 1; border: 1px solid #ccc;">
                     <option value="">Cargando rutas...</option>
                 </select>
-                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #eee; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: bold;">
-                    <input type="checkbox" id="checkRetorno" style="width: 18px; height: 18px; cursor: pointer;"> ¿Retorno?
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #eee; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold;">
+                    <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿VIAJE RETORNO?
                 </label>
             </div>
             
@@ -26,12 +26,12 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Solo Activos):</label>
-            <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe para buscar placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Placas Activas):</label>
+            <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
             <label style="font-weight: bold; font-size: 13px;">4. Conductor:</label>
-            <input list="listaConductores" id="inputConductor" placeholder="Escribe para buscar conductor..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <input list="listaConductores" id="inputConductor" placeholder="Escribe conductor..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaConductores"></datalist>
         </div>
     </div>
@@ -40,14 +40,16 @@
     <table class="tabla-constructor">
         <thead>
             <tr>
-                <th>Orden</th>
+                <th style="width: 50px;">Orden</th>
                 <th style="text-align: left;">Punto de Control</th>
                 <th>Distancia Acum.</th>
                 <th>Llegada (ETA)</th>
                 <th>Salida (ETD)</th>
             </tr>
         </thead>
-        <tbody id="cuerpoItinerario"></tbody>
+        <tbody id="cuerpoItinerario">
+            <tr><td colspan="5" style="text-align:center; padding:20px; color:#999;">Seleccione ruta y fecha para calcular itinerario</td></tr>
+        </tbody>
     </table>
 
     <div style="margin-top: 20px; display: flex; gap: 10px;">
@@ -64,51 +66,55 @@
         return {
             initialize(api, state, callback) {
                 
-                // --- CAMBIO CLAVE PARA TRAER UNIDADES ---
+                // 1. CARGAR VEHÍCULOS (Sin filtros restrictivos para asegurar carga)
                 api.call("Get", { 
-                    typeName: "Device",
-                    // Quitamos el filtro de grupos aquí para que no bloquee nada
-                    search: { 
-                        terminationDateTime: "9999-12-31T23:59:59.000Z" 
-                    } 
+                    typeName: "Device"
                 }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
-                    dl.innerHTML = ""; 
-
-                    // Filtramos manualmente en el código para asegurar que esté activa hoy
-                    const unidadesActivas = result.filter(d => {
-                        // Si no tiene fecha de fin o la fecha de fin es el futuro, está activa
-                        return !d.activeTo || d.activeTo.includes("9999");
+                    dl.innerHTML = "";
+                    
+                    // Filtro manual: Solo los que no tienen fecha de fin o es el año 9999
+                    const activos = result.filter(d => {
+                        return !d.terminationDateTime || d.terminationDateTime.indexOf("9999") > -1;
                     });
 
-                    unidadesActivas.forEach(d => {
+                    activos.forEach(d => {
                         let opt = document.createElement("option");
                         opt.value = d.name;
                         dl.appendChild(opt);
                     });
-                });
+                }, (e) => console.error("Error Vehículos:", e));
 
+                // 2. CARGAR CONDUCTORES
                 api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
+                    dl.innerHTML = "";
                     result.filter(u => u.isDriver).forEach(u => {
                         let opt = document.createElement("option");
-                        opt.value = `${u.firstName} ${u.lastName}`;
+                        opt.value = (u.firstName + " " + (u.lastName || "")).trim();
                         dl.appendChild(opt);
                     });
-                });
+                }, (e) => console.error("Error Conductores:", e));
 
-                fetch(WEB_APP_URL).then(res => res.json()).then(data => {
-                    rutasMaestras = data;
-                    const sel = document.getElementById("selectRuta");
-                    sel.innerHTML = '<option value="">-- Seleccionar --</option>';
-                    data.forEach((r, i) => {
-                        let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre;
-                        sel.appendChild(opt);
-                    });
-                });
+                // 3. CARGAR RUTAS MAESTRAS
+                fetch(WEB_APP_URL)
+                    .then(res => res.json())
+                    .then(data => {
+                        rutasMaestras = data;
+                        const sel = document.getElementById("selectRuta");
+                        sel.innerHTML = '<option value="">-- Seleccionar --</option>';
+                        data.forEach((r, i) => {
+                            let opt = document.createElement("option");
+                            opt.value = i;
+                            opt.textContent = r.nombre;
+                            sel.appendChild(opt);
+                        });
+                    })
+                    .catch(e => console.error("Error Google Sheets:", e));
 
+                // EVENTOS DE CÁLCULO
                 document.getElementById("checkRetorno").addEventListener("change", () => {
-                    document.getElementById("modoRuta").innerText = document.getElementById("checkRetorno").checked ? "(RETORNO)" : "";
+                    document.getElementById("modoRuta").innerText = document.getElementById("checkRetorno").checked ? "(VIAJE RETORNO)" : "";
                     calcular();
                 });
 
@@ -130,30 +136,58 @@
 
                     puntos.forEach((p, i) => {
                         let etaMs, etdMs;
+                        
                         if (i === 0) {
+                            // Punto de Origen: ETD es la hora puesta por usuario
                             const [hP, mP] = p.pernocte.split(":").map(Number);
                             etdMs = tiempoBaseMs;
                             etaMs = etdMs - ((hP * 3600000) + (mP * 60000));
                         } else {
+                            // Siguientes puntos: ETA = ETD anterior + tramo
                             const [hT, mT] = p.tiempo.split(":").map(Number);
                             etaMs = tiempoBaseMs + ((hT * 3600000) + (mT * 60000));
+                            
                             const [hP, mP] = p.pernocte.split(":").map(Number);
                             etdMs = etaMs + ((hP * 3600000) + (mP * 60000));
                             kmAcum += parseFloat(p.km || 0);
                         }
+
                         const row = cuerpo.insertRow();
-                        row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(1)} km</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
+                        row.innerHTML = `
+                            <td>${i+1}</td>
+                            <td style="text-align:left; font-weight:bold;">${p.name}</td>
+                            <td>${kmAcum.toFixed(1)} km</td>
+                            <td style="color:#1a73e8;">${new Date(etaMs).toLocaleString()}</td>
+                            <td style="font-weight:bold;">${new Date(etdMs).toLocaleString()}</td>
+                        `;
                         tiempoBaseMs = etdMs;
                     });
                 }
 
+                // GUARDAR PROGRAMACIÓN
                 document.getElementById("btnProgramar").addEventListener("click", () => {
                     const vehiculo = document.getElementById("inputVehiculo").value;
                     const conductor = document.getElementById("inputConductor").value;
                     const rutaIdx = document.getElementById("selectRuta").value;
-                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Completa los datos.");
+
+                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Completa los datos requeridos.");
                     
                     document.getElementById("btnProgramar").innerText = "⏳ Guardando...";
+                    
+                    const filas = document.querySelectorAll("#cuerpoItinerario tr");
+                    let itinerarioArray = [];
+                    filas.forEach(f => {
+                        if(f.cells.length > 1) {
+                            itinerarioArray.push({
+                                orden: f.cells[0].innerText,
+                                punto: f.cells[1].innerText,
+                                km: f.cells[2].innerText,
+                                eta: f.cells[3].innerText,
+                                etd: f.cells[4].innerText
+                            });
+                        }
+                    });
+
                     fetch(WEB_APP_URL, {
                         method: "POST",
                         body: JSON.stringify({
@@ -161,11 +195,15 @@
                             vehiculo: vehiculo,
                             conductor: conductor,
                             nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RETORNO)" : ""),
-                            itinerario: JSON.stringify(Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({
-                                orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
-                            })))
+                            itinerario: JSON.stringify(itinerarioArray)
                         })
-                    }).then(() => { alert("✅ Viaje Programado"); location.reload(); });
+                    }).then(() => { 
+                        alert("✅ Viaje Programado con éxito"); 
+                        location.reload(); 
+                    }).catch(e => {
+                        alert("Error al guardar");
+                        document.getElementById("btnProgramar").innerText = "🚀 Confirmar Viaje";
+                    });
                 });
 
                 document.getElementById("btnCancelar").addEventListener("click", () => location.reload());
