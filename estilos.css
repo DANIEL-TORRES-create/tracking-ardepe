@@ -1,0 +1,75 @@
+/* estilos.css */
+body { 
+    font-family: 'Segoe UI', Tahoma, sans-serif !important; 
+    padding: 20px !important; 
+    background-color: #f0f2f5 !important; 
+}
+
+.card-container { 
+    background: white !important; 
+    padding: 25px !important; 
+    border-radius: 12px !important; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; 
+    max-width: 1000px !important; 
+    margin: auto !important; 
+}
+
+.titulo-seccion { 
+    color: #1a73e8 !important; 
+    border-bottom: 2px solid #1a73e8 !important; 
+    padding-bottom: 10px !important; 
+    margin-top: 0 !important; 
+}
+
+.barra-herramientas { 
+    display: flex !important; 
+    gap: 15px !important; 
+    margin-bottom: 20px !important; 
+    background: #e8f0fe !important; 
+    padding: 15px !important; 
+    border-radius: 8px !important; 
+    align-items: flex-end !important; 
+    border-left: 5px solid #1a73e8 !important; 
+}
+
+.tabla-constructor { 
+    width: 100% !important; 
+    border-collapse: collapse !important; 
+    margin-top: 20px !important; 
+}
+
+.tabla-constructor th { 
+    background: #1a73e8 !important; 
+    color: white !important; 
+    padding: 12px !important; 
+    text-align: center !important; 
+}
+
+.tabla-constructor td { 
+    padding: 10px !important; 
+    border-bottom: 1px solid #eee !important; 
+    text-align: center !important; 
+    vertical-align: middle !important; 
+}
+
+.input-tiempo { 
+    width: 80px !important; 
+    border: 2px solid #3498db !important; 
+    text-align: center !important; 
+    font-weight: bold !important; 
+    color: #1a73e8 !important; 
+    padding: 5px !important; 
+    border-radius: 4px !important; 
+}
+
+.btn-guardar { 
+    background: #28a745 !important; 
+    color: white !important; 
+    padding: 12px 30px !important; 
+    border: none !important; 
+    border-radius: 6px !important; 
+    font-weight: bold !important; 
+    cursor: pointer !important; 
+    float: right !important; 
+    margin-top: 20px !important; 
+}
