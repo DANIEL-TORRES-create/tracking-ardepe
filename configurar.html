@@ -77,9 +77,30 @@
     }
 
     geotab.addin.configurar = (api, state) => {
+        
+        const cargarRutasExistentes = () => {
+            api.call("Get", { typeName: "AddInData", search: { key: "RutaMaestra_ARDEPE" } }, (rutas) => {
+                const listaUI = document.getElementById("listaRutasGuardadas");
+                listaUI.innerHTML = "";
+                rutas.forEach(r => {
+                    const data = JSON.parse(r.data);
+                    const row = listaUI.insertRow();
+                    row.innerHTML = `
+                        <td style="text-align:left; padding:10px;"><strong>${data.nombre}</strong></td>
+                        <td>${data.puntos.length} pts</td>
+                        <td>${new Date(data.fecha).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn-accion" onclick="editarRuta('${r.id}')">✏️</button>
+                            <button class="btn-accion" onclick="eliminarRuta('${r.id}')">🗑️</button>
+                        </td>
+                    `;
+                });
+            });
+        };
+
         return {
             initialize(api, state, callback) {
-                // 1. CARGAR ZONAS b4A3
+                // Cargar Zonas
                 api.call("Get", {
                     typeName: "Zone",
                     search: { zoneTypeIds: ["b4A3"] }
@@ -95,46 +116,20 @@
                     });
                 });
 
-                // 2. CARGAR RUTAS GUARDADAS
-                const cargarRutasExistentes = () => {
-                    api.call("Get", { typeName: "AddInData", search: { key: "RutaMaestra_ARDEPE" } }, (rutas) => {
-                        const listaUI = document.getElementById("listaRutasGuardadas");
-                        listaUI.innerHTML = "";
-                        rutas.forEach(r => {
-                            const data = JSON.parse(r.data);
-                            const row = listaUI.insertRow();
-                            row.innerHTML = `
-                                <td style="text-align:left; padding:10px; border-bottom:1px solid #eee;"><strong>${data.nombre}</strong></td>
-                                <td style="text-align:center; border-bottom:1px solid #eee;">${data.puntos.length} pts</td>
-                                <td style="text-align:center; border-bottom:1px solid #eee;">${new Date(data.fecha).toLocaleDateString()}</td>
-                                <td style="text-align:center; border-bottom:1px solid #eee;">
-                                    <button class="btn-accion" onclick="editarRuta('${r.id}')">✏️</button>
-                                    <button class="btn-accion" onclick="eliminarRuta('${r.id}')">🗑️</button>
-                                </td>
-                            `;
-                        });
-                    });
-                };
-
                 cargarRutasExistentes();
 
-                // 3. AGREGAR PUNTO
                 document.getElementById("btnAgregar").addEventListener("click", () => {
                     const inputNombre = document.getElementById("nombreRuta");
                     const inputBusqueda = document.getElementById("buscadorZonas");
-                    if (!inputNombre.value.trim()) { alert("⚠️ Debes asignar un Nombre a la Ruta."); inputNombre.focus(); return; }
+                    if (!inputNombre.value.trim()) { alert("⚠️ Ingresa Nombre de Ruta."); inputNombre.focus(); return; }
                     
                     const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
                     if (!zonaSel) return;
 
                     let lat = 0, lon = 0;
-                    if (zonaSel.center && zonaSel.center.y) {
-                        lat = zonaSel.center.y; lon = zonaSel.center.x;
-                    } else if (zonaSel.y) {
-                        lat = zonaSel.y; lon = zonaSel.x;
-                    } else if (zonaSel.points && zonaSel.points[0]) {
-                        lat = zonaSel.points[0].y; lon = zonaSel.points[0].x;
-                    }
+                    if (zonaSel.center) { lat = zonaSel.center.y; lon = zonaSel.center.x; }
+                    else if (zonaSel.y) { lat = zonaSel.y; lon = zonaSel.x; }
+                    else if (zonaSel.points && zonaSel.points[0]) { lat = zonaSel.points[0].y; lon = zonaSel.points[0].x; }
 
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = (previo && lat !== 0) ? getHaversine(previo.lat, previo.lon, lat, lon) : 0;
@@ -144,10 +139,9 @@
                     updateUI();
                 });
 
-                // 4. GUARDAR EN GEOTAB
                 document.getElementById("btnGuardar").addEventListener("click", () => {
-                    const nombre = document.getElementById("nombreRuta").value;
-                    if (!nombre || rutaActual.length === 0) return alert("❌ Datos incompletos");
+                    const nombre = document.getElementById("nombreRuta").value.trim();
+                    if (!nombre || rutaActual.length === 0) return alert("❌ Nombre o puntos faltantes");
 
                     const filas = document.querySelectorAll("#cuerpoRuta tr");
                     const puntosFinales = rutaActual.map((p, i) => ({
@@ -156,15 +150,14 @@
                         pernocte: filas[i].querySelectorAll("input")[1]?.value || "00:30"
                     }));
 
-                    const metodo = rIdActual ? "Set" : "Add";
                     const entidad = {
                         key: "RutaMaestra_ARDEPE",
-                        data: JSON.stringify({ nombre, puntos: puntosFinales, fecha: new Date() })
+                        data: JSON.stringify({ nombre, puntos: puntosFinales, fecha: new Date().toISOString() })
                     };
                     if(rIdActual) entidad.id = rIdActual;
 
-                    api.call(metodo, { typeName: "AddInData", entity: entidad }, () => {
-                        alert("✅ Ruta guardada correctamente.");
+                    api.call(rIdActual ? "Set" : "Add", { typeName: "AddInData", entity: entidad }, () => {
+                        alert("✅ Ruta guardada");
                         rIdActual = null;
                         document.getElementById("nombreRuta").value = "";
                         rutaActual = [];
@@ -173,7 +166,6 @@
                     });
                 });
 
-                // 5. FUNCIONES GLOBALES (EDITAR / ELIMINAR)
                 window.editarRuta = (id) => {
                     api.call("Get", { typeName: "AddInData", search: { id: id } }, (res) => {
                         const r = JSON.parse(res[0].data);
@@ -186,7 +178,7 @@
                 };
 
                 window.eliminarRuta = (id) => {
-                    if(confirm("¿Estás seguro de eliminar esta ruta maestra?")) {
+                    if(confirm("¿Eliminar ruta maestra?")) {
                         api.call("Remove", { typeName: "AddInData", entity: { id: id } }, () => cargarRutasExistentes());
                     }
                 };
@@ -203,7 +195,7 @@
                             <td>${esPrimero ? '<span class="guion">-</span>' : '<span style="color:#333; font-weight:bold; font-size:13px;">' + parseFloat(item.km).toFixed(2) + ' km</span>'}</td>
                             <td>${esPrimero ? '<span class="guion">-</span>' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
                             <td><input type="text" class="input-tiempo" value="${item.pernocte || '00:30'}"></td>
-                            <td><button onclick="borrar(${i})" style="color: #e74c3c; background: none; border: none; font-size: 18px; cursor: pointer;">🗑️</button></td>
+                            <td><button onclick="borrar(${i})" style="color:#e74c3c; background:none; border:none; font-size:18px; cursor:pointer;">🗑️</button></td>
                         `;
                     });
                 }
