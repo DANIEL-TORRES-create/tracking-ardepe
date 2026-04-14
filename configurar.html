@@ -37,6 +37,7 @@
     </table>
 
     <button id="btnGuardar" class="btn-guardar">💾 Guardar Ruta</button>
+    <button id="btnCancelar" class="btn-cancelar">❌ Cancelar</button>
     <div style="clear: both;"></div>
 
     <div style="margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px;">
@@ -58,7 +59,7 @@
 <script>
     let zonasFiltradas = [];
     let rutaActual = [];
-    let idRutaActiva = null; // Para saber si estamos editando una existente
+    let idRutaActiva = null; 
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwwtduJaS6lhzLqEE323RxMs8_NCVrTlpOiRtKMiDIsXhZr_e5e0ppH3WGExJ04z5fT/exec";
 
     function formatTime(decimal) {
@@ -110,6 +111,17 @@
 
                 cargarRutas();
 
+                // FUNCIÓN CANCELAR / RESETEAR
+                const resetearFormulario = () => {
+                    document.getElementById("nombreRuta").value = "";
+                    document.getElementById("buscadorZonas").value = "";
+                    rutaActual = [];
+                    idRutaActiva = null;
+                    updateUI();
+                };
+
+                document.getElementById("btnCancelar").addEventListener("click", resetearFormulario);
+
                 document.getElementById("btnAgregar").addEventListener("click", () => {
                     const inputNombre = document.getElementById("nombreRuta");
                     const inputBusqueda = document.getElementById("buscadorZonas");
@@ -147,17 +159,17 @@
                         method: "POST",
                         body: JSON.stringify({ 
                             action: "write", 
-                            idRuta: idRutaActiva, // Si es nulo, el Script crea uno nuevo
+                            idRuta: idRutaActiva, 
                             nombre: nombre, 
                             puntos: JSON.stringify(puntosFinales) 
                         })
-                    }).then(() => { alert("✅ Ruta Guardada"); location.reload(); });
+                    }).then(() => { alert("✅ Ruta Guardada"); resetearFormulario(); cargarRutas(); document.getElementById("btnGuardar").innerText = "💾 Guardar Ruta"; });
                 });
 
                 window.cargarParaEditar = (pts, nombre, id) => {
                     document.getElementById("nombreRuta").value = nombre;
                     rutaActual = pts;
-                    idRutaActiva = id; // Guardamos el ID para reemplazar al guardar
+                    idRutaActiva = id; 
                     updateUI();
                     window.scrollTo(0,0);
                 };
