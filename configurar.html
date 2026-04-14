@@ -3,17 +3,15 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: monospace; background: #222; color: #00ff00; padding: 20px; }
-        .console { border: 1px solid #00ff00; padding: 15px; border-radius: 5px; }
-        .label { color: #fff; font-weight: bold; }
+        body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: #00ff00; }
+        .box { border: 2px solid #00ff00; padding: 20px; border-radius: 10px; }
+        .dato { color: white; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="console">
-        <h3>🔍 DIAGNÓSTICO DE RUTA (ID: bB)</h3>
-        <p id="res">Consultando a MyGeotab...</p>
-        <hr>
-        <div id="debug"></div>
+    <div class="box">
+        <h2>🔍 VERIFICACIÓN DE RUTA</h2>
+        <div id="resultado">Conectando con MyGeotab...</div>
     </div>
 
     <script>
@@ -24,27 +22,27 @@
                         typeName: "Route",
                         search: { id: "bB" }
                     }, function(result) {
-                        var res = document.getElementById("res");
-                        var debug = document.getElementById("debug");
+                        var res = document.getElementById("resultado");
                         
                         if (result && result.length > 0) {
                             var r = result[0];
-                            // Aquí sacamos la verdad:
-                            res.innerHTML = "✅ RUTA ENCONTRADA";
-                            debug.innerHTML = `
-                                <p><span class="label">Nombre Oficial:</span> ${r.name}</p>
-                                <p><span class="label">ID Interno:</span> ${r.id}</p>
-                                <p><span class="label">¿Tiene paradas?:</span> ${r.routePlanItem ? 'SÍ (' + r.routePlanItem.length + ' puntos)' : 'NO (Viene como undefined)'}</p>
-                                <p><span class="label">Comentario:</span> ${r.comment || 'Sin comentarios'}</p>
+                            var nombre = r.name || "Sin nombre";
+                            // Usamos un bucle clásico de toda la vida, no forEach
+                            var puntos = r.routePlanItem || [];
+                            var totalPuntos = puntos.length;
+
+                            res.innerHTML = `
+                                <p>✅ RUTA ENCONTRADA</p>
+                                <p>Nombre: <span class="dato">${nombre}</span></p>
+                                <p>ID: <span class="dato">${r.id}</span></p>
+                                <p>Total Geocercas: <span class="dato">${totalPuntos}</span></p>
                             `;
-                            
-                            console.log("Objeto completo de la ruta:", r);
                         } else {
-                            res.innerHTML = "❌ NO SE ENCONTRÓ NADA con el ID 'bB'.";
+                            res.innerHTML = "❌ No existe la ruta con ID: bB";
                         }
                         callback();
-                    }, function(error) {
-                        document.getElementById("res").innerHTML = "⚠️ Error de API: " + error;
+                    }, function(err) {
+                        document.getElementById("resultado").innerHTML = "⚠️ Error: " + err;
                         callback();
                     });
                 }
