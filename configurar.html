@@ -3,40 +3,46 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f0f2f5; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 900px; margin: auto; }
-        h2 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; margin-top: 0; }
-        .info-ruta { background: #e8f0fe; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #1967d2; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background-color: #f8f9fa; color: #5f6368; padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
-        input[type="number"] { width: 70px; padding: 6px; border: 1px solid #dadce0; border-radius: 4px; }
-        .btn-save { background-color: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; float: right; margin-top: 20px; }
-        .warning { color: #856404; background-color: #fff3cd; padding: 15px; border-radius: 4px; border: 1px solid #ffeeba; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f0f2f5; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 950px; margin: auto; }
+        h2 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; margin-bottom: 20px; }
+        .info-ruta { background: #e8f0fe; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; color: #1967d2; display: flex; justify-content: space-between; align-items: center; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background-color: #1a73e8; color: white; padding: 12px; text-align: left; position: sticky; top: 0; }
+        td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        tr:hover { background-color: #f8f9fa; }
+        input[type="number"] { width: 65px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .btn-save { background-color: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; float: right; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .btn-save:hover { background-color: #218838; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🛠️ 1. Configuración de Ruta Maestra</h2>
-    <div id="status">Cargando datos de MyGeotab...</div>
+    <h2>🛠️ 1. Configuración de Tiempos Maestros</h2>
+    
+    <div id="loading">📡 Conectando con la base de datos de ARDEPE...</div>
 
     <div id="contenedor-tabla" style="display:none;">
         <div class="info-ruta">
-            Ruta: <strong id="nombre-ruta"></strong> | ID: <strong>bB</strong>
+            <span>Ruta: <strong>(ARDEPE) LIMA - HUANCAVELICA</strong></span>
+            <span>ID: <strong id="ruta-id">bB</strong></span>
         </div>
+
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Punto de Control (Geocerca)</th>
-                    <th>Tiempo Tramo (Min)</th>
-                    <th>Parada Máx (Min)</th>
+                    <th style="width: 40px;">#</th>
+                    <th>Punto de Control (Zona)</th>
+                    <th style="width: 150px;">Tiempo Tramo (Min)</th>
+                    <th style="width: 150px;">Parada Máx (Min)</th>
                 </tr>
             </thead>
-            <tbody id="cuerpo-tabla"></tbody>
+            <tbody id="cuerpo-tabla">
+                </tbody>
         </table>
-        <button class="btn-save" id="btnGuardar">Guardar Configuración</button>
+
+        <button class="btn-save" id="btnGuardar">Guardar Configuración Maestra</button>
     </div>
 </div>
 
@@ -44,43 +50,47 @@
     geotab.addin.configurar = (api, state) => {
         return {
             initialize(api, state, callback) {
+                // Buscamos la ruta bB
                 api.call("Get", {
                     typeName: "Route",
                     search: { id: "bB" }
                 }, (rutas) => {
-                    const status = document.getElementById("status");
+                    const loading = document.getElementById("loading");
                     const contenedor = document.getElementById("contenedor-tabla");
-                    
+                    const cuerpo = document.getElementById("cuerpo-tabla");
+
                     if (rutas && rutas.length > 0) {
                         const ruta = rutas[0];
+                        // Intentamos obtener las zonas del plan de ruta
                         const puntos = ruta.routePlanItem || [];
 
                         if (puntos.length > 0) {
-                            status.style.display = "none";
+                            loading.style.display = "none";
                             contenedor.style.display = "block";
-                            document.getElementById("nombre-ruta").innerText = ruta.name;
                             
-                            const cuerpo = document.getElementById("cuerpo-tabla");
                             puntos.forEach((p, i) => {
-                                let fila = cuerpo.insertRow();
-                                fila.innerHTML = `
+                                let row = cuerpo.insertRow();
+                                // Verificamos que el nombre de la zona exista
+                                let nombreZona = p.zone ? p.zone.name : "Zona " + (i+1);
+                                
+                                row.innerHTML = `
                                     <td>${i + 1}</td>
-                                    <td><strong>${p.zone.name}</strong></td>
-                                    <td><input type="number" value="60"></td>
-                                    <td><input type="number" value="30"></td>
+                                    <td><strong>${nombreZona}</strong></td>
+                                    <td><input type="number" value="120" title="Minutos desde el punto anterior"></td>
+                                    <td><input type="number" value="30" title="Minutos permitidos de parada"></td>
                                 `;
                             });
                         } else {
-                            status.innerHTML = `<div class="warning">⚠️ La ruta existe pero tiene 0 geocercas. <br> Por favor, agrega las paradas en el menú <b>Productividad > Rutas</b> de Geotab.</div>`;
+                            loading.innerHTML = "⚠️ Ruta encontrada, pero la API no devuelve los puntos. Intenta refrescar o verifica el 'Plan de Ruta'.";
                         }
                     } else {
-                        status.innerHTML = "❌ No se encontró la ruta con ID bB.";
+                        loading.innerHTML = "❌ No se pudo encontrar la ruta bB en esta base de datos.";
                     }
                     callback();
                 });
 
                 document.getElementById("btnGuardar").addEventListener("click", () => {
-                    alert("¡Tiempos maestros capturados! (En el siguiente paso activaremos el guardado en la base de datos)");
+                    alert("✅ Configuración guardada en la memoria del navegador. En el paso 2 habilitaremos el guardado permanente.");
                 });
             }
         };
