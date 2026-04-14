@@ -36,11 +36,11 @@
         <tbody id="cuerpoRuta"></tbody>
     </table>
 
-    <button id="btnGuardar" class="btn-guardar">💾 Guardar en Google Sheets</button>
+    <button id="btnGuardar" class="btn-guardar">💾 Guardar Ruta</button>
     <div style="clear: both;"></div>
 
     <div style="margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px;">
-        <h3 style="color: #1a73e8;">📂 Rutas Guardadas en la Nube</h3>
+        <h3 style="color: #1a73e8;">📂 Rutas Guardadas</h3>
         <table class="tabla-constructor">
             <thead>
                 <tr>
@@ -58,6 +58,7 @@
 <script>
     let zonasFiltradas = [];
     let rutaActual = [];
+    let idRutaActiva = null; // Para saber si estamos editando una existente
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwwtduJaS6lhzLqEE323RxMs8_NCVrTlpOiRtKMiDIsXhZr_e5e0ppH3WGExJ04z5fT/exec";
 
     function formatTime(decimal) {
@@ -89,7 +90,7 @@
                     <td style="text-align:left; font-weight:bold;">${r.nombre}</td>
                     <td>${ptsArray.length}</td>
                     <td>${r.fecha}</td>
-                    <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
+                    <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}", "${r.id}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
                 `;
             });
         } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando...</td></tr>"; }
@@ -112,18 +113,10 @@
                 document.getElementById("btnAgregar").addEventListener("click", () => {
                     const inputNombre = document.getElementById("nombreRuta");
                     const inputBusqueda = document.getElementById("buscadorZonas");
-                    
-                    // SEGURIDAD REINSTALADA: Validar nombre antes de añadir puntos
-                    if (!inputNombre.value.trim()) {
-                        alert("⚠️ Debes asignar un Nombre a la Ruta antes de añadir puntos.");
-                        inputNombre.focus();
-                        return;
-                    }
-
+                    if (!inputNombre.value.trim()) { alert("⚠️ Pon un nombre a la ruta"); return; }
                     const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
                     if (!zonaSel) return;
-
-                    // EXTRACCIÓN DE COORDENADAS MEJORADA
+                    
                     let lat = 0, lon = 0;
                     if (zonaSel.center) { lat = zonaSel.center.y; lon = zonaSel.center.x; }
                     else if (zonaSel.y) { lat = zonaSel.y; lon = zonaSel.x; }
@@ -133,16 +126,10 @@
                     let km = (previo && lat !== 0) ? getHaversine(previo.lat, previo.lon, lat, lon) : 0;
 
                     rutaActual.push({ 
-                        name: zonaSel.name, 
-                        lat: lat, 
-                        lon: lon, 
-                        km: km.toFixed(2), 
-                        tiempo: formatTime(km / 60),
-                        pernocte: "00:30" 
+                        name: zonaSel.name, lat: lat, lon: lon, 
+                        km: km.toFixed(2), tiempo: formatTime(km / 60), pernocte: "00:30" 
                     });
-
-                    inputBusqueda.value = ""; 
-                    updateUI();
+                    inputBusqueda.value = ""; updateUI();
                 });
 
                 document.getElementById("btnGuardar").addEventListener("click", async () => {
@@ -152,23 +139,25 @@
                     const filas = document.querySelectorAll("#cuerpoRuta tr");
                     const puntosFinales = rutaActual.map((p, i) => {
                         const inputs = filas[i].querySelectorAll("input");
-                        return {
-                            ...p,
-                            tiempo: inputs[0] ? inputs[0].value : p.tiempo,
-                            pernocte: inputs[1] ? inputs[1].value : "00:30"
-                        };
+                        return { ...p, tiempo: inputs[0] ? inputs[0].value : p.tiempo, pernocte: inputs[1] ? inputs[1].value : "00:30" };
                     });
 
                     document.getElementById("btnGuardar").innerText = "⏳ Guardando...";
                     fetch(WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ action: "write", nombre: nombre, puntos: JSON.stringify(puntosFinales) })
-                    }).then(() => { alert("✅ Guardado en Google Sheets"); location.reload(); });
+                        body: JSON.stringify({ 
+                            action: "write", 
+                            idRuta: idRutaActiva, // Si es nulo, el Script crea uno nuevo
+                            nombre: nombre, 
+                            puntos: JSON.stringify(puntosFinales) 
+                        })
+                    }).then(() => { alert("✅ Ruta Guardada"); location.reload(); });
                 });
 
-                window.cargarParaEditar = (pts, nombre) => {
+                window.cargarParaEditar = (pts, nombre, id) => {
                     document.getElementById("nombreRuta").value = nombre;
-                    rutaActual = pts; 
+                    rutaActual = pts;
+                    idRutaActiva = id; // Guardamos el ID para reemplazar al guardar
                     updateUI();
                     window.scrollTo(0,0);
                 };
@@ -182,8 +171,8 @@
                         row.innerHTML = `
                             <td>${i + 1}</td>
                             <td style="text-align: left; font-weight: bold;">${item.name}</td>
-                            <td>${esPrimero ? '<span style="color:#ccc; font-weight:bold; font-size:18px;">-</span>' : '<span style="color:#333; font-weight:bold; font-size:13px;">' + item.km + ' km</span>'}</td>
-                            <td>${esPrimero ? '<span style="color:#ccc; font-weight:bold; font-size:18px;">-</span>' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
+                            <td>${esPrimero ? '-' : item.km + ' km'}</td>
+                            <td>${esPrimero ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
                             <td><input type="text" class="input-tiempo" value="${item.pernocte}"></td>
                             <td><button onclick="borrar(${i})" style="color:red; background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button></td>
                         `;
