@@ -2,42 +2,60 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="estilos.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f2f5; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
+        .header-tools { display: flex; gap: 15px; margin-bottom: 20px; background: #e8f0fe; padding: 15px; border-radius: 8px; align-items: flex-end; border-left: 5px solid #1a73e8; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; }
+        .btn-add { background: #1a73e8; color: white; padding: 10px 20px; height: 40px; }
+        .btn-save { background: #28a745; color: white; padding: 12px 30px; float: right; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #1a73e8; color: white; padding: 12px; text-align: center; }
+        th:nth-child(2) { text-align: left; }
+        /* AJUSTE: Centrado de todas las celdas */
+        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; vertical-align: middle; }
+        td:nth-child(2) { text-align: left; }
+        .input-edit { width: 80px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px; display: inline-block; }
+        .km-val { color: #666; font-family: monospace; font-weight: bold; display: block; text-align: center; }
+        .delete-btn { color: #e74c3c; background: none; font-size: 18px; }
+        .guion { color: #ccc; font-weight: bold; display: block; width: 100%; text-align: center; font-size: 18px; }
+    </style>
 </head>
 <body>
 
-<div class="card-container">
-    <h2 class="titulo-seccion">🛠️ Constructor de Ruta</h2>
+<div class="card">
+    <h2>🛠️ Constructor de Ruta</h2>
     
-    <div class="barra-herramientas">
-        <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label style="font-weight: bold; font-size: 13px;">Nombre de la Ruta:</label>
-            <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 220px;">
+    <div class="header-tools">
+        <div class="input-group">
+            <label>Nombre de la Ruta:</label>
+            <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 220px;">
         </div>
-        <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label id="lblZonas" style="font-weight: bold; font-size: 13px;">Buscando zonas...</label>
-            <input list="listaZonas" id="buscadorZonas" placeholder="Escribe para buscar..." style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 350px;">
+        <div class="input-group">
+            <label id="lblZonas">Cargando zonas...</label>
+            <input list="listaZonas" id="buscadorZonas" placeholder="Escribe nombre de la zona..." style="width: 350px;">
             <datalist id="listaZonas"></datalist>
         </div>
-        <button id="btnAgregar" style="background: #1a73e8; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; height: 40px;">➕ Añadir Punto</button>
+        <button class="btn-add" id="btnAgregar">➕ Añadir Punto</button>
     </div>
 
-    <table class="tabla-constructor">
+    <table>
         <thead>
             <tr>
-                <th style="border-radius: 6px 0 0 0;">Orden</th>
-                <th style="text-align: left;">Punto de Control</th>
-                <th>Distancia (Km)</th>
-                <th>Tiempo Tramo (HH:mm)</th>
-                <th>Pernocte (HH:mm)</th>
-                <th style="border-radius: 0 6px 0 0;">Acción</th>
+                <th style="width: 50px;">Orden</th>
+                <th>Punto de Control</th>
+                <th style="width: 140px;">Distancia (Km)</th>
+                <th style="width: 140px;">Tiempo Tramo (HH:mm)</th>
+                <th style="width: 140px;">Pernocte (HH:mm)</th>
+                <th style="width: 50px;">Acción</th>
             </tr>
         </thead>
         <tbody id="cuerpoRuta"></tbody>
     </table>
 
-    <button id="btnGuardar" class="btn-guardar">💾 Guardar Ruta Maestra</button>
-    <div style="clear: both;"></div>
+    <button class="btn-save" id="btnGuardar">💾 Guardar Ruta Maestra</button>
 </div>
 
 <script>
@@ -70,7 +88,7 @@
                     zonasFiltradas = result.filter(z => z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3"))
                                            .sort((a, b) => a.name.localeCompare(b.name));
                     
-                    document.getElementById("lblZonas").innerText = `Escribe zona (${zonasFiltradas.length} disp.):`;
+                    document.getElementById("lblZonas").innerText = `Escribe para buscar zona (${zonasFiltradas.length} disponibles):`;
                     const datalist = document.getElementById("listaZonas");
                     zonasFiltradas.forEach(z => {
                         let opt = document.createElement("option");
@@ -82,19 +100,32 @@
                 document.getElementById("btnAgregar").addEventListener("click", () => {
                     const inputBusqueda = document.getElementById("buscadorZonas");
                     const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
+                    
                     if (!zonaSel) return;
 
-                    // VOLVEMOS A LA LÓGICA QUE SÍ FUNCIONABA
-                    let lat = zonaSel.y;
-                    let lon = zonaSel.x;
+                    let lat = 0, lon = 0;
+                    if (zonaSel.center) {
+                        lat = zonaSel.center.y;
+                        lon = zonaSel.center.x;
+                    } else if (zonaSel.points && zonaSel.points.length > 0) {
+                        lat = zonaSel.points[0].y;
+                        lon = zonaSel.points[0].x;
+                    }
 
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = 0;
-                    if (previo) {
+                    if (previo && lat !== 0) {
                         km = getHaversine(previo.lat, previo.lon, lat, lon);
                     }
 
-                    rutaActual.push({ name: zonaSel.name, lat: lat, lon: lon, km: km, tiempo: formatTime(km / 60) });
+                    rutaActual.push({
+                        name: zonaSel.name,
+                        lat: lat,
+                        lon: lon,
+                        km: km,
+                        tiempo: formatTime(km / 60)
+                    });
+
                     inputBusqueda.value = "";
                     updateUI();
                 });
@@ -106,13 +137,16 @@
                         const row = cuerpo.insertRow();
                         const esPrimero = (i === 0);
                         
+                        const distContenido = (esPrimero || item.km === 0) ? '<span class="guion">-</span>' : `<span class="km-val">${parseFloat(item.km).toFixed(2)} km</span>`;
+                        const tiempoContenido = (esPrimero || item.km === 0) ? '<span class="guion">-</span>' : `<input type="text" class="input-edit" value="${item.tiempo}">`;
+                        
                         row.innerHTML = `
                             <td>${i + 1}</td>
-                            <td style="text-align: left; font-weight: bold;">${item.name}</td>
-                            <td>${(esPrimero || item.km === 0) ? '-' : '<span style="color:#666; font-family:monospace;">' + parseFloat(item.km).toFixed(2) + ' km</span>'}</td>
-                            <td>${(esPrimero || item.km === 0) ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
-                            <td><input type="text" class="input-tiempo" value="00:30"></td>
-                            <td><button onclick="borrar(${i})" style="color: #e74c3c; background: none; border: none; font-size: 18px; cursor: pointer;">🗑️</button></td>
+                            <td><strong>${item.name}</strong></td>
+                            <td>${distContenido}</td>
+                            <td>${tiempoContenido}</td>
+                            <td><input type="text" class="input-edit" value="00:30"></td>
+                            <td><button class="delete-btn" onclick="borrar(${i})">🗑️</button></td>
                         `;
                     });
                 }
