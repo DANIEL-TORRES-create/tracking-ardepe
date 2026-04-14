@@ -20,13 +20,12 @@
                     <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿VIAJE RETORNO?
                 </label>
             </div>
-            
             <label style="font-weight: bold; font-size: 13px;">2. Salida Programada (ETD Origen):</label>
             <input type="datetime-local" id="fechaSalida" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Placas Activas):</label>
+            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Solo Tractos Activos):</label>
             <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
@@ -66,53 +65,56 @@
         return {
             initialize(api, state, callback) {
                 
-                // 1. CARGAR VEHÍCULOS (Sin filtros restrictivos para asegurar carga)
+                // 1. CARGAR VEHÍCULOS (Filtrando remolques y archivados)
                 api.call("Get", { 
                     typeName: "Device"
                 }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
                     dl.innerHTML = "";
                     
-                    // Filtro manual: Solo los que no tienen fecha de fin o es el año 9999
-                    const activos = result.filter(d => {
-                        return !d.terminationDateTime || d.terminationDateTime.indexOf("9999") > -1;
+                    const tractosActivos = result.filter(d => {
+                        // A. No debe estar archivado (año 9999)
+                        const esActivo = !d.terminationDateTime || d.terminationDateTime.indexOf("9999") > -1;
+                        
+                        // B. No debe ser un remolque (Trailer)
+                        // En Geotab, los trailers suelen tener una propiedad 'serial' que empieza con 'T' 
+                        // o pertenecen a un tipo de dispositivo específico.
+                        const esTrailer = d.deviceType === "Trailer" || (d.serial && d.serial.startsWith("T"));
+                        
+                        // C. Solo queremos dispositivos GO (que tienen número de serie real)
+                        const esVehiculoReal = d.serial && d.serial !== "000-000-0000";
+
+                        return esActivo && !esTrailer && esVehiculoReal;
                     });
 
-                    activos.forEach(d => {
+                    tractosActivos.forEach(d => {
                         let opt = document.createElement("option");
                         opt.value = d.name;
                         dl.appendChild(opt);
                     });
-                }, (e) => console.error("Error Vehículos:", e));
+                });
 
                 // 2. CARGAR CONDUCTORES
                 api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
-                    dl.innerHTML = "";
                     result.filter(u => u.isDriver).forEach(u => {
                         let opt = document.createElement("option");
                         opt.value = (u.firstName + " " + (u.lastName || "")).trim();
                         dl.appendChild(opt);
                     });
-                }, (e) => console.error("Error Conductores:", e));
+                });
 
                 // 3. CARGAR RUTAS MAESTRAS
-                fetch(WEB_APP_URL)
-                    .then(res => res.json())
-                    .then(data => {
-                        rutasMaestras = data;
-                        const sel = document.getElementById("selectRuta");
-                        sel.innerHTML = '<option value="">-- Seleccionar --</option>';
-                        data.forEach((r, i) => {
-                            let opt = document.createElement("option");
-                            opt.value = i;
-                            opt.textContent = r.nombre;
-                            sel.appendChild(opt);
-                        });
-                    })
-                    .catch(e => console.error("Error Google Sheets:", e));
+                fetch(WEB_APP_URL).then(res => res.json()).then(data => {
+                    rutasMaestras = data;
+                    const sel = document.getElementById("selectRuta");
+                    sel.innerHTML = '<option value="">-- Seleccionar --</option>';
+                    data.forEach((r, i) => {
+                        let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre;
+                        sel.appendChild(opt);
+                    });
+                });
 
-                // EVENTOS DE CÁLCULO
                 document.getElementById("checkRetorno").addEventListener("change", () => {
                     document.getElementById("modoRuta").innerText = document.getElementById("checkRetorno").checked ? "(VIAJE RETORNO)" : "";
                     calcular();
@@ -136,54 +138,36 @@
 
                     puntos.forEach((p, i) => {
                         let etaMs, etdMs;
-                        
                         if (i === 0) {
-                            // Punto de Origen: ETD es la hora puesta por usuario
                             const [hP, mP] = p.pernocte.split(":").map(Number);
                             etdMs = tiempoBaseMs;
                             etaMs = etdMs - ((hP * 3600000) + (mP * 60000));
                         } else {
-                            // Siguientes puntos: ETA = ETD anterior + tramo
                             const [hT, mT] = p.tiempo.split(":").map(Number);
                             etaMs = tiempoBaseMs + ((hT * 3600000) + (mT * 60000));
-                            
                             const [hP, mP] = p.pernocte.split(":").map(Number);
                             etdMs = etaMs + ((hP * 3600000) + (mP * 60000));
                             kmAcum += parseFloat(p.km || 0);
                         }
-
                         const row = cuerpo.insertRow();
-                        row.innerHTML = `
-                            <td>${i+1}</td>
-                            <td style="text-align:left; font-weight:bold;">${p.name}</td>
-                            <td>${kmAcum.toFixed(1)} km</td>
-                            <td style="color:#1a73e8;">${new Date(etaMs).toLocaleString()}</td>
-                            <td style="font-weight:bold;">${new Date(etdMs).toLocaleString()}</td>
-                        `;
+                        row.innerHTML = `<td>${i+1}</td><td style="text-align:left; font-weight:bold;">${p.name}</td><td>${kmAcum.toFixed(1)} km</td><td style="color:#1a73e8;">${new Date(etaMs).toLocaleString()}</td><td style="font-weight:bold;">${new Date(etdMs).toLocaleString()}</td>`;
                         tiempoBaseMs = etdMs;
                     });
                 }
 
-                // GUARDAR PROGRAMACIÓN
                 document.getElementById("btnProgramar").addEventListener("click", () => {
                     const vehiculo = document.getElementById("inputVehiculo").value;
                     const conductor = document.getElementById("inputConductor").value;
                     const rutaIdx = document.getElementById("selectRuta").value;
-
-                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Completa los datos requeridos.");
+                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Datos incompletos");
                     
                     document.getElementById("btnProgramar").innerText = "⏳ Guardando...";
-                    
                     const filas = document.querySelectorAll("#cuerpoItinerario tr");
                     let itinerarioArray = [];
                     filas.forEach(f => {
                         if(f.cells.length > 1) {
                             itinerarioArray.push({
-                                orden: f.cells[0].innerText,
-                                punto: f.cells[1].innerText,
-                                km: f.cells[2].innerText,
-                                eta: f.cells[3].innerText,
-                                etd: f.cells[4].innerText
+                                orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
                             });
                         }
                     });
@@ -197,13 +181,7 @@
                             nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RETORNO)" : ""),
                             itinerario: JSON.stringify(itinerarioArray)
                         })
-                    }).then(() => { 
-                        alert("✅ Viaje Programado con éxito"); 
-                        location.reload(); 
-                    }).catch(e => {
-                        alert("Error al guardar");
-                        document.getElementById("btnProgramar").innerText = "🚀 Confirmar Viaje";
-                    });
+                    }).then(() => { alert("✅ Viaje Programado"); location.reload(); });
                 });
 
                 document.getElementById("btnCancelar").addEventListener("click", () => location.reload());
