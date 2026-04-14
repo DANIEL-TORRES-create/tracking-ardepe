@@ -26,7 +26,7 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Placas Activas):</label>
+            <label style="font-weight: bold; font-size: 13px;">3. Vehículo (Solo Activos):</label>
             <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe para buscar placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
@@ -64,21 +64,30 @@
         return {
             initialize(api, state, callback) {
                 
-                // CARGAR VEHÍCULOS (Filtro simplificado para que no falle)
+                // --- CAMBIO CLAVE PARA TRAER UNIDADES ---
                 api.call("Get", { 
                     typeName: "Device",
-                    search: { terminationDateTime: "9999-12-31T23:59:59.000Z" } 
+                    // Quitamos el filtro de grupos aquí para que no bloquee nada
+                    search: { 
+                        terminationDateTime: "9999-12-31T23:59:59.000Z" 
+                    } 
                 }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
-                    // Filtramos solo por unidades activas (que tengan serial o ID)
-                    result.forEach(d => {
+                    dl.innerHTML = ""; 
+
+                    // Filtramos manualmente en el código para asegurar que esté activa hoy
+                    const unidadesActivas = result.filter(d => {
+                        // Si no tiene fecha de fin o la fecha de fin es el futuro, está activa
+                        return !d.activeTo || d.activeTo.includes("9999");
+                    });
+
+                    unidadesActivas.forEach(d => {
                         let opt = document.createElement("option");
                         opt.value = d.name;
                         dl.appendChild(opt);
                     });
                 });
 
-                // CARGAR CONDUCTORES
                 api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
                     result.filter(u => u.isDriver).forEach(u => {
@@ -88,7 +97,6 @@
                     });
                 });
 
-                // CARGAR RUTAS
                 fetch(WEB_APP_URL).then(res => res.json()).then(data => {
                     rutasMaestras = data;
                     const sel = document.getElementById("selectRuta");
@@ -117,7 +125,6 @@
 
                     const cuerpo = document.getElementById("cuerpoItinerario");
                     cuerpo.innerHTML = "";
-
                     let tiempoBaseMs = new Date(salidaUser).getTime();
                     let kmAcum = 0;
 
@@ -134,15 +141,8 @@
                             etdMs = etaMs + ((hP * 3600000) + (mP * 60000));
                             kmAcum += parseFloat(p.km || 0);
                         }
-
                         const row = cuerpo.insertRow();
-                        row.innerHTML = `
-                            <td>${i + 1}</td>
-                            <td style="text-align: left; font-weight: bold;">${p.name}</td>
-                            <td>${kmAcum.toFixed(1)} km</td>
-                            <td style="color: #1a73e8;">${new Date(etaMs).toLocaleString()}</td>
-                            <td style="font-weight: bold;">${new Date(etdMs).toLocaleString()}</td>
-                        `;
+                        row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(1)} km</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
                         tiempoBaseMs = etdMs;
                     });
                 }
@@ -151,47 +151,24 @@
                     const vehiculo = document.getElementById("inputVehiculo").value;
                     const conductor = document.getElementById("inputConductor").value;
                     const rutaIdx = document.getElementById("selectRuta").value;
-                    const esRetorno = document.getElementById("checkRetorno").checked;
-
-                    if (!vehiculo || !conductor || rutaIdx === "") {
-                        return alert("⚠️ Por favor completa Vehículo, Conductor y Ruta.");
-                    }
-
-                    const filas = document.querySelectorAll("#cuerpoItinerario tr");
-                    let itinerarioArray = [];
-                    filas.forEach(fila => {
-                        const c = fila.cells;
-                        itinerarioArray.push({
-                            orden: c[0].innerText,
-                            punto: c[1].innerText,
-                            km: c[2].innerText,
-                            eta: c[3].innerText,
-                            etd: c[4].innerText
-                        });
-                    });
-
+                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Completa los datos.");
+                    
                     document.getElementById("btnProgramar").innerText = "⏳ Guardando...";
-
                     fetch(WEB_APP_URL, {
                         method: "POST",
                         body: JSON.stringify({
                             action: "programarViaje",
                             vehiculo: vehiculo,
                             conductor: conductor,
-                            nombreRuta: rutasMaestras[rutaIdx].nombre + (esRetorno ? " (RETORNO)" : ""),
-                            itinerario: JSON.stringify(itinerarioArray)
+                            nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RETORNO)" : ""),
+                            itinerario: JSON.stringify(Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({
+                                orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
+                            })))
                         })
-                    }).then(() => {
-                        alert("✅ Viaje Programado con éxito");
-                        location.reload();
-                    }).catch(err => {
-                        alert("Error al guardar");
-                        document.getElementById("btnProgramar").innerText = "🚀 Confirmar Viaje";
-                    });
+                    }).then(() => { alert("✅ Viaje Programado"); location.reload(); });
                 });
 
                 document.getElementById("btnCancelar").addEventListener("click", () => location.reload());
-
                 callback();
             }
         };
