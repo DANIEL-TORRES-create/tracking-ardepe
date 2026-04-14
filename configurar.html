@@ -3,24 +3,25 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .box { border: 1px solid #ccc; padding: 15px; border-radius: 5px; background: #fafafa; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        body { font-family: sans-serif; padding: 20px; background-color: #f9f9f9; }
+        .box { border: 1px solid #ccc; padding: 15px; border-radius: 5px; background: white; max-width: 800px; margin: auto; }
+        h3 { color: #004a99; margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background: #004a99; color: white; }
-        .error-msg { color: red; font-weight: bold; padding: 10px; border: 1px solid red; margin-top: 10px; }
+        .warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin: 10px 0; border: 1px solid #ffeeba; }
     </style>
 </head>
 <body>
     <div class="box">
         <h3>🛠️ Configuración de Ruta (ID: bB)</h3>
-        <div id="status">⏳ Conectando con la API de Geotab...</div>
+        <div id="status">⏳ Validando datos de ruta...</div>
         
         <table id="tabla" style="display:none;">
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Punto de Control</th>
+                    <th>Punto de Control (Zona)</th>
                     <th>Viaje (Min)</th>
                     <th>Pernocte (Min)</th>
                 </tr>
@@ -33,34 +34,37 @@
         geotab.addin.configurar = (api, state) => {
             return {
                 initialize(api, state, callback) {
-                    console.log("Iniciando Add-in...");
-                    
-                    // Intentamos traer la ruta directamente por su ID único
                     api.call("Get", {
                         typeName: "Route",
                         search: { id: "bB" }
                     }, function(result) {
                         var status = document.getElementById("status");
-                        
+                        var cuerpo = document.getElementById("cuerpo");
+                        var tabla = document.getElementById("tabla");
+
                         if (result && result.length > 0) {
                             var ruta = result[0];
-                            var puntos = ruta.routePlanItem;
-                            var cuerpo = document.getElementById("cuerpo");
+                            // Verificamos si existen los items de la ruta
+                            var puntos = ruta.routePlanItem || []; 
                             
-                            status.innerHTML = "✅ <strong>Ruta:</strong> " + ruta.name;
-                            
-                            puntos.forEach(function(p, i) {
-                                var row = cuerpo.insertRow();
-                                row.innerHTML = "<td>"+(i+1)+"</td><td>"+p.zone.name+"</td><td><input type='number' value='60' style='width:50px'></td><td><input type='number' value='30' style='width:50px'></td>";
-                            });
-                            
-                            document.getElementById("tabla").style.display = "table";
+                            status.innerHTML = "✅ <strong>Ruta detectada:</strong> " + ruta.name;
+
+                            if (puntos.length > 0) {
+                                puntos.forEach(function(p, i) {
+                                    var nombreZona = (p.zone && p.zone.name) ? p.zone.name : "Zona sin nombre";
+                                    var row = cuerpo.insertRow();
+                                    row.innerHTML = "<td>"+(i+1)+"</td><td><strong>"+nombreZona+"</strong></td><td><input type='number' value='60' style='width:50px'></td><td><input type='number' value='30' style='width:50px'></td>";
+                                });
+                                tabla.style.display = "table";
+                            } else {
+                                status.innerHTML += "<div class='warning'>⚠️ La ruta existe, pero <strong>no tiene puntos o zonas asignadas</strong>. Agrégalas en MyGeotab > Rutas.</div>";
+                            }
                         } else {
-                            status.innerHTML = "<div class='error-msg'>❌ No se encontró la ruta bB. Verifica que el ID sea correcto en esta base de datos.</div>";
+                            status.innerHTML = "❌ No se encontró ninguna ruta con el ID: bB";
                         }
                         callback();
                     }, function(error) {
-                        document.getElementById("status").innerHTML = "<div class='error-msg'>⚠️ Error de API: " + error + "</div>";
+                        document.getElementById("status").innerHTML = "⚠️ Error de API: " + error;
                         callback();
                     });
                 }
