@@ -14,7 +14,6 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #1a73e8; color: white; padding: 12px; text-align: center; }
         th:nth-child(2) { text-align: left; }
-        /* AJUSTE: Centrado de todas las celdas */
         td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; vertical-align: middle; }
         td:nth-child(2) { text-align: left; }
         .input-edit { width: 80px; border: 2px solid #3498db; text-align: center; font-weight: bold; color: #1a73e8; padding: 5px; border-radius: 4px; display: inline-block; }
@@ -103,11 +102,15 @@
                     
                     if (!zonaSel) return;
 
+                    // Lógica de coordenadas ultra-segura
                     let lat = 0, lon = 0;
-                    if (zonaSel.center) {
+                    if (zonaSel.center && zonaSel.center.y) {
                         lat = zonaSel.center.y;
                         lon = zonaSel.center.x;
-                    } else if (zonaSel.points && zonaSel.points.length > 0) {
+                    } else if (zonaSel.y) {
+                        lat = zonaSel.y;
+                        lon = zonaSel.x;
+                    } else if (zonaSel.points && zonaSel.points[0]) {
                         lat = zonaSel.points[0].y;
                         lon = zonaSel.points[0].x;
                     }
