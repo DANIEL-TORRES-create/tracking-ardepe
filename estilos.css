@@ -73,3 +73,9 @@ body {
     float: right !important; 
     margin-top: 20px !important; 
 }
+
+/* Clases para la gestión de rutas guardadas */
+.seccion-lista { margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px; }
+.tabla-rutas-guardadas th { background: #5c6bc0 !important; }
+.btn-accion { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; }
+.guion { color: #ccc; font-weight: bold; font-size: 18px; }
