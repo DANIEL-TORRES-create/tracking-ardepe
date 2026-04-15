@@ -65,7 +65,7 @@
             <div style="display: flex; align-items: center; gap: 10px;">
                 <label style="font-size: 12px;">Filtrar Fecha:</label>
                 <input type="date" id="filtroFechaLista" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
-                <button onclick="cargarViajesExistentes()" style="padding: 5px 10px; cursor: pointer;">🔄</button>
+                <button onclick="cargarViajesExistentes()" style="padding: 5px 10px; cursor: pointer; background: #eee; border: 1px solid #ccc; border-radius: 4px;">🔄</button>
             </div>
         </div>
         
@@ -87,16 +87,17 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwwtduJaS6lhzLqEE323RxMs8_NCVrTlpOiRtKMiDIsXhZr_e5e0ppH3WGExJ04z5fT/exec";
+    // TU NUEVO LINK UNIFICADO
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzv5b4fL0CNUSrBYaHmDe0KCYe_T6cMrhfTw9Gg_7BThEFBzSj4J8P_OR4kBbYXQnF4/exec";
     let rutasMaestras = [];
 
     geotab.addin.programar = (api, state) => {
         return {
             initialize(api, state, callback) {
-                // Establecer fecha de hoy por defecto en el filtro de la lista
+                // Fecha de hoy por defecto en el filtro
                 document.getElementById('filtroFechaLista').valueAsDate = new Date();
 
-                // 1. CARGAR VEHÍCULOS (Tu lógica de b2798, b279A)
+                // 1. CARGAR VEHÍCULOS (Lógica b2798, b279A)
                 api.call("Get", { 
                     typeName: "Device",
                     search: { groups: [{ id: "b2798" }, { id: "b279A" }] }
@@ -134,7 +135,7 @@
                         let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre;
                         sel.appendChild(opt);
                     });
-                    cargarViajesExistentes(); // Cargar la lista de abajo
+                    cargarViajesExistentes(); 
                 });
 
                 // EVENTOS
@@ -187,10 +188,9 @@
 
     async function cargarViajesExistentes() {
         const cuerpo = document.getElementById("cuerpoListaViajes");
-        const filtroFecha = document.getElementById("filtroFechaLista").value; // YYYY-MM-DD
+        const filtroFecha = document.getElementById("filtroFechaLista").value; 
         
         try {
-            // Reutilizamos el doGet de tu Apps Script (necesitaremos que el Apps Script devuelva la Hoja 2 también)
             const res = await fetch(WEB_APP_URL + "?read=viajes");
             const viajes = await res.json();
             
@@ -235,17 +235,20 @@
                 action: "programarViaje",
                 vehiculo: vehiculo,
                 conductor: conductor,
-                etdOrigen: salida.replace("T", " "), // Para el filtro de fecha
+                etdOrigen: salida.replace("T", " "), 
                 nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RETORNO)" : ""),
                 itinerario: JSON.stringify(itinerario)
             })
         }).then(() => { 
-            alert("✅ Viaje Guardado"); 
+            alert("✅ Viaje Guardado Exitosamente"); 
             cargarViajesExistentes(); 
             document.getElementById("inputVehiculo").value = "";
+            document.getElementById("inputConductor").value = "";
             document.getElementById("cuerpoItinerario").innerHTML = "";
         });
     });
+
+    document.getElementById("btnCancelar").addEventListener("click", () => location.reload());
 </script>
 </body>
 </html>
