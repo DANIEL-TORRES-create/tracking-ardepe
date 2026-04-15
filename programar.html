@@ -54,7 +54,7 @@
             <tr>
                 <th>Orden</th>
                 <th style="text-align: left;">Punto</th>
-                <th>Km</th>
+                <th>Km Total</th>
                 <th>ETA</th>
                 <th>ETD</th>
             </tr>
@@ -94,7 +94,8 @@
                 document.getElementById('filtroFechaLista').valueAsDate = new Date();
                 api.call("Get", { typeName: "Device", search: { groups: [{ id: "b2798" }, { id: "b279A" }] } }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
-                    const activos = result.filter(d => !d.activeTo || new Date(d.activeTo) > new Date());
+                    const hoy = new Date();
+                    const activos = result.filter(d => !d.activeTo || new Date(d.activeTo) > hoy);
                     activos.forEach(d => {
                         let opt = document.createElement("option"); opt.value = d.name; dl.appendChild(opt);
                     });
@@ -132,11 +133,10 @@
         const cuerpo = document.getElementById("cuerpoItinerario");
         cuerpo.innerHTML = "";
         
-        let partes = salidaUser.split("T");
-        let f = partes[0].split("-");
-        let h = partes[1].split(":");
+        let f = salidaUser.split("T")[0].split("-");
+        let h = salidaUser.split("T")[1].split(":");
         let tiempoBaseMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime();
-        let kmAcum = 0;
+        let kmAcumulado = 0;
 
         puntos.forEach((p, i) => {
             let etaMs, etdMs;
@@ -144,15 +144,15 @@
             if (i === 0) { 
                 etdMs = tiempoBaseMs; 
                 etaMs = etdMs - perMs; 
-                kmAcum = 0;
+                kmAcumulado = 0;
             } else {
                 const tieMs = (p.tiempo.split(":")[0]*3600000)+(p.tiempo.split(":")[1]*60000);
                 etaMs = tiempoBaseMs + tieMs; 
                 etdMs = etaMs + perMs;
-                kmAcum += parseFloat(p.km || 0);
+                kmAcumulado += parseFloat(p.km || 0);
             }
             const row = cuerpo.insertRow();
-            row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(2)}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
+            row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcumulado.toFixed(2)}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
             tiempoBaseMs = etdMs;
         });
     }
@@ -167,10 +167,12 @@
             cuerpo.innerHTML = "";
             const filtrados = viajes.filter(v => {
                 if (!v.etdOrigen) return false;
-                return v.etdOrigen.split(' ')[0] === filtro;
+                // Compara solo los primeros 10 caracteres (YYYY-MM-DD)
+                let fechaEnHoja = v.etdOrigen.toString().substring(0, 10).replace(/\//g, "-");
+                return fechaEnHoja === filtro;
             });
             if (filtrados.length === 0) {
-                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Sin registros para esta fecha</td></tr>";
+                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay registros para: " + filtro + "</td></tr>";
                 return;
             }
             filtrados.forEach(v => {
@@ -178,7 +180,7 @@
                 let cond = (v.conductor === "N/A" || !v.conductor) ? "Sin Conductor" : v.conductor;
                 tr.innerHTML = `<td>${v.placa}</td><td>${cond}</td><td>${v.ruta}</td><td>${v.etdOrigen}</td><td><b style="color:#1565c0;">${v.estado}</b></td>`;
             });
-        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de servidor</td></tr>"; }
+        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de conexión</td></tr>"; }
     }
 
     document.getElementById("btnProgramar").addEventListener("click", function() {
@@ -207,6 +209,7 @@
             })
         }).then(() => { 
             alert("✅ ¡Viaje Programado Exitosamente!"); 
+            // Limpieza manual de todos los elementos
             document.getElementById("inputVehiculo").value = "";
             document.getElementById("inputConductor").value = "";
             document.getElementById("selectRuta").value = "";
