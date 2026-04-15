@@ -17,7 +17,7 @@
                     <option value="">Cargando rutas...</option>
                 </select>
                 <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #eee; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold;">
-                    <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿RETORNO?
+                    <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿VIAJE RETORNO?
                 </label>
             </div>
             <label style="font-weight: bold; font-size: 13px;">2. Salida Programada (ETD Origen):</label>
@@ -25,16 +25,17 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label id="lblVehiculo" style="font-weight: bold; font-size: 13px;">3. Vehículo (Todas las Unidades):</label>
-            <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe para buscar..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <label id="lblVehiculo" style="font-weight: bold; font-size: 13px;">3. VEHICULOS (0):</label>
+            <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
             <label style="font-weight: bold; font-size: 13px;">4. Conductor:</label>
-            <input list="listaConductores" id="inputConductor" placeholder="Escribe para buscar..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <input list="listaConductores" id="inputConductor" placeholder="Escribe conductor..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaConductores"></datalist>
         </div>
     </div>
 
+    <h3 style="color: #1a73e8; margin-top: 20px;">📋 Itinerario Estimado <span id="modoRuta" style="font-size: 12px; color: #e67e22; font-weight: bold;"></span></h3>
     <table class="tabla-constructor">
         <thead>
             <tr>
@@ -62,12 +63,17 @@
         return {
             initialize(api, state, callback) {
                 
-                // 1. CARGAR TODAS LAS UNIDADES SIN FILTRO
+                // 1. CARGAR VEHÍCULOS FILTRADOS POR GRUPO (b2798, b279A)
                 api.call("Get", { 
-                    typeName: "Device"
+                    typeName: "Device",
+                    search: {
+                        groups: [{ id: "b2798" }, { id: "b279A" }],
+                        terminationDateTime: "9999-12-31T23:59:59.000Z" // Solo activos
+                    }
                 }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
                     dl.innerHTML = "";
+                    
                     result.forEach(d => {
                         if (d.name) {
                             let opt = document.createElement("option");
@@ -75,7 +81,8 @@
                             dl.appendChild(opt);
                         }
                     });
-                    document.getElementById("lblVehiculo").innerText = "3. Vehículo (" + result.length + " encontradas):";
+                    // Título dinámico solicitado
+                    document.getElementById("lblVehiculo").innerText = "3. VEHICULOS (" + result.length + ")";
                 }, (e) => console.error("Error Placas:", e));
 
                 // 2. CARGAR CONDUCTORES
@@ -88,7 +95,7 @@
                     });
                 });
 
-                // 3. CARGAR RUTAS
+                // 3. CARGAR RUTAS DESDE GOOGLE SHEETS
                 fetch(WEB_APP_URL).then(res => res.json()).then(data => {
                     rutasMaestras = data;
                     const sel = document.getElementById("selectRuta");
@@ -148,6 +155,7 @@
                     });
                 }
 
+                // Guardar Programación
                 document.getElementById("btnProgramar").addEventListener("click", () => {
                     const vehiculo = document.getElementById("inputVehiculo").value;
                     const conductor = document.getElementById("inputConductor").value;
