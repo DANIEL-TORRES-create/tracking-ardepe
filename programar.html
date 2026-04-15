@@ -54,7 +54,7 @@
             <tr>
                 <th>Orden</th>
                 <th style="text-align: left;">Punto</th>
-                <th>Km Total</th>
+                <th>Km</th>
                 <th>ETA</th>
                 <th>ETD</th>
             </tr>
@@ -136,7 +136,7 @@
         let f = salidaUser.split("T")[0].split("-");
         let h = salidaUser.split("T")[1].split(":");
         let tiempoBaseMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime();
-        let kmAcumulado = 0;
+        let kmAcum = 0;
 
         puntos.forEach((p, i) => {
             let etaMs, etdMs;
@@ -144,15 +144,14 @@
             if (i === 0) { 
                 etdMs = tiempoBaseMs; 
                 etaMs = etdMs - perMs; 
-                kmAcumulado = 0;
             } else {
                 const tieMs = (p.tiempo.split(":")[0]*3600000)+(p.tiempo.split(":")[1]*60000);
                 etaMs = tiempoBaseMs + tieMs; 
                 etdMs = etaMs + perMs;
-                kmAcumulado += parseFloat(p.km || 0);
+                kmAcum += parseFloat(p.km || 0);
             }
             const row = cuerpo.insertRow();
-            row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcumulado.toFixed(2)}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
+            row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(2)}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
             tiempoBaseMs = etdMs;
         });
     }
@@ -167,20 +166,22 @@
             cuerpo.innerHTML = "";
             const filtrados = viajes.filter(v => {
                 if (!v.etdOrigen) return false;
-                // Compara solo los primeros 10 caracteres (YYYY-MM-DD)
-                let fechaEnHoja = v.etdOrigen.toString().substring(0, 10).replace(/\//g, "-");
-                return fechaEnHoja === filtro;
+                // Extraer YYYY-MM-DD ignorando T, Z o espacios
+                let fechaLimpia = v.etdOrigen.toString().match(/\d{4}-\d{2}-\d{2}/);
+                return fechaLimpia && fechaLimpia[0] === filtro;
             });
             if (filtrados.length === 0) {
-                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay registros para: " + filtro + "</td></tr>";
+                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Sin registros para esta fecha</td></tr>";
                 return;
             }
             filtrados.forEach(v => {
                 const tr = cuerpo.insertRow();
                 let cond = (v.conductor === "N/A" || !v.conductor) ? "Sin Conductor" : v.conductor;
-                tr.innerHTML = `<td>${v.placa}</td><td>${cond}</td><td>${v.ruta}</td><td>${v.etdOrigen}</td><td><b style="color:#1565c0;">${v.estado}</b></td>`;
+                // Mostrar solo fecha y hora amigable
+                let fechaMostrar = v.etdOrigen.toString().replace("T", " ").split(".")[0].replace("Z", "");
+                tr.innerHTML = `<td>${v.placa}</td><td>${cond}</td><td>${v.ruta}</td><td>${fechaMostrar}</td><td><b style="color:#1565c0;">${v.estado}</b></td>`;
             });
-        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de conexión</td></tr>"; }
+        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de servidor</td></tr>"; }
     }
 
     document.getElementById("btnProgramar").addEventListener("click", function() {
@@ -203,13 +204,13 @@
                 action: "programarViaje", 
                 vehiculo: vehiculo, 
                 conductor: document.getElementById("inputConductor").value || "Sin Conductor",
-                etdOrigen: salida.replace('T', ' '), 
+                // MANDAR COMO TEXTO PURO PARA BLOQUEAR CONVERSIÓN DE GOOGLE
+                etdOrigen: "'" + salida.replace('T', ' '), 
                 nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RET)" : ""),
                 itinerario: JSON.stringify(itinerario)
             })
         }).then(() => { 
             alert("✅ ¡Viaje Programado Exitosamente!"); 
-            // Limpieza manual de todos los elementos
             document.getElementById("inputVehiculo").value = "";
             document.getElementById("inputConductor").value = "";
             document.getElementById("selectRuta").value = "";
