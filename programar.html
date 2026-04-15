@@ -3,21 +3,6 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="estilos.css">
-    <style>
-        .seccion-lista { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .bg-prog { background: #e3f2fd; color: #1565c0; }
-        .btn-lupa { 
-            padding: 5px 15px; 
-            cursor: pointer; 
-            background: #1a73e8; 
-            color: white; 
-            border: none; 
-            border-radius: 4px; 
-            font-weight: bold;
-        }
-        .btn-lupa:hover { background: #1557b0; }
-    </style>
 </head>
 <body>
 
@@ -29,13 +14,13 @@
             <label style="font-weight: bold; font-size: 13px;">1. Ruta Maestra:</label>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <select id="selectRuta" style="padding: 10px; border-radius: 6px; flex-grow: 1; border: 1px solid #ccc;">
-                    <option value="">Cargando rutas...</option>
+                    <option value="">Cargando...</option>
                 </select>
                 <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #eee; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold;">
-                    <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿VIAJE RETORNO?
+                    <input type="checkbox" id="checkRetorno"> ¿RETORNO?
                 </label>
             </div>
-            <label style="font-weight: bold; font-size: 13px;">2. Salida Programada (ETD Origen):</label>
+            <label style="font-weight: bold; font-size: 13px;">2. Salida Programada (ETD):</label>
             <input type="datetime-local" id="fechaSalida" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
         </div>
 
@@ -45,7 +30,7 @@
             <datalist id="listaVehiculos"></datalist>
 
             <label style="font-weight: bold; font-size: 13px;">4. Conductor (Opcional):</label>
-            <input list="listaConductores" id="inputConductor" placeholder="Escribe conductor..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <input list="listaConductores" id="inputConductor" placeholder="Escribe nombre..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaConductores"></datalist>
         </div>
     </div>
@@ -54,7 +39,7 @@
         <thead>
             <tr>
                 <th>Orden</th>
-                <th style="text-align: left;">Punto de Control</th>
+                <th style="text-align: left;">Punto</th>
                 <th>Km</th>
                 <th>ETA</th>
                 <th>ETD</th>
@@ -64,33 +49,23 @@
     </table>
 
     <div style="margin-top: 20px; display: flex; gap: 10px;">
-        <button id="btnProgramar" class="btn-guardar" style="flex-grow: 2; float: none;">🚀 Confirmar y Guardar Viaje</button>
+        <button id="btnProgramar" class="btn-guardar" style="flex-grow: 2; float: none;">🚀 Confirmar Viaje</button>
         <button id="btnCancelar" class="btn-cancelar" style="flex-grow: 1; float: none; margin: 0;">❌ Limpiar</button>
     </div>
 
-    <div class="seccion-lista">
+    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin: 0; color: #333;">🗂️ Viajes Programados</h3>
+            <h3 style="margin: 0; color: #333;">🗂️ Historial de Programación</h3>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <label style="font-size: 12px;">Fecha:</label>
                 <input type="date" id="filtroFechaLista" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
-                <button onclick="cargarViajesExistentes()" class="btn-lupa">🔍 Buscar en Sheet</button>
+                <button onclick="cargarViajesExistentes()" style="padding: 6px 15px; cursor: pointer; background: #1a73e8; color: white; border: none; border-radius: 4px; font-weight: bold;">🔍 Buscar</button>
             </div>
         </div>
-        
         <table class="tabla-constructor" style="font-size: 12px;">
             <thead style="background: #f8f9fa;">
-                <tr>
-                    <th>Placa</th>
-                    <th>Conductor</th>
-                    <th>Ruta</th>
-                    <th>Salida (ETD)</th>
-                    <th>Estado</th>
-                </tr>
+                <tr><th>Placa</th><th>Conductor</th><th>Ruta</th><th>Salida</th><th>Estado</th></tr>
             </thead>
-            <tbody id="cuerpoListaViajes">
-                <tr><td colspan="5" style="text-align:center; padding:20px;">Cargando viajes...</td></tr>
-            </tbody>
+            <tbody id="cuerpoListaViajes"></tbody>
         </table>
     </div>
 </div>
@@ -102,23 +77,14 @@
     geotab.addin.programar = (api, state) => {
         return {
             initialize(api, state, callback) {
-                // Fecha de hoy por defecto
                 document.getElementById('filtroFechaLista').valueAsDate = new Date();
 
-                api.call("Get", { 
-                    typeName: "Device",
-                    search: { groups: [{ id: "b2798" }, { id: "b279A" }] }
-                }, (result) => {
+                api.call("Get", { typeName: "Device", search: { groups: [{ id: "b2798" }, { id: "b279A" }] } }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
-                    dl.innerHTML = "";
                     const hoy = new Date();
                     const activos = result.filter(d => !d.activeTo || new Date(d.activeTo) > hoy);
                     activos.forEach(d => {
-                        if (d.name) {
-                            let opt = document.createElement("option");
-                            opt.value = d.name; 
-                            dl.appendChild(opt);
-                        }
+                        let opt = document.createElement("option"); opt.value = d.name; dl.appendChild(opt);
                     });
                     document.getElementById("lblVehiculo").innerText = "3. VEHICULOS (" + activos.length + ")";
                 });
@@ -126,9 +92,7 @@
                 api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
                     result.filter(u => u.isDriver).forEach(u => {
-                        let opt = document.createElement("option");
-                        opt.value = (u.firstName + " " + (u.lastName || "")).trim();
-                        dl.appendChild(opt);
+                        let opt = document.createElement("option"); opt.value = (u.firstName + " " + (u.lastName || "")).trim(); dl.appendChild(opt);
                     });
                 });
 
@@ -137,16 +101,13 @@
                     const sel = document.getElementById("selectRuta");
                     sel.innerHTML = '<option value="">-- Seleccionar --</option>';
                     data.forEach((r, i) => {
-                        let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre;
-                        sel.appendChild(opt);
+                        let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre; sel.appendChild(opt);
                     });
-                    // CARGA INICIAL AUTOMÁTICA
-                    setTimeout(cargarViajesExistentes, 1000);
+                    cargarViajesExistentes();
                 });
 
                 const inputs = ["checkRetorno", "selectRuta", "fechaSalida"];
                 inputs.forEach(id => document.getElementById(id).addEventListener("change", calcular));
-
                 callback();
             }
         };
@@ -156,103 +117,63 @@
         const idx = document.getElementById("selectRuta").value;
         const salidaUser = document.getElementById("fechaSalida").value;
         if (idx === "" || !salidaUser) return;
-        
         let puntos = JSON.parse(rutasMaestras[idx].puntos);
         if (document.getElementById("checkRetorno").checked) puntos = [...puntos].reverse();
-
         const cuerpo = document.getElementById("cuerpoItinerario");
         cuerpo.innerHTML = "";
         let tiempoBaseMs = new Date(salidaUser).getTime();
-        let kmAcum = 0;
-
         puntos.forEach((p, i) => {
             let etaMs, etdMs;
-            const [hP, mP] = p.pernocte.split(":").map(Number);
-            const pernocteMs = (hP * 3600000) + (mP * 60000);
-            if (i === 0) {
-                etdMs = tiempoBaseMs;
-                etaMs = etdMs - pernocteMs;
-            } else {
-                const [hT, mT] = p.tiempo.split(":").map(Number);
-                etaMs = tiempoBaseMs + ((hT * 3600000) + (mT * 60000));
-                etdMs = etaMs + pernocteMs;
-                kmAcum += parseFloat(p.km || 0);
+            const perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000);
+            if (i === 0) { etdMs = tiempoBaseMs; etaMs = etdMs - perMs; } 
+            else {
+                const tieMs = (p.tiempo.split(":")[0]*3600000)+(p.tiempo.split(":")[1]*60000);
+                etaMs = tiempoBaseMs + tieMs; etdMs = etaMs + perMs;
             }
             const row = cuerpo.insertRow();
-            row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(1)}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
+            row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${p.km || 0}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
             tiempoBaseMs = etdMs;
         });
     }
 
     async function cargarViajesExistentes() {
         const cuerpo = document.getElementById("cuerpoListaViajes");
-        const filtroFecha = document.getElementById("filtroFechaLista").value; // Formato YYYY-MM-DD
-        
-        cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>🔍 Conectando con Google Sheets...</td></tr>";
-
+        const filtro = document.getElementById("filtroFechaLista").value;
+        cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando información...</td></tr>";
         try {
-            const res = await fetch(WEB_APP_URL + "?read=viajes&t=" + new Date().getTime());
+            const res = await fetch(WEB_APP_URL + "?read=viajes&v=" + new Date().getTime());
             const viajes = await res.json();
-            
             cuerpo.innerHTML = "";
-            
-            // FILTRO DE BUSQUEDA POR TEXTO (PARA EVITAR PROBLEMAS DE FORMATO)
-            const filtrados = viajes.filter(v => {
-                if (!v.etdOrigen) return false;
-                // Convertimos el valor del Sheet a String y buscamos si contiene la fecha del input
-                const txtSheet = v.etdOrigen.toString();
-                return txtSheet.includes(filtroFecha);
-            });
-
+            const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(filtro));
             if (filtrados.length === 0) {
-                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>❌ No hay viajes para esta fecha en el Sheet</td></tr>";
+                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No se encontraron registros para esta fecha</td></tr>";
                 return;
             }
-
             filtrados.forEach(v => {
                 const tr = cuerpo.insertRow();
-                tr.innerHTML = `
-                    <td style="font-weight:bold;">${v.placa}</td>
-                    <td>${v.conductor || 'N/A'}</td>
-                    <td>${v.ruta}</td>
-                    <td>${v.etdOrigen}</td>
-                    <td><span class="badge bg-prog">${v.estado}</span></td>
-                `;
+                tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor || 'N/A'}</td><td>${v.ruta}</td><td>${v.etdOrigen}</td><td><b style="color:#1565c0;">${v.estado}</b></td>`;
             });
-        } catch (e) {
-            cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center; color:red;'>Error al leer Hoja 2</td></tr>";
-        }
+        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de comunicación</td></tr>"; }
     }
 
     document.getElementById("btnProgramar").addEventListener("click", () => {
         const vehiculo = document.getElementById("inputVehiculo").value;
-        const conductor = document.getElementById("inputConductor").value || "N/A";
         const rutaIdx = document.getElementById("selectRuta").value;
         const salida = document.getElementById("fechaSalida").value;
-
         if (!vehiculo || rutaIdx === "" || !salida) return alert("⚠️ Placa, Ruta y Fecha son obligatorios");
         
-        const filas = Array.from(document.querySelectorAll("#cuerpoItinerario tr"));
-        const itinerario = filas.map(f => ({
+        const itinerario = Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({
             orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
         }));
 
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
-                action: "programarViaje",
-                vehiculo: vehiculo,
-                conductor: conductor,
-                etdOrigen: salida.replace("T", " "), 
-                nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RETORNO)" : ""),
+                action: "programarViaje", vehiculo: vehiculo, conductor: document.getElementById("inputConductor").value || "N/A",
+                etdOrigen: salida.replace("T", " "), nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RET)" : ""),
                 itinerario: JSON.stringify(itinerario)
             })
-        }).then(() => { 
-            alert("✅ ¡Viaje Guardado!"); 
-            cargarViajesExistentes(); 
-            document.getElementById("inputVehiculo").value = "";
-            document.getElementById("cuerpoItinerario").innerHTML = "";
-        });
+        }).then(() => { alert("✅ Guardado"); location.reload(); });
     });
 
     document.getElementById("btnCancelar").addEventListener("click", () => location.reload());
