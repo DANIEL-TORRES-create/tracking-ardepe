@@ -273,19 +273,23 @@
                 });
 
                 // EVENTO VALIDAR Y SUBIR EXCEL (RESTAURADO)
-                document.getElementById("btnProcesarExcel").addEventListener("click", function() {
+         document.getElementById("btnProcesarExcel").addEventListener("click", function() {
                     const fileInput = document.getElementById("inputExcel"), log = document.getElementById("errorLog"), btn = this;
                     if (!fileInput.files[0]) return alert("Seleccione archivo");
+                    
                     log.style.display = "none"; log.innerHTML = "";
                     const reader = new FileReader();
+                    
                     reader.onload = async (e) => {
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         const sheet = workbook.Sheets["Programación"];
                         if (!sheet) return alert("No se encontró hoja 'Programación'");
+                        
                         const jsonData = XLSX.utils.sheet_to_json(sheet);
                         let errores = [];
                         const nombresRutas = rutasMaestras.map(r => r.nombre);
                         
+                        // Validación
                         jsonData.forEach((f, i) => {
                             let n = i + 2;
                             if (!placasValidas.includes(f.PLACA)) errores.push(`Fila ${n}: Placa '${f.PLACA}' inválida.`);
@@ -293,17 +297,42 @@
                             if (!f.FECHA_ETD || !validarFechaReal(f.FECHA_ETD)) errores.push(`Fila ${n}: Fecha inválida.`);
                         });
 
-                        if (errores.length > 0) { log.style.display = "block"; log.innerHTML = errores.join("<br>"); return; }
-                        
-                        btn.disabled = true;
-                        for (let [idx, f] of jsonData.entries()) {
-                            btn.innerText = `⏳ ${idx + 1}/${jsonData.length}...`;
-                            await fetch(WEB_APP_URL, { 
-                                method: "POST", 
-                                body: JSON.stringify({ action: "programarViaje", vehiculo: f.PLACA, conductor: f.CONDUCTOR || "Sin Conductor", etdOrigen: f.FECHA_ETD.toString().startsWith("'") ? f.FECHA_ETD : "'" + f.FECHA_ETD, nombreRuta: f.RUTA, itinerario: generarItinerarioMasivo(f.RUTA, f.FECHA_ETD) }) 
-                            });
+                        if (errores.length > 0) { 
+                            log.style.display = "block"; 
+                            log.innerHTML = errores.join("<br>"); 
+                            return; 
                         }
-                        alert("✅ Carga masiva lista"); resetearFormularioProgramacion(); cargarViajesExistentes();
+                        
+                        // Inicio de carga masiva
+                        btn.disabled = true;
+                        const total = jsonData.length;
+                        
+                        for (let [idx, f] of jsonData.entries()) {
+                            btn.innerText = `⏳ Procesando ${idx + 1}/${total}...`;
+                            try {
+                                await fetch(WEB_APP_URL, { 
+                                    method: "POST", 
+                                    body: JSON.stringify({ 
+                                        action: "programarViaje", 
+                                        vehiculo: f.PLACA, 
+                                        conductor: f.CONDUCTOR || "Sin Conductor", 
+                                        etdOrigen: f.FECHA_ETD.toString().startsWith("'") ? f.FECHA_ETD : "'" + f.FECHA_ETD, 
+                                        nombreRuta: f.RUTA, 
+                                        itinerario: generarItinerarioMasivo(f.RUTA, f.FECHA_ETD) 
+                                    }) 
+                                });
+                            } catch (error) {
+                                console.error("Error en fila " + (idx + 2), error);
+                            }
+                        }
+                        
+                        // LIMPIEZA Y CIERRE DEL PROCESO
+                        alert("✅ Carga masiva completada con éxito");
+                        fileInput.value = ""; // Limpia el nombre del archivo en el input
+                        btn.innerText = "Validar y Subir";
+                        btn.disabled = false;
+                        resetearFormularioProgramacion(); 
+                        cargarViajesExistentes(); // Refresca la tabla automáticamente
                     };
                     reader.readAsArrayBuffer(fileInput.files[0]);
                 });
