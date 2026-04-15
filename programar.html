@@ -114,11 +114,36 @@
     };
 
     function exportarPlantilla() {
-        const wb = XLSX.utils.book_new();
-        const wsData = [["PLACA", "CONDUCTOR", "RUTA", "FECHA_ETD"], ["ABC-123", "JUAN PEREZ", "LIMA-ICA", "'2026-04-15 22:00"]];
+       const wb = XLSX.utils.book_new();
+        
+        // 1. Datos de la hoja Programación
+        const wsData = [
+            ["PLACA", "CONDUCTOR", "RUTA", "FECHA_ETD"], 
+            ["ABC-123", "JUAN PEREZ", "LIMA-ICA", "'2026-04-15 22:00"]
+        ];
         const ws = XLSX.utils.aoa_to_sheet(wsData);
+        
+        // 2. Datos de la hoja Instrucciones
+        const wsInstData = [
+            ["INSTRUCCIONES DE CARGA MASIVA"],
+            [""],
+            ["1. Solo use la hoja 'Programación' para cargar los datos."],
+            ["2. La FECHA_ETD debe llevar una comilla simple al inicio: '2026-04-15 22:00"],
+            ["3. El formato de fecha debe ser: AAAA-MM-DD HH:mm"],
+            ["4. La PLACA debe coincidir exactamente con el nombre en MyGeotab."],
+            ["5. El CONDUCTOR debe coincidir con el nombre registrado en MyGeotab."],
+            ["6. La RUTA debe ser idéntica al nombre creado en el Add-in de Configuración."],
+            [""],
+            ["Nota: Si la ruta no existe en el sistema, el registro será rechazado."]
+        ];
+        const wsInst = XLSX.utils.aoa_to_sheet(wsInstData);
+        
+        // 3. Añadir ambas hojas al libro
         XLSX.utils.book_append_sheet(wb, ws, "Programación");
-        XLSX.writeFile(wb, "Plantilla_Viajes.xlsx");
+        XLSX.utils.book_append_sheet(wb, wsInst, "Instrucciones");
+        
+        // 4. Descargar archivo
+        XLSX.writeFile(wb, "Plantilla_Viajes_Geotab.xlsx");
     }
 
     function validarFechaReal(fechaStr) {
