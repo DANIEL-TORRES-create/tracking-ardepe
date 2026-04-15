@@ -17,19 +17,20 @@
                     <option value="">Cargando rutas...</option>
                 </select>
                 <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #eee; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold;">
-                    <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿VIAJE RETORNO?
+                    <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿RETORNO?
                 </label>
             </div>
+            <label style="font-weight: bold; font-size: 13px;">2. Salida Programada (ETD Origen):</label>
             <input type="datetime-local" id="fechaSalida" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label id="lblVehiculo" style="font-weight: bold; font-size: 13px;">3. Vehículo (Solo Unidades GO):</label>
-            <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <label id="lblVehiculo" style="font-weight: bold; font-size: 13px;">3. Vehículo (Todas las Unidades):</label>
+            <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe para buscar..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
             <label style="font-weight: bold; font-size: 13px;">4. Conductor:</label>
-            <input list="listaConductores" id="inputConductor" placeholder="Escribe conductor..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <input list="listaConductores" id="inputConductor" placeholder="Escribe para buscar..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaConductores"></datalist>
         </div>
     </div>
@@ -38,7 +39,7 @@
         <thead>
             <tr>
                 <th>Orden</th>
-                <th style="text-align: left;">Punto</th>
+                <th style="text-align: left;">Punto de Control</th>
                 <th>Km</th>
                 <th>ETA (Llegada)</th>
                 <th>ETD (Salida)</th>
@@ -61,34 +62,26 @@
         return {
             initialize(api, state, callback) {
                 
-                // 1. CARGAR VEHÍCULOS (Lógica optimizada para Planes GO)
+                // 1. CARGAR TODAS LAS UNIDADES SIN FILTRO
                 api.call("Get", { 
-                    typeName: "Device",
-                    search: { activeTo: "2050-01-01T00:00:00.000Z" } 
-                }, (devices) => {
+                    typeName: "Device"
+                }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
                     dl.innerHTML = "";
-                    
-                    // Filtramos solo los que tienen plan GO
-                    const soloGO = devices.filter(d => {
-                        const p = (d.devicePlan || "").toLowerCase();
-                        return p.indexOf("go") !== -1;
+                    result.forEach(d => {
+                        if (d.name) {
+                            let opt = document.createElement("option");
+                            opt.value = d.name; 
+                            dl.appendChild(opt);
+                        }
                     });
-
-                    soloGO.forEach(d => {
-                        let opt = document.createElement("option");
-                        opt.value = d.name; 
-                        dl.appendChild(opt);
-                    });
-                    document.getElementById("lblVehiculo").innerText = "3. Vehículo (" + soloGO.length + " Unidades GO):";
-                }, (err) => {
-                    console.error("Error Placas:", err);
-                });
+                    document.getElementById("lblVehiculo").innerText = "3. Vehículo (" + result.length + " encontradas):";
+                }, (e) => console.error("Error Placas:", e));
 
                 // 2. CARGAR CONDUCTORES
-                api.call("Get", { typeName: "User" }, (users) => {
+                api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
-                    users.filter(u => u.isDriver).forEach(u => {
+                    result.filter(u => u.isDriver).forEach(u => {
                         let opt = document.createElement("option");
                         opt.value = (u.firstName + " " + (u.lastName || "")).trim();
                         dl.appendChild(opt);
@@ -106,9 +99,9 @@
                     });
                 });
 
-                // Lógica de cálculo (Actualizada para origen)
-                const inputsCalculo = ["checkRetorno", "selectRuta", "fechaSalida"];
-                inputsCalculo.forEach(id => document.getElementById(id).addEventListener("change", calcular));
+                // Eventos de cálculo
+                const inputs = ["checkRetorno", "selectRuta", "fechaSalida"];
+                inputs.forEach(id => document.getElementById(id).addEventListener("change", calcular));
 
                 function calcular() {
                     const idx = document.getElementById("selectRuta").value;
@@ -155,12 +148,11 @@
                     });
                 }
 
-                // Guardar
                 document.getElementById("btnProgramar").addEventListener("click", () => {
                     const vehiculo = document.getElementById("inputVehiculo").value;
                     const conductor = document.getElementById("inputConductor").value;
                     const rutaIdx = document.getElementById("selectRuta").value;
-                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Completa los campos");
+                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Datos incompletos");
                     
                     document.getElementById("btnProgramar").innerText = "⏳ Guardando...";
                     const filas = Array.from(document.querySelectorAll("#cuerpoItinerario tr"));
