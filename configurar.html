@@ -60,6 +60,7 @@
     let zonasFiltradas = [];
     let rutaActual = [];
     let idRutaActiva = null; 
+    let apiGlobal;
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwwtduJaS6lhzLqEE323RxMs8_NCVrTlpOiRtKMiDIsXhZr_e5e0ppH3WGExJ04z5fT/exec";
 
     function formatTime(decimal) {
@@ -97,6 +98,18 @@
         } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando...</td></tr>"; }
     }
 
+    function cargarZonasGeotab(api) {
+        api.call("Get", { typeName: "Zone", search: { zoneTypeIds: ["b4A3"] } }, (result) => {
+            zonasFiltradas = result.filter(z => z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3")).sort((a,b)=>a.name.localeCompare(b.name));
+            document.getElementById("lblZonas").innerText = `Escribe zona (${zonasFiltradas.length}):`;
+            const datalist = document.getElementById("listaZonas");
+            datalist.innerHTML = "";
+            zonasFiltradas.forEach(z => {
+                let opt = document.createElement("option"); opt.value = z.name; datalist.appendChild(opt);
+            });
+        });
+    }
+
     const resetearFormulario = () => {
         document.getElementById("nombreRuta").value = "";
         document.getElementById("buscadorZonas").value = "";
@@ -131,19 +144,16 @@
         window.scrollTo(0,0);
     };
 
-    geotab.addin.configurar = (api, state) => {
-        const cargarZonasGeotab = (api) => {
-            api.call("Get", { typeName: "Zone", search: { zoneTypeIds: ["b4A3"] } }, (result) => {
-                zonasFiltradas = result.filter(z => z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3")).sort((a,b)=>a.name.localeCompare(b.name));
-                document.getElementById("lblZonas").innerText = `Escribe zona (${zonasFiltradas.length}):`;
-                const datalist = document.getElementById("listaZonas");
-                datalist.innerHTML = "";
-                zonasFiltradas.forEach(z => {
-                    let opt = document.createElement("option"); opt.value = z.name; datalist.appendChild(opt);
-                });
-            });
-        };
+    // Refresco automático al detectar que el usuario entra a la pestaña
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && apiGlobal) {
+            cargarZonasGeotab(apiGlobal);
+            cargarRutas();
+        }
+    });
 
+    geotab.addin.configurar = (api, state) => {
+        apiGlobal = api;
         return {
             initialize(api, state, callback) {
                 cargarZonasGeotab(api);
@@ -173,7 +183,7 @@
                     if (!nombre || rutaActual.length === 0) return alert("Faltan datos");
                     const puntosFinales = rutaActual.map((p, i) => {
                         const inputs = filas[i].querySelectorAll("input");
-                        return { ...p, tiempo: inputs[0] ? inputs[1] ? inputs[0].value : inputs[0].value : p.tiempo, pernocte: inputs[1] ? inputs[1].value : inputs[0] ? inputs[0].value : "00:30" };
+                        return { ...p, tiempo: inputs[0] ? inputs[0].value : p.tiempo, pernocte: inputs[1] ? inputs[1].value : "00:30" };
                     });
                     document.getElementById("btnGuardar").innerText = "⏳ Guardando...";
                     fetch(WEB_APP_URL, {
