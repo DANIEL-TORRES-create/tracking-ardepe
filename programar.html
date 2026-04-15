@@ -137,7 +137,11 @@
         if (document.getElementById("checkRetorno").checked) puntos = [...puntos].reverse();
         const cuerpo = document.getElementById("cuerpoItinerario");
         cuerpo.innerHTML = "";
-        let tiempoBaseMs = new Date(salidaUser).getTime();
+        
+        // CORRECCIÓN LOCAL DE FECHA (EVITA +5 HORAS)
+        let fechaBase = new Date(salidaUser.replace(/-/g, '/').replace('T', ' '));
+        let tiempoBaseMs = fechaBase.getTime();
+
         puntos.forEach((p, i) => {
             let etaMs, etdMs;
             const perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000);
@@ -162,28 +166,34 @@
             cuerpo.innerHTML = "";
             const filtrados = viajes.filter(v => {
                 if (!v.etdOrigen) return false;
-                let fechaLimpia = v.etdOrigen.toString().split('T')[0];
+                let fechaLimpia = v.etdOrigen.split(' ')[0]; // Busca coincidencia con YYYY-MM-DD
                 return fechaLimpia === filtro;
             });
             if (filtrados.length === 0) {
-                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay registros para esta fecha</td></tr>";
+                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay registros para: " + filtro + "</td></tr>";
                 return;
             }
             filtrados.forEach(v => {
                 const tr = cuerpo.insertRow();
                 let cond = (v.conductor === "N/A" || !v.conductor) ? "Sin Conductor" : v.conductor;
-                let fechaLegible = v.etdOrigen.replace("T", " ").replace(/\..+/, "").replace("Z", "");
-                tr.innerHTML = `<td>${v.placa}</td><td>${cond}</td><td>${v.ruta}</td><td>${fechaLegible}</td><td><b style="color:#1565c0;">${v.estado}</b></td>`;
+                tr.innerHTML = `<td>${v.placa}</td><td>${cond}</td><td>${v.ruta}</td><td>${v.etdOrigen}</td><td><b style="color:#1565c0;">${v.estado}</b></td>`;
             });
         } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de servidor</td></tr>"; }
     }
 
-    document.getElementById("btnProgramar").addEventListener("click", () => {
+    document.getElementById("btnProgramar").addEventListener("click", function() {
+        const btn = this;
         const vehiculo = document.getElementById("inputVehiculo").value;
         const rutaIdx = document.getElementById("selectRuta").value;
         const salida = document.getElementById("fechaSalida").value;
+        
         if (!vehiculo || rutaIdx === "" || !salida) return alert("⚠️ Placa, Ruta y Fecha son obligatorios");
         
+        // CAMBIO A "CARGANDO"
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ Cargando...";
+        btn.disabled = true;
+
         const itinerario = Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({
             orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
         }));
@@ -194,16 +204,29 @@
                 action: "programarViaje", 
                 vehiculo: vehiculo, 
                 conductor: document.getElementById("inputConductor").value || "Sin Conductor",
-                etdOrigen: salida, 
+                etdOrigen: salida.replace('T', ' '), 
                 nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RET)" : ""),
                 itinerario: JSON.stringify(itinerario)
             })
         }).then(() => { 
-            alert("✅ Guardado"); 
-            cargarViajesExistentes(); 
+            alert("✅ ¡Viaje Programado Exitosamente!"); 
+            
+            // LIMPIEZA AUTOMÁTICA DE CAMPOS
             document.getElementById("inputVehiculo").value = "";
             document.getElementById("inputConductor").value = "";
+            document.getElementById("selectRuta").value = "";
+            document.getElementById("fechaSalida").value = "";
+            document.getElementById("checkRetorno").checked = false;
             document.getElementById("cuerpoItinerario").innerHTML = "";
+            
+            // RESTAURAR BOTÓN Y ACTUALIZAR
+            btn.innerText = originalText;
+            btn.disabled = false;
+            cargarViajesExistentes(); 
+        }).catch(err => {
+            alert("Error al guardar");
+            btn.innerText = originalText;
+            btn.disabled = false;
         });
     });
 
