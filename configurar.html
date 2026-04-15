@@ -81,7 +81,7 @@
     async function cargarRutas() {
         const listaUI = document.getElementById("listaRutasGuardadas");
         try {
-            const res = await fetch(WEB_APP_URL);
+            const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime());
             const data = await res.json();
             listaUI.innerHTML = "";
             data.forEach(r => {
@@ -97,101 +97,95 @@
         } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando...</td></tr>"; }
     }
 
+    const resetearFormulario = () => {
+        document.getElementById("nombreRuta").value = "";
+        document.getElementById("buscadorZonas").value = "";
+        rutaActual = [];
+        idRutaActiva = null;
+        updateUI();
+    };
+
+    function updateUI() {
+        const cuerpo = document.getElementById("cuerpoRuta");
+        cuerpo.innerHTML = "";
+        rutaActual.forEach((item, i) => {
+            const row = cuerpo.insertRow();
+            const esPrimero = (i === 0);
+            row.innerHTML = `
+                <td>${i + 1}</td>
+                <td style="text-align: left; font-weight: bold;">${item.name}</td>
+                <td>${esPrimero ? '-' : item.km + ' km'}</td>
+                <td>${esPrimero ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
+                <td><input type="text" class="input-tiempo" value="${item.pernocte}"></td>
+                <td><button onclick="borrar(${i})" style="color:red; background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button></td>
+            `;
+        });
+    }
+
+    window.borrar = (idx) => { rutaActual.splice(idx, 1); updateUI(); };
+    window.cargarParaEditar = (pts, nombre, id) => {
+        document.getElementById("nombreRuta").value = nombre;
+        rutaActual = pts;
+        idRutaActiva = id; 
+        updateUI();
+        window.scrollTo(0,0);
+    };
+
     geotab.addin.configurar = (api, state) => {
+        const cargarZonasGeotab = (api) => {
+            api.call("Get", { typeName: "Zone", search: { zoneTypeIds: ["b4A3"] } }, (result) => {
+                zonasFiltradas = result.filter(z => z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3")).sort((a,b)=>a.name.localeCompare(b.name));
+                document.getElementById("lblZonas").innerText = `Escribe zona (${zonasFiltradas.length}):`;
+                const datalist = document.getElementById("listaZonas");
+                datalist.innerHTML = "";
+                zonasFiltradas.forEach(z => {
+                    let opt = document.createElement("option"); opt.value = z.name; datalist.appendChild(opt);
+                });
+            });
+        };
+
         return {
             initialize(api, state, callback) {
-                api.call("Get", { typeName: "Zone", search: { zoneTypeIds: ["b4A3"] } }, (result) => {
-                    zonasFiltradas = result.filter(z => z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3")).sort((a,b)=>a.name.localeCompare(b.name));
-                    document.getElementById("lblZonas").innerText = `Escribe zona (${zonasFiltradas.length}):`;
-                    const datalist = document.getElementById("listaZonas");
-                    zonasFiltradas.forEach(z => {
-                        let opt = document.createElement("option"); opt.value = z.name; datalist.appendChild(opt);
-                    });
-                });
-
+                cargarZonasGeotab(api);
                 cargarRutas();
-
-                // FUNCIÓN CANCELAR / RESETEAR
-                const resetearFormulario = () => {
-                    document.getElementById("nombreRuta").value = "";
-                    document.getElementById("buscadorZonas").value = "";
-                    rutaActual = [];
-                    idRutaActiva = null;
-                    updateUI();
-                };
-
                 document.getElementById("btnCancelar").addEventListener("click", resetearFormulario);
-
                 document.getElementById("btnAgregar").addEventListener("click", () => {
                     const inputNombre = document.getElementById("nombreRuta");
                     const inputBusqueda = document.getElementById("buscadorZonas");
                     if (!inputNombre.value.trim()) { alert("⚠️ Pon un nombre a la ruta"); return; }
                     const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
                     if (!zonaSel) return;
-                    
                     let lat = 0, lon = 0;
                     if (zonaSel.center) { lat = zonaSel.center.y; lon = zonaSel.center.x; }
                     else if (zonaSel.y) { lat = zonaSel.y; lon = zonaSel.x; }
                     else if (zonaSel.points && zonaSel.points[0]) { lat = zonaSel.points[0].y; lon = zonaSel.points[0].x; }
-
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = (previo && lat !== 0) ? getHaversine(previo.lat, previo.lon, lat, lon) : 0;
-
                     rutaActual.push({ 
                         name: zonaSel.name, lat: lat, lon: lon, 
                         km: km.toFixed(2), tiempo: formatTime(km / 60), pernocte: "00:30" 
                     });
                     inputBusqueda.value = ""; updateUI();
                 });
-
                 document.getElementById("btnGuardar").addEventListener("click", async () => {
                     const nombre = document.getElementById("nombreRuta").value.trim();
-                    if (!nombre || rutaActual.length === 0) return alert("Faltan datos");
-                    
                     const filas = document.querySelectorAll("#cuerpoRuta tr");
+                    if (!nombre || rutaActual.length === 0) return alert("Faltan datos");
                     const puntosFinales = rutaActual.map((p, i) => {
                         const inputs = filas[i].querySelectorAll("input");
-                        return { ...p, tiempo: inputs[0] ? inputs[0].value : p.tiempo, pernocte: inputs[1] ? inputs[1].value : "00:30" };
+                        return { ...p, tiempo: inputs[0] ? inputs[1] ? inputs[0].value : inputs[0].value : p.tiempo, pernocte: inputs[1] ? inputs[1].value : inputs[0] ? inputs[0].value : "00:30" };
                     });
-
                     document.getElementById("btnGuardar").innerText = "⏳ Guardando...";
                     fetch(WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ 
-                            action: "write", 
-                            idRuta: idRutaActiva, 
-                            nombre: nombre, 
-                            puntos: JSON.stringify(puntosFinales) 
-                        })
+                        body: JSON.stringify({ action: "write", idRuta: idRutaActiva, nombre: nombre, puntos: JSON.stringify(puntosFinales) })
                     }).then(() => { alert("✅ Ruta Guardada"); resetearFormulario(); cargarRutas(); document.getElementById("btnGuardar").innerText = "💾 Guardar Ruta"; });
                 });
-
-                window.cargarParaEditar = (pts, nombre, id) => {
-                    document.getElementById("nombreRuta").value = nombre;
-                    rutaActual = pts;
-                    idRutaActiva = id; 
-                    updateUI();
-                    window.scrollTo(0,0);
-                };
-
-                function updateUI() {
-                    const cuerpo = document.getElementById("cuerpoRuta");
-                    cuerpo.innerHTML = "";
-                    rutaActual.forEach((item, i) => {
-                        const row = cuerpo.insertRow();
-                        const esPrimero = (i === 0);
-                        row.innerHTML = `
-                            <td>${i + 1}</td>
-                            <td style="text-align: left; font-weight: bold;">${item.name}</td>
-                            <td>${esPrimero ? '-' : item.km + ' km'}</td>
-                            <td>${esPrimero ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
-                            <td><input type="text" class="input-tiempo" value="${item.pernocte}"></td>
-                            <td><button onclick="borrar(${i})" style="color:red; background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button></td>
-                        `;
-                    });
-                }
-                window.borrar = (idx) => { rutaActual.splice(idx, 1); updateUI(); };
                 callback();
+            },
+            focus(api, state) {
+                cargarZonasGeotab(api);
+                cargarRutas();
             }
         };
     };
