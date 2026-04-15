@@ -132,7 +132,10 @@
         const cuerpo = document.getElementById("cuerpoItinerario");
         cuerpo.innerHTML = "";
         
-        let tiempoBaseMs = new Date(salidaUser.replace('T', ' ')).getTime();
+        let partes = salidaUser.split("T");
+        let f = partes[0].split("-");
+        let h = partes[1].split(":");
+        let tiempoBaseMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime();
         let kmAcum = 0;
 
         puntos.forEach((p, i) => {
@@ -164,9 +167,7 @@
             cuerpo.innerHTML = "";
             const filtrados = viajes.filter(v => {
                 if (!v.etdOrigen) return false;
-                // Filtro flexible para detectar YYYY-MM-DD
-                let fechaLimpia = v.etdOrigen.toString().split(' ')[0].split('T')[0];
-                return fechaLimpia === filtro;
+                return v.etdOrigen.split(' ')[0] === filtro;
             });
             if (filtrados.length === 0) {
                 cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Sin registros para esta fecha</td></tr>";
@@ -177,7 +178,7 @@
                 let cond = (v.conductor === "N/A" || !v.conductor) ? "Sin Conductor" : v.conductor;
                 tr.innerHTML = `<td>${v.placa}</td><td>${cond}</td><td>${v.ruta}</td><td>${v.etdOrigen}</td><td><b style="color:#1565c0;">${v.estado}</b></td>`;
             });
-        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de comunicación</td></tr>"; }
+        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de servidor</td></tr>"; }
     }
 
     document.getElementById("btnProgramar").addEventListener("click", function() {
@@ -206,7 +207,6 @@
             })
         }).then(() => { 
             alert("✅ ¡Viaje Programado Exitosamente!"); 
-            // LIMPIEZA TOTAL
             document.getElementById("inputVehiculo").value = "";
             document.getElementById("inputConductor").value = "";
             document.getElementById("selectRuta").value = "";
