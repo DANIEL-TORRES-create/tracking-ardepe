@@ -3,6 +3,11 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="estilos.css">
+    <style>
+        .seccion-lista { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .bg-prog { background: #e3f2fd; color: #1565c0; }
+    </style>
 </head>
 <body>
 
@@ -35,7 +40,7 @@
         </div>
     </div>
 
-    <h3 style="color: #1a73e8; margin-top: 20px;">📋 Itinerario Estimado <span id="modoRuta" style="font-size: 12px; color: #e67e22; font-weight: bold;"></span></h3>
+    <h3 style="color: #1a73e8; margin-top: 20px;">📋 Vista Previa Itinerario <span id="modoRuta" style="font-size: 12px; color: #e67e22; font-weight: bold;"></span></h3>
     <table class="tabla-constructor">
         <thead>
             <tr>
@@ -50,8 +55,34 @@
     </table>
 
     <div style="margin-top: 20px; display: flex; gap: 10px;">
-        <button id="btnProgramar" class="btn-guardar" style="flex-grow: 2; float: none;">🚀 Confirmar Viaje</button>
+        <button id="btnProgramar" class="btn-guardar" style="flex-grow: 2; float: none;">🚀 Confirmar y Guardar Viaje</button>
         <button id="btnCancelar" class="btn-cancelar" style="flex-grow: 1; float: none; margin: 0;">❌ Limpiar</button>
+    </div>
+
+    <div class="seccion-lista">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #333;">🗂️ Viajes Programados</h3>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="font-size: 12px;">Filtrar Fecha:</label>
+                <input type="date" id="filtroFechaLista" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                <button onclick="cargarViajesExistentes()" style="padding: 5px 10px; cursor: pointer;">🔄</button>
+            </div>
+        </div>
+        
+        <table class="tabla-constructor" style="font-size: 12px;">
+            <thead style="background: #f8f9fa;">
+                <tr>
+                    <th>Placa</th>
+                    <th>Conductor</th>
+                    <th>Ruta</th>
+                    <th>Salida (ETD)</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoListaViajes">
+                <tr><td colspan="5" style="text-align:center; padding:20px;">Cargando viajes...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -62,28 +93,18 @@
     geotab.addin.programar = (api, state) => {
         return {
             initialize(api, state, callback) {
-                
-                // CARGAR VEHÍCULOS CON FILTRO MANUAL DE ACTIVOS
+                // Establecer fecha de hoy por defecto en el filtro de la lista
+                document.getElementById('filtroFechaLista').valueAsDate = new Date();
+
+                // 1. CARGAR VEHÍCULOS (Tu lógica de b2798, b279A)
                 api.call("Get", { 
                     typeName: "Device",
-                    search: {
-                        groups: [{ id: "b2798" }, { id: "b279A" }]
-                    }
+                    search: { groups: [{ id: "b2798" }, { id: "b279A" }] }
                 }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
                     dl.innerHTML = "";
-                    
                     const hoy = new Date();
-                    
-                    // FILTRO MANUAL: 
-                    // 1. Que no tenga fecha de caducidad (null)
-                    // 2. O que la fecha de caducidad sea en el futuro (año 9999 o > hoy)
-                    const activosReales = result.filter(d => {
-                        if (!d.activeTo) return true;
-                        let fechaActivo = new Date(d.activeTo);
-                        return fechaActivo > hoy;
-                    });
-
+                    const activosReales = result.filter(d => !d.activeTo || new Date(d.activeTo) > hoy);
                     activosReales.forEach(d => {
                         if (d.name) {
                             let opt = document.createElement("option");
@@ -91,11 +112,10 @@
                             dl.appendChild(opt);
                         }
                     });
-                    
                     document.getElementById("lblVehiculo").innerText = "3. VEHICULOS (" + activosReales.length + ")";
-                }, (e) => console.error("Error Placas:", e));
+                });
 
-                // CARGAR CONDUCTORES
+                // 2. CARGAR CONDUCTORES
                 api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
                     result.filter(u => u.isDriver).forEach(u => {
@@ -105,7 +125,7 @@
                     });
                 });
 
-                // CARGAR RUTAS
+                // 3. CARGAR RUTAS Y VIAJES EXISTENTES
                 fetch(WEB_APP_URL).then(res => res.json()).then(data => {
                     rutasMaestras = data;
                     const sel = document.getElementById("selectRuta");
@@ -114,80 +134,118 @@
                         let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre;
                         sel.appendChild(opt);
                     });
+                    cargarViajesExistentes(); // Cargar la lista de abajo
                 });
 
                 // EVENTOS
+                document.getElementById("filtroFechaLista").addEventListener("change", cargarViajesExistentes);
                 const inputs = ["checkRetorno", "selectRuta", "fechaSalida"];
                 inputs.forEach(id => document.getElementById(id).addEventListener("change", calcular));
 
-                function calcular() {
-                    const idx = document.getElementById("selectRuta").value;
-                    const salidaUser = document.getElementById("fechaSalida").value;
-                    if (idx === "" || !salidaUser) return;
-                    
-                    let puntos = JSON.parse(rutasMaestras[idx].puntos);
-                    if (document.getElementById("checkRetorno").checked) {
-                        puntos = [...puntos].reverse();
-                        document.getElementById("modoRuta").innerText = "(RETORNO)";
-                    } else {
-                        document.getElementById("modoRuta").innerText = "(NORMAL)";
-                    }
-
-                    const cuerpo = document.getElementById("cuerpoItinerario");
-                    cuerpo.innerHTML = "";
-                    let tiempoBaseMs = new Date(salidaUser).getTime();
-                    let kmAcum = 0;
-
-                    puntos.forEach((p, i) => {
-                        let etaMs, etdMs;
-                        const [hP, mP] = p.pernocte.split(":").map(Number);
-                        const pernocteMs = (hP * 3600000) + (mP * 60000);
-
-                        if (i === 0) {
-                            etdMs = tiempoBaseMs;
-                            etaMs = etdMs - pernocteMs;
-                        } else {
-                            const [hT, mT] = p.tiempo.split(":").map(Number);
-                            etaMs = tiempoBaseMs + ((hT * 3600000) + (mT * 60000));
-                            etdMs = etaMs + pernocteMs;
-                            kmAcum += parseFloat(p.km || 0);
-                        }
-
-                        const row = cuerpo.insertRow();
-                        row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(1)}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
-                        tiempoBaseMs = etdMs;
-                    });
-                }
-
-                document.getElementById("btnProgramar").addEventListener("click", () => {
-                    const vehiculo = document.getElementById("inputVehiculo").value;
-                    const conductor = document.getElementById("inputConductor").value;
-                    const rutaIdx = document.getElementById("selectRuta").value;
-                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Datos incompletos");
-                    
-                    document.getElementById("btnProgramar").innerText = "⏳ Guardando...";
-                    const filas = Array.from(document.querySelectorAll("#cuerpoItinerario tr"));
-                    const itinerario = filas.map(f => ({
-                        orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
-                    }));
-
-                    fetch(WEB_APP_URL, {
-                        method: "POST",
-                        body: JSON.stringify({
-                            action: "programarViaje",
-                            vehiculo: vehiculo,
-                            conductor: conductor,
-                            nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RETORNO)" : ""),
-                            itinerario: JSON.stringify(itinerario)
-                        })
-                    }).then(() => { alert("✅ Viaje Programado"); location.reload(); });
-                });
-
-                document.getElementById("btnCancelar").addEventListener("click", () => location.reload());
                 callback();
             }
         };
     };
+
+    function calcular() {
+        const idx = document.getElementById("selectRuta").value;
+        const salidaUser = document.getElementById("fechaSalida").value;
+        if (idx === "" || !salidaUser) return;
+        
+        let puntos = JSON.parse(rutasMaestras[idx].puntos);
+        if (document.getElementById("checkRetorno").checked) {
+            puntos = [...puntos].reverse();
+            document.getElementById("modoRuta").innerText = "(RETORNO)";
+        } else {
+            document.getElementById("modoRuta").innerText = "(NORMAL)";
+        }
+
+        const cuerpo = document.getElementById("cuerpoItinerario");
+        cuerpo.innerHTML = "";
+        let tiempoBaseMs = new Date(salidaUser).getTime();
+        let kmAcum = 0;
+
+        puntos.forEach((p, i) => {
+            let etaMs, etdMs;
+            const [hP, mP] = p.pernocte.split(":").map(Number);
+            const pernocteMs = (hP * 3600000) + (mP * 60000);
+
+            if (i === 0) {
+                etdMs = tiempoBaseMs;
+                etaMs = etdMs - pernocteMs;
+            } else {
+                const [hT, mT] = p.tiempo.split(":").map(Number);
+                etaMs = tiempoBaseMs + ((hT * 3600000) + (mT * 60000));
+                etdMs = etaMs + pernocteMs;
+                kmAcum += parseFloat(p.km || 0);
+            }
+            const row = cuerpo.insertRow();
+            row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(1)}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
+            tiempoBaseMs = etdMs;
+        });
+    }
+
+    async function cargarViajesExistentes() {
+        const cuerpo = document.getElementById("cuerpoListaViajes");
+        const filtroFecha = document.getElementById("filtroFechaLista").value; // YYYY-MM-DD
+        
+        try {
+            // Reutilizamos el doGet de tu Apps Script (necesitaremos que el Apps Script devuelva la Hoja 2 también)
+            const res = await fetch(WEB_APP_URL + "?read=viajes");
+            const viajes = await res.json();
+            
+            cuerpo.innerHTML = "";
+            const filtrados = viajes.filter(v => v.etdOrigen.includes(filtroFecha));
+
+            if (filtrados.length === 0) {
+                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay viajes para esta fecha</td></tr>";
+                return;
+            }
+
+            filtrados.forEach(v => {
+                const tr = cuerpo.insertRow();
+                tr.innerHTML = `
+                    <td style="font-weight:bold;">${v.placa}</td>
+                    <td>${v.conductor}</td>
+                    <td>${v.ruta}</td>
+                    <td>${v.etdOrigen}</td>
+                    <td><span class="badge bg-prog">${v.estado}</span></td>
+                `;
+            });
+        } catch (e) {
+            cuerpo.innerHTML = "<tr><td colspan='5'>Error al cargar lista</td></tr>";
+        }
+    }
+
+    document.getElementById("btnProgramar").addEventListener("click", () => {
+        const vehiculo = document.getElementById("inputVehiculo").value;
+        const conductor = document.getElementById("inputConductor").value;
+        const rutaIdx = document.getElementById("selectRuta").value;
+        const salida = document.getElementById("fechaSalida").value;
+        if (!vehiculo || !conductor || rutaIdx === "" || !salida) return alert("⚠️ Datos incompletos");
+        
+        const filas = Array.from(document.querySelectorAll("#cuerpoItinerario tr"));
+        const itinerario = filas.map(f => ({
+            orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
+        }));
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "programarViaje",
+                vehiculo: vehiculo,
+                conductor: conductor,
+                etdOrigen: salida.replace("T", " "), // Para el filtro de fecha
+                nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RETORNO)" : ""),
+                itinerario: JSON.stringify(itinerario)
+            })
+        }).then(() => { 
+            alert("✅ Viaje Guardado"); 
+            cargarViajesExistentes(); 
+            document.getElementById("inputVehiculo").value = "";
+            document.getElementById("cuerpoItinerario").innerHTML = "";
+        });
+    });
 </script>
 </body>
 </html>
