@@ -3,6 +3,21 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="estilos.css">
+    <style>
+        .seccion-lista { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .bg-prog { background: #e3f2fd; color: #1565c0; }
+        .btn-lupa { 
+            padding: 5px 15px; 
+            cursor: pointer; 
+            background: #1a73e8; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold;
+        }
+        .btn-lupa:hover { background: #1557b0; }
+    </style>
 </head>
 <body>
 
@@ -53,12 +68,12 @@
         <button id="btnCancelar" class="btn-cancelar" style="flex-grow: 1; float: none; margin: 0;">❌ Limpiar</button>
     </div>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+    <div class="seccion-lista">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0; color: #333;">🗂️ Historial de Programación</h3>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="date" id="filtroFechaLista" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
-                <button onclick="cargarViajesExistentes()" style="padding: 6px 15px; cursor: pointer; background: #1a73e8; color: white; border: none; border-radius: 4px; font-weight: bold;">🔍 Buscar</button>
+                <button onclick="cargarViajesExistentes()" class="btn-lupa">🔍 Buscar</button>
             </div>
         </div>
         <table class="tabla-constructor" style="font-size: 12px;">
@@ -106,8 +121,9 @@
                     cargarViajesExistentes();
                 });
 
-                const inputs = ["checkRetorno", "selectRuta", "fechaSalida"];
-                inputs.forEach(id => document.getElementById(id).addEventListener("change", calcular));
+                document.getElementById("selectRuta").addEventListener("change", calcular);
+                document.getElementById("fechaSalida").addEventListener("change", calcular);
+                document.getElementById("checkRetorno").addEventListener("change", calcular);
                 callback();
             }
         };
@@ -139,21 +155,27 @@
     async function cargarViajesExistentes() {
         const cuerpo = document.getElementById("cuerpoListaViajes");
         const filtro = document.getElementById("filtroFechaLista").value;
-        cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando información...</td></tr>";
+        cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Buscando...</td></tr>";
         try {
             const res = await fetch(WEB_APP_URL + "?read=viajes&v=" + new Date().getTime());
             const viajes = await res.json();
             cuerpo.innerHTML = "";
-            const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(filtro));
+            const filtrados = viajes.filter(v => {
+                if (!v.etdOrigen) return false;
+                let fechaLimpia = v.etdOrigen.toString().split('T')[0];
+                return fechaLimpia === filtro;
+            });
             if (filtrados.length === 0) {
-                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No se encontraron registros para esta fecha</td></tr>";
+                cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay registros para esta fecha</td></tr>";
                 return;
             }
             filtrados.forEach(v => {
                 const tr = cuerpo.insertRow();
-                tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor || 'N/A'}</td><td>${v.ruta}</td><td>${v.etdOrigen}</td><td><b style="color:#1565c0;">${v.estado}</b></td>`;
+                let cond = (v.conductor === "N/A" || !v.conductor) ? "Sin Conductor" : v.conductor;
+                let fechaLegible = v.etdOrigen.replace("T", " ").replace(/\..+/, "").replace("Z", "");
+                tr.innerHTML = `<td>${v.placa}</td><td>${cond}</td><td>${v.ruta}</td><td>${fechaLegible}</td><td><b style="color:#1565c0;">${v.estado}</b></td>`;
             });
-        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de comunicación</td></tr>"; }
+        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Error de servidor</td></tr>"; }
     }
 
     document.getElementById("btnProgramar").addEventListener("click", () => {
@@ -169,11 +191,20 @@
         fetch(WEB_APP_URL, {
             method: "POST",
             body: JSON.stringify({
-                action: "programarViaje", vehiculo: vehiculo, conductor: document.getElementById("inputConductor").value || "N/A",
-                etdOrigen: salida.replace("T", " "), nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RET)" : ""),
+                action: "programarViaje", 
+                vehiculo: vehiculo, 
+                conductor: document.getElementById("inputConductor").value || "Sin Conductor",
+                etdOrigen: salida, 
+                nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RET)" : ""),
                 itinerario: JSON.stringify(itinerario)
             })
-        }).then(() => { alert("✅ Guardado"); location.reload(); });
+        }).then(() => { 
+            alert("✅ Guardado"); 
+            cargarViajesExistentes(); 
+            document.getElementById("inputVehiculo").value = "";
+            document.getElementById("inputConductor").value = "";
+            document.getElementById("cuerpoItinerario").innerHTML = "";
+        });
     });
 
     document.getElementById("btnCancelar").addEventListener("click", () => location.reload());
