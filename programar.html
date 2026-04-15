@@ -17,7 +17,7 @@
                     <option value="">Cargando rutas...</option>
                 </select>
                 <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #eee; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold;">
-                    <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿VIAJE RETORNO?
+                    <input type="checkbox" id="checkRetorno" style="width: 16px; height: 16px; cursor: pointer;"> ¿RETORNO?
                 </label>
             </div>
             <label style="font-weight: bold; font-size: 13px;">2. Salida Programada (ETD Origen):</label>
@@ -25,7 +25,7 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label id="lblVehiculo" style="font-weight: bold; font-size: 13px;">3. VEHICULOS (0):</label>
+            <label id="lblVehiculo" style="font-weight: bold; font-size: 13px;">3. VEHICULOS (Cargando...):</label>
             <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
 
@@ -35,7 +35,6 @@
         </div>
     </div>
 
-    <h3 style="color: #1a73e8; margin-top: 20px;">📋 Itinerario Estimado <span id="modoRuta" style="font-size: 12px; color: #e67e22; font-weight: bold;"></span></h3>
     <table class="tabla-constructor">
         <thead>
             <tr>
@@ -63,39 +62,39 @@
         return {
             initialize(api, state, callback) {
                 
-                // CARGAR VEHÍCULOS CON FILTRO MANUAL DE ACTIVOS
+                // 1. CARGA MASIVA USANDO GroupCompanyId + FILTRO DE LIMPIEZA
                 api.call("Get", { 
                     typeName: "Device",
                     search: {
-                        groups: [{ id: "b2798" }, { id: "b279A" }]
+                        groups: [{ id: "GroupCompanyId" }]
                     }
                 }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
                     dl.innerHTML = "";
-                    
                     const hoy = new Date();
                     
-                    // FILTRO MANUAL: 
-                    // 1. Que no tenga fecha de caducidad (null)
-                    // 2. O que la fecha de caducidad sea en el futuro (año 9999 o > hoy)
+                    // FILTRO DINÁMICO PARA ELIMINAR BASURA
                     const activosReales = result.filter(d => {
-                        if (!d.activeTo) return true;
-                        let fechaActivo = new Date(d.activeTo);
-                        return fechaActivo > hoy;
+                        // A) Debe tener un número de serie válido (descarta remolques virtuales)
+                        const tieneSerial = d.serial && d.serial !== "000-000-0000";
+                        // B) No debe estar archivado (activeTo debe ser nulo o en el futuro)
+                        const esActivo = !d.activeTo || new Date(d.activeTo) > hoy;
+                        // C) Debe tener nombre/placa asignada
+                        const tieneNombre = d.name && d.name.trim() !== "";
+                        
+                        return tieneSerial && esActivo && tieneNombre;
                     });
 
                     activosReales.forEach(d => {
-                        if (d.name) {
-                            let opt = document.createElement("option");
-                            opt.value = d.name; 
-                            dl.appendChild(opt);
-                        }
+                        let opt = document.createElement("option");
+                        opt.value = d.name; 
+                        dl.appendChild(opt);
                     });
                     
                     document.getElementById("lblVehiculo").innerText = "3. VEHICULOS (" + activosReales.length + ")";
-                }, (e) => console.error("Error Placas:", e));
+                }, (e) => console.error("Error en carga masiva:", e));
 
-                // CARGAR CONDUCTORES
+                // 2. CARGAR CONDUCTORES
                 api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
                     result.filter(u => u.isDriver).forEach(u => {
@@ -105,7 +104,7 @@
                     });
                 });
 
-                // CARGAR RUTAS
+                // 3. CARGAR RUTAS
                 fetch(WEB_APP_URL).then(res => res.json()).then(data => {
                     rutasMaestras = data;
                     const sel = document.getElementById("selectRuta");
@@ -116,7 +115,7 @@
                     });
                 });
 
-                // EVENTOS
+                // Lógica de cálculo
                 const inputs = ["checkRetorno", "selectRuta", "fechaSalida"];
                 inputs.forEach(id => document.getElementById(id).addEventListener("change", calcular));
 
@@ -126,12 +125,7 @@
                     if (idx === "" || !salidaUser) return;
                     
                     let puntos = JSON.parse(rutasMaestras[idx].puntos);
-                    if (document.getElementById("checkRetorno").checked) {
-                        puntos = [...puntos].reverse();
-                        document.getElementById("modoRuta").innerText = "(RETORNO)";
-                    } else {
-                        document.getElementById("modoRuta").innerText = "(NORMAL)";
-                    }
+                    if (document.getElementById("checkRetorno").checked) puntos = [...puntos].reverse();
 
                     const cuerpo = document.getElementById("cuerpoItinerario");
                     cuerpo.innerHTML = "";
@@ -152,18 +146,18 @@
                             etdMs = etaMs + pernocteMs;
                             kmAcum += parseFloat(p.km || 0);
                         }
-
                         const row = cuerpo.insertRow();
                         row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(1)}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
                         tiempoBaseMs = etdMs;
                     });
                 }
 
+                // Guardar
                 document.getElementById("btnProgramar").addEventListener("click", () => {
                     const vehiculo = document.getElementById("inputVehiculo").value;
                     const conductor = document.getElementById("inputConductor").value;
                     const rutaIdx = document.getElementById("selectRuta").value;
-                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Datos incompletos");
+                    if (!vehiculo || !conductor || rutaIdx === "") return alert("⚠️ Completa los campos");
                     
                     document.getElementById("btnProgramar").innerText = "⏳ Guardando...";
                     const filas = Array.from(document.querySelectorAll("#cuerpoItinerario tr"));
