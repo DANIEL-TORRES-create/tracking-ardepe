@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        .monitor-container { padding: 10px; }
+        .fila-alerta { background-color: #fff5f5; border-left: 4px solid #ff4d4d; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-programado { background: #e2e8f0; color: #475569; }
+        .badge-encurso { background: #dcfce7; color: #166534; }
+        .badge-retraso { background: #fee2e2; color: #991b1b; }
+        .tabla-kpi { width: 100%; border-spacing: 0; margin-top: 15px; }
+        .tabla-kpi th { text-align: left; font-size: 12px; color: #64748b; padding: 10px; border-bottom: 1px solid #e2e8f0; }
+        .tabla-kpi td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="card-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="titulo-seccion" style="margin:0;">🚀 Monitor Tolerancia Cero</h2>
+        <div id="statusUpdate" style="font-size: 12px; color: #94a3b8;">Sincronizando flota...</div>
+    </div>
+
+    <table class="tabla-kpi">
+        <thead>
+            <tr>
+                <th>Vehículo</th>
+                <th>Conductor / Ruta</th>
+                <th>Plan vs Real</th>
+                <th>Desviación</th>
+                <th>Estado</th>
+                <th>Detalle</th>
+            </tr>
+        </thead>
+        <tbody id="listaSeguimiento">
+            <tr><td colspan="6" style="text-align:center; padding:40px; color:#94a3b8;">Cargando viajes activos...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec";
+    const ID_REGLA_IN = "aBwGAmaZcK0eLqz0hOmp1BQ";
+    const ID_REGLA_OUT = "ad632T6WAGkGjZr_j-UiriQ";
+    let apiGlobal;
+
+    // 1. FUNCIÓN PRINCIPAL DE MONITOREO (Cada 5 min)
+    async function ejecutarMonitoreo(api) {
+        document.getElementById("statusUpdate").innerText = "⏳ Buscando excepciones en Geotab...";
+        
+        try {
+            // A. Obtener viajes PROGRAMADOS o EN CURSO del Excel
+            const res = await fetch(WEB_APP_URL + "?read=viajes&v=" + new Date().getTime());
+            const viajesActivos = await res.json();
+            
+            if (!viajesActivos || viajesActivos.length === 0) {
+                document.getElementById("listaSeguimiento").innerHTML = "<tr><td colspan='6' style='text-align:center;'>No hay viajes activos para monitorear.</td></tr>";
+                document.getElementById("statusUpdate").innerText = "Sin viajes activos.";
+                return;
+            }
+
+            // B. Consultar excepciones de las últimas 2 horas en Geotab
+            // Filtramos solo para los vehículos que tenemos en el Excel
+            const devicesSearch = viajesActivos.map(v => ({ id: v.deviceId })); // Si tenemos el ID, sino buscamos por nombre
+            
+            api.call("Get", {
+                typeName: "ExceptionEvent",
+                search: {
+                    fromDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // Últimas 2 horas
+                    ruleSearch: { id: ID_REGLA_IN }, // Empezamos con ingresos
+                    includeChildren: true
+                }
+            }, async (excepciones) => {
+                await procesarExcepciones(excepciones, viajesActivos, "INGRESO");
+            });
+
+            api.call("Get", {
+                typeName: "ExceptionEvent",
+                search: {
+                    fromDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                    ruleSearch: { id: ID_REGLA_OUT }, // Luego salidas
+                    includeChildren: true
+                }
+            }, async (excepciones) => {
+                await procesarExcepciones(excepciones, viajesActivos, "SALIDA");
+            });
+
+            renderizarTabla(viajesActivos);
+            document.getElementById("statusUpdate").innerText = "✅ Última actualización: " + new Date().toLocaleTimeString();
+
+        } catch (error) {
+            console.error("Error en monitoreo:", error);
+            document.getElementById("statusUpdate").innerText = "❌ Error de conexión.";
+        }
+    }
+
+    // 2. PROCESAR Y ENVIAR AL EXCEL
+    async function procesarExcepciones(excs, viajes, tipo) {
+        for (let ex of excs) {
+            const viajeMatch = viajes.find(v => v.placa === ex.device.name);
+            if (!viajeMatch) continue; // Si el camión no está programado, ignorar
+
+            const itin = JSON.parse(viajeMatch.itinerario);
+            const puntoMatch = itin.find(p => p.punto === ex.zone.name);
+            
+            if (puntoMatch) {
+                // Es un punto válido de su ruta, enviamos al Apps Script
+                const horaPlan = (tipo === "INGRESO") ? puntoMatch.eta : puntoMatch.etd;
+                
+                // Calculamos desviación básica para el envío
+                const dtReal = new Date(ex.activeFrom);
+                // Aquí podrías calcular la diferencia contra horaPlan...
+                
+                await fetch(WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "registrarHito",
+                        id_viaje: viajeMatch.idViaje,
+                        placa: viajeMatch.placa,
+                        punto_nombre: ex.zone.name,
+                        tipo_evento: tipo,
+                        hora_planificada: horaPlan,
+                        hora_real: dtReal.toLocaleString(),
+                        desviacion_min: 0, // El script puede recalcularlo o lo mandas desde aquí
+                        km_gps: 0,
+                        es_punto_inicial: (itin[0].punto === ex.zone.name)
+                    })
+                });
+            }
+        }
+    }
+
+    function renderizarTabla(viajes) {
+        const tbody = document.getElementById("listaSeguimiento");
+        tbody.innerHTML = "";
+        viajes.forEach(v => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td><strong>${v.placa}</strong></td>
+                <td><div style="font-size:11px; color:#64748b;">${v.ruta}</div>${v.conductor}</td>
+                <td>${v.etdOrigen}</td>
+                <td>-</td>
+                <td><span class="badge ${v.estado === 'EN CURSO' ? 'badge-encurso' : 'badge-programado'}">${v.estado}</span></td>
+                <td><button onclick="alert('Próximamente: Detalle del viaje')" style="cursor:pointer; border:none; background:none; font-size:16px;">📋</button></td>
+            `;
+        });
+    }
+
+    // GEOTAB ADD-IN ESTRUCTURA
+    geotab.addin.seguimiento = (api, state) => {
+        apiGlobal = api;
+        return {
+            initialize(api, state, callback) {
+                ejecutarMonitoreo(api);
+                // Ejecutar cada 5 minutos
+                setInterval(() => ejecutarMonitoreo(api), 300000);
+                callback();
+            },
+            focus(api, state) {
+                ejecutarMonitoreo(api);
+            }
+        };
+    };
+</script>
+</body>
+</html>
