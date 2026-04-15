@@ -3,12 +3,13 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="estilos.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         .seccion-lista { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
         .btn-lupa { padding: 5px 15px; cursor: pointer; background: #1a73e8; color: white; border: none; border-radius: 4px; font-weight: bold; }
-        .modo-masivo { background: #fdf6e3; padding: 15px; border: 1px dashed #d3af37; border-radius: 8px; margin-bottom: 20px; }
+        .modo-masivo { background: #f0f7ff; padding: 15px; border: 1px solid #1a73e8; border-radius: 8px; margin-bottom: 20px; }
         .editando { border: 2px solid #f2994a !important; background: #fff4e5; }
-        .tabla-constructor th { font-size: 11px; padding: 10px 5px; }
+        .input-file-custom { padding: 8px; background: white; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; }
     </style>
 </head>
 <body>
@@ -17,9 +18,12 @@
     <h2 class="titulo-seccion">📅 Programación de Viajes</h2>
     
     <div class="modo-masivo">
-        <label style="font-weight: bold; font-size: 12px;">🚀 CARGA MASIVA (Pegar desde Excel: Placa | Conductor | Ruta | Fecha):</label>
-        <textarea id="txtMasivo" placeholder="Copia y pega las filas de tu Excel aquí..." style="width: 100%; height: 50px; margin-top: 5px; font-size: 11px;"></textarea>
-        <button id="btnProcesarMasivo" class="btn-lupa" style="margin-top: 5px; width: 100%; background: #27ae60;">Procesar Lote Masivo</button>
+        <label style="font-weight: bold; font-size: 13px; color: #1a73e8;">🚀 CARGA MASIVA DESDE EXCEL (.xlsx)</label>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <input type="file" id="inputExcel" class="input-file-custom" accept=".xlsx, .xls">
+            <button id="btnProcesarExcel" class="btn-lupa" style="background: #27ae60; white-space: nowrap;">Subir y Procesar</button>
+        </div>
+        <p style="font-size: 11px; color: #666; margin-top: 5px;">* El Excel debe tener estas columnas: <b>PLACA, CONDUCTOR, RUTA, FECHA_ETD</b></p>
     </div>
 
     <div id="contenedorManual" class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 10px; border-radius: 8px;">
@@ -64,14 +68,16 @@
 
     <div style="margin-top: 20px; display: flex; gap: 10px;">
         <button id="btnProgramar" class="btn-guardar" style="flex-grow: 2; float: none;">🚀 Confirmar Viaje</button>
-        <button id="btnCancelar" class="btn-cancelar" style="flex-grow: 1; float: none; margin: 0;">❌ Limpiar / Cancelar</button>
+        <button id="btnCancelar" class="btn-cancelar" style="flex-grow: 1; float: none; margin: 0;">❌ Limpiar</button>
     </div>
 
     <div class="seccion-lista">
-        <h3 style="margin: 0 0 15px 0; color: #333;">🗂️ Historial y Edición</h3>
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-            <input type="date" id="filtroFechaLista" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
-            <button onclick="cargarViajesExistentes()" class="btn-lupa">🔍 Buscar</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #333;">🗂️ Historial y Edición</h3>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="date" id="filtroFechaLista" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                <button onclick="cargarViajesExistentes()" class="btn-lupa">🔍 Buscar</button>
+            </div>
         </div>
         <table class="tabla-constructor" style="font-size: 12px;">
             <thead>
@@ -91,42 +97,22 @@
             initialize(api, state, callback) {
                 document.getElementById('filtroFechaLista').valueAsDate = new Date();
                 
-                // CARGA DE PLACAS DESDE GEOTAB
-                api.call("Get", { 
-                    typeName: "Device", 
-                    search: { groups: [{ id: "b2798" }, { id: "b279A" }] } 
-                }, (result) => {
+                api.call("Get", { typeName: "Device", search: { groups: [{ id: "b2798" }, { id: "b279A" }] } }, (result) => {
                     const dl = document.getElementById("listaVehiculos");
-                    dl.innerHTML = "";
-                    const hoy = new Date();
-                    const activos = result.filter(d => !d.activeTo || new Date(d.activeTo) > hoy);
-                    activos.forEach(d => {
-                        let opt = document.createElement("option");
-                        opt.value = d.name;
-                        dl.appendChild(opt);
-                    });
-                    document.getElementById("lblVehiculo").innerText = "3. Vehículo (" + activos.length + "):";
+                    const activos = result.filter(d => !d.activeTo || new Date(d.activeTo) > new Date());
+                    activos.forEach(d => { let opt = document.createElement("option"); opt.value = d.name; dl.appendChild(opt); });
                 });
 
-                // CARGA DE CONDUCTORES DESDE GEOTAB
                 api.call("Get", { typeName: "User" }, (result) => {
                     const dl = document.getElementById("listaConductores");
-                    result.filter(u => u.isDriver).forEach(u => {
-                        let opt = document.createElement("option");
-                        opt.value = (u.firstName + " " + (u.lastName || "")).trim();
-                        dl.appendChild(opt);
-                    });
+                    result.filter(u => u.isDriver).forEach(u => { let opt = document.createElement("option"); opt.value = (u.firstName + " " + (u.lastName || "")).trim(); dl.appendChild(opt); });
                 });
 
-                // CARGA DE RUTAS DESDE EL SHEET
                 fetch(WEB_APP_URL).then(res => res.json()).then(data => {
                     rutasMaestras = data;
                     const sel = document.getElementById("selectRuta");
                     sel.innerHTML = '<option value="">-- Seleccionar --</option>';
-                    data.forEach((r, i) => {
-                        let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre;
-                        sel.appendChild(opt);
-                    });
+                    data.forEach((r, i) => { let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre; sel.appendChild(opt); });
                     cargarViajesExistentes();
                 });
 
@@ -177,28 +163,53 @@
             const viajes = await res.json();
             cuerpo.innerHTML = "";
             const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(filtro));
-            if (filtrados.length === 0) {
-                cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Sin registros</td></tr>";
-                return;
-            }
+            if (filtrados.length === 0) { cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Sin registros</td></tr>"; return; }
             filtrados.forEach(v => {
                 const tr = cuerpo.insertRow();
-                let cond = (v.conductor === "N/A" || !v.conductor) ? "Sin Conductor" : v.conductor;
                 let fStr = v.etdOrigen.toString().replace("'", "").replace("T", " ").split(".")[0];
-                tr.innerHTML = `<td>${v.placa}</td><td>${cond}</td><td>${v.ruta}</td><td>${fStr}</td><td><b>${v.estado}</b></td>
+                tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${fStr}</td><td><b>${v.estado}</b></td>
                 <td><button onclick='iniciarEdicion(${JSON.stringify(v)})' style='cursor:pointer;'>✏️</button></td>`;
             });
         } catch (e) { cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error de conexión</td></tr>"; }
     }
 
-    function iniciarEdicion(v) {
-        document.getElementById("contenedorManual").classList.add("editando");
-        document.getElementById("idEdicion").value = v.idViaje || ""; // Asumiendo que guardas el ID en el Sheet
-        document.getElementById("inputVehiculo").value = v.placa;
-        document.getElementById("inputConductor").value = v.conductor;
-        document.getElementById("btnProgramar").innerText = "🔄 Actualizar Programación";
-        alert("Modo Edición: Ajusta los datos arriba y confirma.");
-    }
+    // CARGA MASIVA DESDE EXCEL
+    document.getElementById("btnProcesarExcel").addEventListener("click", function() {
+        const fileInput = document.getElementById("inputExcel");
+        if (!fileInput.files[0]) return alert("Seleccione un archivo .xlsx");
+        
+        const btn = this;
+        btn.innerText = "⏳ Procesando...";
+        btn.disabled = true;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+            
+            for (let fila of jsonData) {
+                await fetch(WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "programarViaje",
+                        vehiculo: fila.PLACA,
+                        conductor: fila.CONDUCTOR || "Sin Conductor",
+                        etdOrigen: "'" + fila.FECHA_ETD, 
+                        nombreRuta: fila.RUTA,
+                        itinerario: "[]"
+                    })
+                });
+            }
+            alert("✅ Lote procesado con éxito.");
+            btn.innerText = "Subir y Procesar";
+            btn.disabled = false;
+            fileInput.value = "";
+            cargarViajesExistentes();
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    });
 
     document.getElementById("btnProgramar").addEventListener("click", function() {
         const idEdit = document.getElementById("idEdicion").value;
@@ -206,7 +217,7 @@
         const vehiculo = document.getElementById("inputVehiculo").value;
         const rutaIdx = document.getElementById("selectRuta").value;
         const salida = document.getElementById("fechaSalida").value;
-        if (!vehiculo || rutaIdx === "" || !salida) return alert("⚠️ Datos incompletos");
+        if (!vehiculo || rutaIdx === "" || !salida) return alert("⚠️ Faltan datos");
         
         btn.innerText = "⏳ Cargando...";
         btn.disabled = true;
@@ -227,11 +238,19 @@
                 itinerario: JSON.stringify(itinerario)
             })
         }).then(() => {
-            alert("✅ ¡Éxito!");
+            alert("✅ Éxito");
             limpiar();
             cargarViajesExistentes();
         });
     });
+
+    function iniciarEdicion(v) {
+        document.getElementById("contenedorManual").classList.add("editando");
+        document.getElementById("idEdicion").value = v.idViaje || "";
+        document.getElementById("inputVehiculo").value = v.placa;
+        document.getElementById("inputConductor").value = v.conductor;
+        document.getElementById("btnProgramar").innerText = "🔄 Actualizar Programación";
+    }
 
     function limpiar() {
         document.getElementById("contenedorManual").classList.remove("editando");
@@ -246,27 +265,6 @@
     }
 
     document.getElementById("btnCancelar").addEventListener("click", limpiar);
-
-    document.getElementById("btnProcesarMasivo").addEventListener("click", async function() {
-        const texto = document.getElementById("txtMasivo").value;
-        if (!texto) return alert("Pega los datos del Excel");
-        this.innerText = "⏳ Procesando...";
-        const lineas = texto.split("\n");
-        for (let l of lineas) {
-            const c = l.split("\t");
-            if (c.length < 4) continue;
-            await fetch(WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    action: "programarViaje", vehiculo: c[0].trim(), conductor: c[1].trim(), etdOrigen: "'" + c[3].trim(), nombreRuta: c[2].trim(), itinerario: "[]"
-                })
-            });
-        }
-        alert("✅ Carga masiva lista");
-        document.getElementById("txtMasivo").value = "";
-        this.innerText = "Procesar Lote Masivo";
-        cargarViajesExistentes();
-    });
 </script>
 </body>
 </html>
