@@ -47,7 +47,6 @@
                 <tr>
                     <th>Nombre de Ruta</th>
                     <th>Puntos</th>
-                    <th>Fecha</th>
                     <th>Cargar</th>
                 </tr>
             </thead>
@@ -61,7 +60,8 @@
     let rutaActual = [];
     let idRutaActiva = null; 
     let apiGlobal;
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwwtduJaS6lhzLqEE323RxMs8_NCVrTlpOiRtKMiDIsXhZr_e5e0ppH3WGExJ04z5fT/exec";
+    // URL DE TU NUEVA IMPLEMENTACIÓN
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzsBCgWyyBYoR9oseGaU5aPilYzWJRLM_X9Q6BBYnza-HnD6Sb_3HGmSskb3E42elAB/exec";
 
     function formatTime(decimal) {
         if (!decimal || isNaN(decimal) || decimal <= 0) return "00:00";
@@ -82,7 +82,7 @@
     async function cargarRutas() {
         const listaUI = document.getElementById("listaRutasGuardadas");
         try {
-            const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime());
+            const res = await fetch(WEB_APP_URL + "?action=getRutas&v=" + new Date().getTime());
             const data = await res.json();
             listaUI.innerHTML = "";
             data.forEach(r => {
@@ -91,16 +91,15 @@
                 row.innerHTML = `
                     <td style="text-align:left; font-weight:bold;">${r.nombre}</td>
                     <td>${ptsArray.length}</td>
-                    <td>${r.fecha}</td>
                     <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}", "${r.id}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
                 `;
             });
-        } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando...</td></tr>"; }
+        } catch(e) { listaUI.innerHTML = "<tr><td colspan='3'>Sincronizando con DB_CONFIGURACION...</td></tr>"; }
     }
 
     function cargarZonasGeotab(api) {
         api.call("Get", { typeName: "Zone", search: { zoneTypeIds: ["b4A3"] } }, (result) => {
-            zonasFiltradas = result.filter(z => z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3")).sort((a,b)=>a.name.localeCompare(b.name));
+            zonasFiltradas = result.sort((a,b)=>a.name.localeCompare(b.name));
             document.getElementById("lblZonas").innerText = `Escribe zona (${zonasFiltradas.length}):`;
             const datalist = document.getElementById("listaZonas");
             datalist.innerHTML = "";
@@ -144,7 +143,6 @@
         window.scrollTo(0,0);
     };
 
-    // Refresco automático al detectar que el usuario entra a la pestaña
     document.addEventListener("visibilitychange", () => {
         if (!document.hidden && apiGlobal) {
             cargarZonasGeotab(apiGlobal);
@@ -167,7 +165,6 @@
                     if (!zonaSel) return;
                     let lat = 0, lon = 0;
                     if (zonaSel.center) { lat = zonaSel.center.y; lon = zonaSel.center.x; }
-                    else if (zonaSel.y) { lat = zonaSel.y; lon = zonaSel.x; }
                     else if (zonaSel.points && zonaSel.points[0]) { lat = zonaSel.points[0].y; lon = zonaSel.points[0].x; }
                     const previo = rutaActual[rutaActual.length - 1];
                     let km = (previo && lat !== 0) ? getHaversine(previo.lat, previo.lon, lat, lon) : 0;
@@ -188,8 +185,8 @@
                     document.getElementById("btnGuardar").innerText = "⏳ Guardando...";
                     fetch(WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ action: "write", idRuta: idRutaActiva, nombre: nombre, puntos: JSON.stringify(puntosFinales) })
-                    }).then(() => { alert("✅ Ruta Guardada"); resetearFormulario(); cargarRutas(); document.getElementById("btnGuardar").innerText = "💾 Guardar Ruta"; });
+                        body: JSON.stringify({ action: "programarRuta", idRuta: idRutaActiva, nombre: nombre, puntos: JSON.stringify(puntosFinales) })
+                    }).then(() => { alert("✅ Ruta Guardada en DB_CONFIGURACION"); resetearFormulario(); cargarRutas(); document.getElementById("btnGuardar").innerText = "💾 Guardar Ruta"; });
                 });
                 callback();
             },
