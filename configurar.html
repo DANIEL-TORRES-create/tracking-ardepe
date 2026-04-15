@@ -60,7 +60,6 @@
     let rutaActual = [];
     let idRutaActiva = null; 
     let apiGlobal;
-    // URL DE TU NUEVA IMPLEMENTACIÓN
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzsBCgWyyBYoR9oseGaU5aPilYzWJRLM_X9Q6BBYnza-HnD6Sb_3HGmSskb3E42elAB/exec";
 
     function formatTime(decimal) {
@@ -94,12 +93,12 @@
                     <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}", "${r.id}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
                 `;
             });
-        } catch(e) { listaUI.innerHTML = "<tr><td colspan='3'>Sincronizando con DB_CONFIGURACION...</td></tr>"; }
+        } catch(e) { listaUI.innerHTML = "<tr><td colspan='3'>Sincronizando...</td></tr>"; }
     }
 
     function cargarZonasGeotab(api) {
         api.call("Get", { typeName: "Zone", search: { zoneTypeIds: ["b4A3"] } }, (result) => {
-            zonasFiltradas = result.sort((a,b)=>a.name.localeCompare(b.name));
+            zonasFiltradas = result.filter(z => z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3")).sort((a,b)=>a.name.localeCompare(b.name));
             document.getElementById("lblZonas").innerText = `Escribe zona (${zonasFiltradas.length}):`;
             const datalist = document.getElementById("listaZonas");
             datalist.innerHTML = "";
@@ -186,7 +185,7 @@
                     fetch(WEB_APP_URL, {
                         method: "POST",
                         body: JSON.stringify({ action: "programarRuta", idRuta: idRutaActiva, nombre: nombre, puntos: JSON.stringify(puntosFinales) })
-                    }).then(() => { alert("✅ Ruta Guardada en DB_CONFIGURACION"); resetearFormulario(); cargarRutas(); document.getElementById("btnGuardar").innerText = "💾 Guardar Ruta"; });
+                    }).then(() => { alert("✅ Ruta Guardada"); resetearFormulario(); cargarRutas(); document.getElementById("btnGuardar").innerText = "💾 Guardar Ruta"; });
                 });
                 callback();
             },
