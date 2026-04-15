@@ -10,7 +10,9 @@
         .modo-masivo { background: #f0f7ff; padding: 15px; border: 1px solid #1a73e8; border-radius: 8px; margin-bottom: 20px; }
         .editando { border: 2px solid #f2994a !important; background: #fff4e5; }
         .input-file-custom { padding: 8px; background: white; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; }
-        .btn-descarga { background: #27ae60; color: white; padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; display: inline-block; }
+        .btn-descarga { background: #27ae60; color: white; padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; }
+        .error-log { background: #fee; color: #b00; padding: 10px; border-radius: 4px; margin-top: 10px; display: none; font-size: 12px; border: 1px solid #b00; line-height: 1.5; }
+        .tabla-constructor th { font-size: 11px; }
     </style>
 </head>
 <body>
@@ -20,14 +22,14 @@
     
     <div class="modo-masivo">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label style="font-weight: bold; font-size: 13px; color: #1a73e8;">🚀 CARGA MASIVA DESDE EXCEL</label>
-            <button onclick="exportarPlantilla()" class="btn-descarga">📥 Descargar Plantilla Excel</button>
+            <label style="font-weight: bold; font-size: 13px; color: #1a73e8;">🚀 CARGA MASIVA EXCEL</label>
+            <button onclick="exportarPlantilla()" class="btn-descarga">📥 Descargar Plantilla</button>
         </div>
-        
         <div style="display: flex; gap: 10px; margin-top: 10px;">
             <input type="file" id="inputExcel" class="input-file-custom" accept=".xlsx, .xls">
-            <button id="btnProcesarExcel" class="btn-lupa" style="background: #27ae60; white-space: nowrap;">Subir y Procesar</button>
+            <button id="btnProcesarExcel" class="btn-lupa" style="background: #27ae60;">Validar y Subir</button>
         </div>
+        <div id="errorLog" class="error-log"></div>
     </div>
 
     <div id="contenedorManual" class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 10px; border-radius: 8px;">
@@ -35,24 +37,18 @@
         <div style="display: flex; flex-direction: column; gap: 10px;">
             <label style="font-weight: bold; font-size: 13px;">1. Ruta Maestra:</label>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <select id="selectRuta" style="padding: 10px; border-radius: 6px; flex-grow: 1; border: 1px solid #ccc;">
-                    <option value="">Cargando rutas...</option>
-                </select>
-                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #eee; padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: bold;">
-                    <input type="checkbox" id="checkRetorno"> ¿RET?
-                </label>
+                <select id="selectRuta" style="padding: 10px; border-radius: 6px; flex-grow: 1; border: 1px solid #ccc;"><option value="">Cargando...</option></select>
+                <label style="font-size: 11px; font-weight: bold;"><input type="checkbox" id="checkRetorno"> ¿RET?</label>
             </div>
             <label style="font-weight: bold; font-size: 13px;">2. Salida Programada:</label>
             <input type="datetime-local" id="fechaSalida" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
         </div>
-
         <div style="display: flex; flex-direction: column; gap: 10px;">
             <label id="lblVehiculo" style="font-weight: bold; font-size: 13px;">3. Vehículo (Placa):</label>
-            <input list="listaVehiculos" id="inputVehiculo" placeholder="Escribe placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <input list="listaVehiculos" id="inputVehiculo" placeholder="Placa..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaVehiculos"></datalist>
-
             <label style="font-weight: bold; font-size: 13px;">4. Conductor:</label>
-            <input list="listaConductores" id="inputConductor" placeholder="Escribe nombre..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+            <input list="listaConductores" id="inputConductor" placeholder="Conductor..." style="padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
             <datalist id="listaConductores"></datalist>
         </div>
     </div>
@@ -71,8 +67,8 @@
     </table>
 
     <div style="margin-top: 20px; display: flex; gap: 10px;">
-        <button id="btnProgramar" class="btn-guardar" style="flex-grow: 2; float: none;">🚀 Confirmar Viaje</button>
-        <button id="btnCancelar" class="btn-cancelar" style="flex-grow: 1; float: none; margin: 0;">❌ Limpiar</button>
+        <button id="btnProgramar" class="btn-guardar" style="flex-grow: 2;">🚀 Confirmar Viaje</button>
+        <button id="btnCancelar" class="btn-cancelar" style="flex-grow: 1;">❌ Limpiar / Cancelar</button>
     </div>
 
     <div class="seccion-lista">
@@ -93,30 +89,31 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzv5b4fL0CNUSrBYaHmDe0KCYe_T6cMrhfTw9Gg_7BThEFBzSj4J8P_OR4kBbYXQnF4/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzsBCgWyyBYoR9oseGaU5aPilYzWJRLM_X9Q6BBYnza-HnD6Sb_3HGmSskb3E42elAB/exec";
     let rutasMaestras = [];
+    let placasValidas = [];
 
     geotab.addin.programar = (api, state) => {
         return {
             initialize(api, state, callback) {
                 document.getElementById('filtroFechaLista').valueAsDate = new Date();
                 
-                api.call("Get", { typeName: "Device", search: { groups: [{ id: "b2798" }, { id: "b279A" }] } }, (result) => {
+                api.call("Get", { typeName: "Device", search: { groups: [{ id: "b2798" }, { id: "b279A" }] } }, (res) => {
                     const dl = document.getElementById("listaVehiculos");
-                    const activos = result.filter(d => !d.activeTo || new Date(d.activeTo) > new Date());
-                    activos.forEach(d => { let opt = document.createElement("option"); opt.value = d.name; dl.appendChild(opt); });
+                    placasValidas = res.filter(d => !d.activeTo || new Date(d.activeTo) > new Date()).map(d => d.name);
+                    placasValidas.forEach(p => { let o = document.createElement("option"); o.value = p; dl.appendChild(o); });
                 });
 
-                api.call("Get", { typeName: "User" }, (result) => {
+                api.call("Get", { typeName: "User" }, (res) => {
                     const dl = document.getElementById("listaConductores");
-                    result.filter(u => u.isDriver).forEach(u => { let opt = document.createElement("option"); opt.value = (u.firstName + " " + (u.lastName || "")).trim(); dl.appendChild(opt); });
+                    res.filter(u => u.isDriver).forEach(u => { let o = document.createElement("option"); o.value = (u.firstName + " " + (u.lastName || "")).trim(); dl.appendChild(o); });
                 });
 
-                fetch(WEB_APP_URL).then(res => res.json()).then(data => {
-                    rutasMaestras = data;
-                    const sel = document.getElementById("selectRuta");
-                    sel.innerHTML = '<option value="">-- Seleccionar --</option>';
-                    data.forEach((r, i) => { let opt = document.createElement("option"); opt.value = i; opt.textContent = r.nombre; sel.appendChild(opt); });
+                fetch(WEB_APP_URL).then(r => r.json()).then(d => {
+                    rutasMaestras = d;
+                    const s = document.getElementById("selectRuta");
+                    s.innerHTML = '<option value="">-- Seleccionar --</option>';
+                    d.forEach((r, i) => { let o = document.createElement("option"); o.value = i; o.textContent = r.nombre; s.appendChild(o); });
                     cargarViajesExistentes();
                 });
 
@@ -130,44 +127,38 @@
 
     function exportarPlantilla() {
         const wb = XLSX.utils.book_new();
-        const wsData = [["PLACA", "CONDUCTOR", "RUTA", "FECHA_ETD"]];
+        const wsData = [["PLACA", "CONDUCTOR", "RUTA", "FECHA_ETD"], ["ABC-123", "JUAN PEREZ", "LIMA-ICA", "'2026-04-15 22:00"]];
         const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wsInst = XLSX.utils.aoa_to_sheet([["INSTRUCCIONES"], ["1. Solo use la hoja 'Programación'"], ["2. Fecha con comilla: '2026-04-15 22:00"]]);
         XLSX.utils.book_append_sheet(wb, ws, "Programación");
-        XLSX.writeFile(wb, "Plantilla_Programacion_Viajes.xlsx");
+        XLSX.utils.book_append_sheet(wb, wsInst, "Instrucciones");
+        XLSX.writeFile(wb, "Plantilla_Viajes.xlsx");
     }
 
     document.getElementById("btnProcesarExcel").addEventListener("click", function() {
         const fileInput = document.getElementById("inputExcel");
-        if (!fileInput.files[0]) return alert("Seleccione un archivo .xlsx");
-        
-        const btn = this;
-        btn.innerText = "⏳ Procesando...";
-        btn.disabled = true;
-
+        const log = document.getElementById("errorLog");
+        if (!fileInput.files[0]) return alert("Seleccione archivo");
+        log.style.display = "none"; log.innerHTML = "";
         const reader = new FileReader();
         reader.onload = async (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            
-            for (let fila of jsonData) {
-                await fetch(WEB_APP_URL, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        action: "programarViaje",
-                        vehiculo: fila.PLACA,
-                        conductor: fila.CONDUCTOR || "Sin Conductor",
-                        etdOrigen: "'" + fila.FECHA_ETD, 
-                        nombreRuta: fila.RUTA,
-                        itinerario: "[]"
-                    })
-                });
+            const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            const sheet = workbook.Sheets["Programación"];
+            if (!sheet) return alert("No se encontró hoja 'Programación'");
+            const jsonData = XLSX.utils.sheet_to_json(sheet);
+            let errores = [];
+            const nombresRutas = rutasMaestras.map(r => r.nombre);
+            jsonData.forEach((f, i) => {
+                let n = i + 2;
+                if (!placasValidas.includes(f.PLACA)) errores.push(`Fila ${n}: Placa '${f.PLACA}' inválida.`);
+                if (!nombresRutas.includes(f.RUTA)) errores.push(`Fila ${n}: Ruta '${f.RUTA}' no existe.`);
+                if (!f.FECHA_ETD) errores.push(`Fila ${n}: Falta fecha.`);
+            });
+            if (errores.length > 0) { log.style.display = "block"; log.innerHTML = errores.join("<br>"); return; }
+            for (let f of jsonData) {
+                await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "programarViaje", vehiculo: f.PLACA, conductor: f.CONDUCTOR || "Sin Conductor", etdOrigen: f.FECHA_ETD.toString().startsWith("'") ? f.FECHA_ETD : "'" + f.FECHA_ETD, nombreRuta: f.RUTA, itinerario: "[]" }) });
             }
-            alert("✅ Carga masiva exitosa");
-            btn.innerText = "Subir y Procesar";
-            btn.disabled = false;
-            fileInput.value = "";
-            cargarViajesExistentes();
+            alert("✅ Carga masiva lista"); location.reload();
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     });
@@ -180,104 +171,52 @@
         if (document.getElementById("checkRetorno").checked) puntos = [...puntos].reverse();
         const cuerpo = document.getElementById("cuerpoItinerario");
         cuerpo.innerHTML = "";
-        
-        let f = salidaUser.split("T")[0].split("-");
-        let h = salidaUser.split("T")[1].split(":");
-        let tiempoBaseMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime();
-        let kmAcum = 0;
-
+        let f = salidaUser.split("T")[0].split("-"), h = salidaUser.split("T")[1].split(":");
+        let tiempoMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime(), kmAcum = 0;
         puntos.forEach((p, i) => {
-            let etaMs, etdMs;
-            const perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000);
-            if (i === 0) { etdMs = tiempoBaseMs; etaMs = etdMs - perMs; }
-            else {
-                const tieMs = (p.tiempo.split(":")[0]*3600000)+(p.tiempo.split(":")[1]*60000);
-                etaMs = tiempoBaseMs + tieMs; 
-                etdMs = etaMs + perMs;
-                kmAcum += parseFloat(p.km || 0);
+            let perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000), eta, etd;
+            if (i === 0) { etd = tiempoMs; eta = etd - perMs; }
+            else { 
+                let tieMs = (p.tiempo.split(":")[0]*3600000)+(p.tiempo.split(":")[1]*60000); 
+                eta = tiempoMs + tieMs; etd = eta + perMs; kmAcum += parseFloat(p.km || 0); 
             }
-            const row = cuerpo.insertRow();
-            row.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(2)}</td><td>${new Date(etaMs).toLocaleString()}</td><td>${new Date(etdMs).toLocaleString()}</td>`;
-            tiempoBaseMs = etdMs;
+            cuerpo.insertRow().innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(2)}</td><td>${new Date(eta).toLocaleString()}</td><td>${new Date(etd).toLocaleString()}</td>`;
+            tiempoMs = etd;
         });
     }
 
     async function cargarViajesExistentes() {
-        const cuerpo = document.getElementById("cuerpoListaViajes");
-        const filtro = document.getElementById("filtroFechaLista").value;
-        cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Buscando...</td></tr>";
-        try {
-            const res = await fetch(WEB_APP_URL + "?read=viajes&v=" + new Date().getTime());
-            const viajes = await res.json();
-            cuerpo.innerHTML = "";
-            const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(filtro));
-            if (filtrados.length === 0) {
-                cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Sin registros</td></tr>";
-                return;
-            }
-            filtrados.forEach(v => {
-                const tr = cuerpo.insertRow();
-                let fStr = v.etdOrigen.toString().replace("'", "").replace("T", " ").split(".")[0];
-                tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${fStr}</td><td><b>${v.estado}</b></td>
-                <td><button onclick='iniciarEdicion(${JSON.stringify(v)})' style='cursor:pointer;'>✏️</button></td>`;
-            });
-        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error</td></tr>"; }
-    }
-
-    document.getElementById("btnProgramar").addEventListener("click", function() {
-        const idEdit = document.getElementById("idEdicion").value;
-        const btn = this;
-        const vehiculo = document.getElementById("inputVehiculo").value;
-        const rutaIdx = document.getElementById("selectRuta").value;
-        const salida = document.getElementById("fechaSalida").value;
-        if (!vehiculo || rutaIdx === "" || !salida) return alert("⚠️ Datos incompletos");
-        
-        btn.innerText = "⏳ Cargando...";
-        btn.disabled = true;
-
-        const itinerario = Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({
-            orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText
-        }));
-
-        fetch(WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: idEdit ? "editarViaje" : "programarViaje",
-                idViaje: idEdit,
-                vehiculo: vehiculo, 
-                conductor: document.getElementById("inputConductor").value || "Sin Conductor",
-                etdOrigen: "'" + salida.replace('T', ' '), 
-                nombreRuta: rutasMaestras[rutaIdx].nombre + (document.getElementById("checkRetorno").checked ? " (RET)" : ""),
-                itinerario: JSON.stringify(itinerario)
-            })
-        }).then(() => {
-            alert("✅ ¡Éxito!");
-            limpiar();
-            cargarViajesExistentes();
+        const c = document.getElementById("cuerpoListaViajes"), f = document.getElementById("filtroFechaLista").value;
+        c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Buscando...</td></tr>";
+        const res = await fetch(WEB_APP_URL + "?read=viajes&v=" + new Date().getTime());
+        const viajes = await res.json();
+        c.innerHTML = "";
+        const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(f));
+        if (filtrados.length === 0) return c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Sin registros</td></tr>";
+        filtrados.forEach(v => {
+            let tr = c.insertRow();
+            tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${v.etdOrigen.toString().replace("'","").replace("T"," ")}</td><td><b>${v.estado}</b></td><td><button onclick='iniciarEdicion(${JSON.stringify(v)})'>✏️</button></td>`;
         });
-    });
+    }
 
     function iniciarEdicion(v) {
         document.getElementById("contenedorManual").classList.add("editando");
-        document.getElementById("idEdicion").value = v.idViaje || "";
+        document.getElementById("idEdicion").value = v.idViaje;
         document.getElementById("inputVehiculo").value = v.placa;
         document.getElementById("inputConductor").value = v.conductor;
         document.getElementById("btnProgramar").innerText = "🔄 Actualizar Programación";
+        alert("Modo Edición Activado.");
     }
 
-    function limpiar() {
-        document.getElementById("contenedorManual").classList.remove("editando");
-        document.getElementById("idEdicion").value = "";
-        document.getElementById("inputVehiculo").value = "";
-        document.getElementById("inputConductor").value = "";
-        document.getElementById("selectRuta").value = "";
-        document.getElementById("fechaSalida").value = "";
-        document.getElementById("cuerpoItinerario").innerHTML = "";
-        document.getElementById("btnProgramar").innerText = "🚀 Confirmar Viaje";
-        document.getElementById("btnProgramar").disabled = false;
-    }
+    document.getElementById("btnProgramar").addEventListener("click", function() {
+        const id = document.getElementById("idEdicion").value, v = document.getElementById("inputVehiculo").value, r = document.getElementById("selectRuta").value, s = document.getElementById("fechaSalida").value;
+        if (!v || r === "" || !s) return alert("Faltan datos");
+        this.innerText = "⏳ Cargando..."; this.disabled = true;
+        const itinerario = Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({ orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText }));
+        fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: id ? "editarViaje" : "programarViaje", idViaje: id, vehiculo: v, conductor: document.getElementById("inputConductor").value, etdOrigen: "'" + s.replace('T', ' '), nombreRuta: rutasMaestras[r].nombre, itinerario: JSON.stringify(itinerario) }) }).then(() => { alert("✅ Éxito"); location.reload(); });
+    });
 
-    document.getElementById("btnCancelar").addEventListener("click", limpiar);
+    document.getElementById("btnCancelar").addEventListener("click", () => location.reload());
 </script>
 </body>
 </html>
