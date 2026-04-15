@@ -90,7 +90,6 @@
 </div>
 
 <script>
-    // URL DE TU NUEVA IMPLEMENTACIÓN
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzsBCgWyyBYoR9oseGaU5aPilYzWJRLM_X9Q6BBYnza-HnD6Sb_3HGmSskb3E42elAB/exec";
     let rutasMaestras = [];
     let placasValidas = [];
@@ -111,9 +110,6 @@
         document.getElementById("cuerpoItinerario").innerHTML = "";
         document.getElementById("btnProgramar").innerText = "🚀 Confirmar Viaje";
         document.getElementById("btnProgramar").disabled = false;
-        document.getElementById("inputExcel").value = "";
-        const log = document.getElementById("errorLog");
-        log.style.display = "none"; log.innerHTML = "";
     };
 
     function exportarPlantilla() {
@@ -185,7 +181,7 @@
                 let tr = c.insertRow();
                 tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${v.etdOrigen.toString().replace("'","").replace("T"," ")}</td><td><b>${v.estado}</b></td><td><button onclick='iniciarEdicion(${JSON.stringify(v)})'>✏️</button></td>`;
             });
-        } catch(e) { c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error de sincronización con DB_OPERACION</td></tr>"; }
+        } catch(e) { c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error de sincronización</td></tr>"; }
     }
 
     window.iniciarEdicion = (v) => {
@@ -247,7 +243,7 @@
                     fetch(WEB_APP_URL, { 
                         method: "POST", 
                         body: JSON.stringify({ action: id ? "editarViaje" : "programarViaje", idViaje: id, vehiculo: v, conductor: document.getElementById("inputConductor").value, etdOrigen: "'" + s.replace('T', ' '), nombreRuta: (r!=="")?rutasMaestras[r].nombre:"", itinerario: JSON.stringify(itinerario) }) 
-                    }).then(() => { alert("✅ Éxito en DB_OPERACION"); resetearFormularioProgramacion(); cargarViajesExistentes(); });
+                    }).then(() => { alert("✅ Éxito"); resetearFormularioProgramacion(); cargarViajesExistentes(); });
                 });
                 callback();
             },
