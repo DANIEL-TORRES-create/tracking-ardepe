@@ -97,13 +97,40 @@
 
     function exportarPlantilla() {
         const wb = XLSX.utils.book_new();
-        const wsData = [["PLACA", "CONDUCTOR", "RUTA", "FECHA_ETD"], ["ABC-123", "JUAN PEREZ", "LIMA-ICA", "'2026-04-15 22:00"]];
+        
+        // 1. Datos de la hoja Programación (Formato exacto)
+        const wsData = [
+            ["PLACA", "CONDUCTOR", "RUTA", "FECHA_ETD"], 
+            ["ABC-123", "JUAN PEREZ", "LIMA-ICA", "'2026-04-15 22:00"]
+        ];
         const ws = XLSX.utils.aoa_to_sheet(wsData);
-        const wsInstData = [["INSTRUCCIONES DE CARGA"], ["1. Hoja 'Programación'"], ["2. Fecha con comilla: '2026-04-15 22:00"], ["3. Placa y Ruta deben ser exactos"]];
+        
+        // 2. Instrucciones completas y detalladas restauradas
+        const wsInstData = [
+            ["INSTRUCCIONES DE CARGA MASIVA - NAVISAF"],
+            [""],
+            ["1. Solo use la hoja 'Programación' para cargar los datos de sus viajes."],
+            ["2. La FECHA_ETD es CRÍTICA: debe llevar una comilla simple al inicio: '2026-04-15 22:00"],
+            ["   Formato aceptado: AAAA-MM-DD HH:mm (Año-Mes-Día Hora:Minuto)"],
+            ["3. La PLACA debe coincidir exactamente con el nombre del vehículo en MyGeotab."],
+            ["4. EL CONDUCTOR debe ser el nombre y apellido registrado en la plataforma."],
+            ["5. La RUTA debe ser idéntica al nombre de la ruta creada en el Add-in 1. Configurar Rutas."],
+            ["6. No cambie el nombre de los encabezados de la primera fila."],
+            [""],
+            ["Nota: El botón 'Validar y Subir' verificará que las Placas y Rutas existan antes de procesar."]
+        ];
         const wsInst = XLSX.utils.aoa_to_sheet(wsInstData);
+        
+        // Ajuste de ancho de columnas para que se vea profesional
+        ws['!cols'] = [{wch:15}, {wch:25}, {wch:25}, {wch:20}];
+        wsInst['!cols'] = [{wch:80}];
+
+        // 3. Añadir ambas hojas al libro
         XLSX.utils.book_append_sheet(wb, ws, "Programación");
         XLSX.utils.book_append_sheet(wb, wsInst, "Instrucciones");
-        XLSX.writeFile(wb, "Plantilla_Viajes.xlsx");
+        
+        // 4. Descargar archivo con el nombre original
+        XLSX.writeFile(wb, "Plantilla_Viajes_Navisaf.xlsx");
     }
 
     const resetearFormularioProgramacion = () => {
