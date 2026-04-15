@@ -90,7 +90,8 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzsBCgWyyBYoR9oseGaU5aPilYzWJRLM_X9Q6BBYnza-HnD6Sb_3HGmSskb3E42elAB/exec";
+    // URL ACTUALIZADA
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec";
     let rutasMaestras = [];
     let placasValidas = [];
     let apiGlobal;
@@ -172,7 +173,8 @@
         const c = document.getElementById("cuerpoListaViajes"), f = document.getElementById("filtroFechaLista").value;
         c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Buscando...</td></tr>";
         try {
-            const res = await fetch(WEB_APP_URL + "?action=getViajesEnCurso&v=" + new Date().getTime());
+            // CAMBIO: Se usa el parámetro read=viajes para leer de DB_OPERACION
+            const res = await fetch(WEB_APP_URL + "?read=viajes&v=" + new Date().getTime());
             const viajes = await res.json();
             c.innerHTML = "";
             const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(f));
@@ -181,7 +183,7 @@
                 let tr = c.insertRow();
                 tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${v.etdOrigen.toString().replace("'","").replace("T"," ")}</td><td><b>${v.estado}</b></td><td><button onclick='iniciarEdicion(${JSON.stringify(v)})'>✏️</button></td>`;
             });
-        } catch(e) { c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error de sincronización</td></tr>"; }
+        } catch(e) { c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error de sincronización con DB_OPERACION</td></tr>"; }
     }
 
     window.iniciarEdicion = (v) => {
@@ -216,7 +218,8 @@
             dl.innerHTML = "";
             res.filter(u => u.isDriver).forEach(u => { let o = document.createElement("option"); o.value = (u.firstName + " " + (u.lastName || "")).trim(); dl.appendChild(o); });
         });
-        fetch(WEB_APP_URL + "?action=getRutas&v=" + new Date().getTime()).then(r => r.json()).then(d => {
+        // Lectura de rutas maestras desde DB_CONFIGURACION
+        fetch(WEB_APP_URL + "?v=" + new Date().getTime()).then(r => r.json()).then(d => {
             rutasMaestras = d;
             const s = document.getElementById("selectRuta");
             s.innerHTML = '<option value="">-- Seleccionar --</option>';
@@ -243,7 +246,7 @@
                     fetch(WEB_APP_URL, { 
                         method: "POST", 
                         body: JSON.stringify({ action: id ? "editarViaje" : "programarViaje", idViaje: id, vehiculo: v, conductor: document.getElementById("inputConductor").value, etdOrigen: "'" + s.replace('T', ' '), nombreRuta: (r!=="")?rutasMaestras[r].nombre:"", itinerario: JSON.stringify(itinerario) }) 
-                    }).then(() => { alert("✅ Éxito"); resetearFormularioProgramacion(); cargarViajesExistentes(); });
+                    }).then(() => { alert("✅ Éxito en DB_OPERACION"); resetearFormularioProgramacion(); cargarViajesExistentes(); });
                 });
                 callback();
             },
