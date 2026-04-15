@@ -10,6 +10,7 @@
         .modo-masivo { background: #f0f7ff; padding: 15px; border: 1px solid #1a73e8; border-radius: 8px; margin-bottom: 20px; }
         .editando { border: 2px solid #f2994a !important; background: #fff4e5; }
         .input-file-custom { padding: 8px; background: white; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; }
+        .btn-descarga { background: #27ae60; color: white; padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -18,12 +19,15 @@
     <h2 class="titulo-seccion">📅 Programación de Viajes</h2>
     
     <div class="modo-masivo">
-        <label style="font-weight: bold; font-size: 13px; color: #1a73e8;">🚀 CARGA MASIVA DESDE EXCEL (.xlsx)</label>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label style="font-weight: bold; font-size: 13px; color: #1a73e8;">🚀 CARGA MASIVA DESDE EXCEL</label>
+            <button onclick="exportarPlantilla()" class="btn-descarga">📥 Descargar Plantilla Excel</button>
+        </div>
+        
         <div style="display: flex; gap: 10px; margin-top: 10px;">
             <input type="file" id="inputExcel" class="input-file-custom" accept=".xlsx, .xls">
             <button id="btnProcesarExcel" class="btn-lupa" style="background: #27ae60; white-space: nowrap;">Subir y Procesar</button>
         </div>
-        <p style="font-size: 11px; color: #666; margin-top: 5px;">* El Excel debe tener estas columnas: <b>PLACA, CONDUCTOR, RUTA, FECHA_ETD</b></p>
     </div>
 
     <div id="contenedorManual" class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 10px; border-radius: 8px;">
@@ -124,6 +128,50 @@
         };
     };
 
+    function exportarPlantilla() {
+        const wb = XLSX.utils.book_new();
+        const wsData = [["PLACA", "CONDUCTOR", "RUTA", "FECHA_ETD"]];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, "Programación");
+        XLSX.writeFile(wb, "Plantilla_Programacion_Viajes.xlsx");
+    }
+
+    document.getElementById("btnProcesarExcel").addEventListener("click", function() {
+        const fileInput = document.getElementById("inputExcel");
+        if (!fileInput.files[0]) return alert("Seleccione un archivo .xlsx");
+        
+        const btn = this;
+        btn.innerText = "⏳ Procesando...";
+        btn.disabled = true;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            
+            for (let fila of jsonData) {
+                await fetch(WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "programarViaje",
+                        vehiculo: fila.PLACA,
+                        conductor: fila.CONDUCTOR || "Sin Conductor",
+                        etdOrigen: "'" + fila.FECHA_ETD, 
+                        nombreRuta: fila.RUTA,
+                        itinerario: "[]"
+                    })
+                });
+            }
+            alert("✅ Carga masiva exitosa");
+            btn.innerText = "Subir y Procesar";
+            btn.disabled = false;
+            fileInput.value = "";
+            cargarViajesExistentes();
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    });
+
     function calcular() {
         const idx = document.getElementById("selectRuta").value;
         const salidaUser = document.getElementById("fechaSalida").value;
@@ -163,53 +211,18 @@
             const viajes = await res.json();
             cuerpo.innerHTML = "";
             const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(filtro));
-            if (filtrados.length === 0) { cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Sin registros</td></tr>"; return; }
+            if (filtrados.length === 0) {
+                cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Sin registros</td></tr>";
+                return;
+            }
             filtrados.forEach(v => {
                 const tr = cuerpo.insertRow();
                 let fStr = v.etdOrigen.toString().replace("'", "").replace("T", " ").split(".")[0];
                 tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${fStr}</td><td><b>${v.estado}</b></td>
                 <td><button onclick='iniciarEdicion(${JSON.stringify(v)})' style='cursor:pointer;'>✏️</button></td>`;
             });
-        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error de conexión</td></tr>"; }
+        } catch (e) { cuerpo.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error</td></tr>"; }
     }
-
-    // CARGA MASIVA DESDE EXCEL
-    document.getElementById("btnProcesarExcel").addEventListener("click", function() {
-        const fileInput = document.getElementById("inputExcel");
-        if (!fileInput.files[0]) return alert("Seleccione un archivo .xlsx");
-        
-        const btn = this;
-        btn.innerText = "⏳ Procesando...";
-        btn.disabled = true;
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-            
-            for (let fila of jsonData) {
-                await fetch(WEB_APP_URL, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        action: "programarViaje",
-                        vehiculo: fila.PLACA,
-                        conductor: fila.CONDUCTOR || "Sin Conductor",
-                        etdOrigen: "'" + fila.FECHA_ETD, 
-                        nombreRuta: fila.RUTA,
-                        itinerario: "[]"
-                    })
-                });
-            }
-            alert("✅ Lote procesado con éxito.");
-            btn.innerText = "Subir y Procesar";
-            btn.disabled = false;
-            fileInput.value = "";
-            cargarViajesExistentes();
-        };
-        reader.readAsArrayBuffer(fileInput.files[0]);
-    });
 
     document.getElementById("btnProgramar").addEventListener("click", function() {
         const idEdit = document.getElementById("idEdicion").value;
@@ -217,7 +230,7 @@
         const vehiculo = document.getElementById("inputVehiculo").value;
         const rutaIdx = document.getElementById("selectRuta").value;
         const salida = document.getElementById("fechaSalida").value;
-        if (!vehiculo || rutaIdx === "" || !salida) return alert("⚠️ Faltan datos");
+        if (!vehiculo || rutaIdx === "" || !salida) return alert("⚠️ Datos incompletos");
         
         btn.innerText = "⏳ Cargando...";
         btn.disabled = true;
@@ -238,7 +251,7 @@
                 itinerario: JSON.stringify(itinerario)
             })
         }).then(() => {
-            alert("✅ Éxito");
+            alert("✅ ¡Éxito!");
             limpiar();
             cargarViajesExistentes();
         });
