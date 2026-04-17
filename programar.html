@@ -173,16 +173,37 @@
         return JSON.stringify(resultado);
     }
 
+    // ... (Busca la función calcular en tu script y reemplázala por esta)
+
     function calcular() {
         const idx = document.getElementById("selectRuta").value;
         const salidaUser = document.getElementById("fechaSalida").value;
         if (idx === "" || !salidaUser) return;
-        let puntos = JSON.parse(rutasMaestras[idx].puntos);
-        if (document.getElementById("checkRetorno").checked) puntos = [...puntos].reverse();
+        
+        let puntosOriginales = JSON.parse(rutasMaestras[idx].puntos);
+        let puntos;
+
+        // --- CORRECCIÓN OBSERVACIÓN 1: Lógica de Retorno ---
+        if (document.getElementById("checkRetorno").checked) {
+            // Invertimos el itinerario
+            puntos = [...puntosOriginales].reverse();
+            // Ajustamos KM y tiempos para que el retorno sea lógico (el km del punto ahora es el tramo anterior)
+            puntos = puntos.map((p, i) => {
+                if (i === 0) return { ...p, km: 0, tiempo: "00:00" };
+                // El tiempo/km para llegar a este punto es el que tenía el punto que antes le seguía
+                let originalIndex = puntosOriginales.findIndex(orig => orig.name === p.name);
+                let dataReferencia = puntosOriginales[originalIndex + 1] || puntosOriginales[originalIndex];
+                return { ...p, km: dataReferencia.km, tiempo: dataReferencia.tiempo };
+            });
+        } else {
+            puntos = puntosOriginales;
+        }
+
         const cuerpo = document.getElementById("cuerpoItinerario");
         cuerpo.innerHTML = "";
         let f = salidaUser.split("T")[0].split("-"), h = salidaUser.split("T")[1].split(":");
         let tiempoMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime(), kmAcum = 0;
+        
         puntos.forEach((p, i) => {
             let perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000), eta, etd;
             if (i === 0) { etd = tiempoMs; eta = etd - perMs; }
@@ -193,6 +214,8 @@
             cuerpo.insertRow().innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(2)}</td><td>${new Date(eta).toLocaleString()}</td><td>${new Date(etd).toLocaleString()}</td>`;
             tiempoMs = etd;
         });
+    }
+// ... (resto del archivo igual)
     }
 
     async function cargarViajesExistentes() {
