@@ -97,15 +97,11 @@
 
     function exportarPlantilla() {
         const wb = XLSX.utils.book_new();
-        
-        // 1. Datos de la hoja Programación (Formato exacto)
         const wsData = [
             ["PLACA", "CONDUCTOR", "RUTA", "FECHA_ETD"], 
             ["ABC-123", "JUAN PEREZ", "LIMA-ICA", "'2026-04-15 22:00"]
         ];
         const ws = XLSX.utils.aoa_to_sheet(wsData);
-        
-        // 2. Instrucciones completas y detalladas restauradas
         const wsInstData = [
             ["INSTRUCCIONES DE CARGA MASIVA - NAVISAF"],
             [""],
@@ -120,16 +116,10 @@
             ["Nota: El botón 'Validar y Subir' verificará que las Placas y Rutas existan antes de procesar."]
         ];
         const wsInst = XLSX.utils.aoa_to_sheet(wsInstData);
-        
-        // Ajuste de ancho de columnas para que se vea profesional
         ws['!cols'] = [{wch:15}, {wch:25}, {wch:25}, {wch:20}];
         wsInst['!cols'] = [{wch:80}];
-
-        // 3. Añadir ambas hojas al libro
         XLSX.utils.book_append_sheet(wb, ws, "Programación");
         XLSX.utils.book_append_sheet(wb, wsInst, "Instrucciones");
-        
-        // 4. Descargar archivo con el nombre original
         XLSX.writeFile(wb, "Plantilla_Viajes_Navisaf.xlsx");
     }
 
@@ -141,6 +131,7 @@
         document.getElementById("inputConductor").value = "";
         document.getElementById("selectRuta").value = "";
         document.getElementById("fechaSalida").value = "";
+        document.getElementById("checkRetorno").checked = false;
         document.getElementById("cuerpoItinerario").innerHTML = "";
         document.getElementById("btnProgramar").innerText = "🚀 Confirmar Viaje";
         document.getElementById("btnProgramar").disabled = false;
@@ -173,49 +164,43 @@
         return JSON.stringify(resultado);
     }
 
-    // ... (Busca la función calcular en tu script y reemplázala por esta)
-
     function calcular() {
-        const idx = document.getElementById("selectRuta").value;
-        const salidaUser = document.getElementById("fechaSalida").value;
-        if (idx === "" || !salidaUser) return;
-        
-        let puntosOriginales = JSON.parse(rutasMaestras[idx].puntos);
-        let puntos;
+        try {
+            const idx = document.getElementById("selectRuta").value;
+            const salidaUser = document.getElementById("fechaSalida").value;
+            if (idx === "" || !salidaUser) return;
+            
+            let puntosOriginales = JSON.parse(rutasMaestras[idx].puntos);
+            let puntos;
 
-        // --- CORRECCIÓN OBSERVACIÓN 1: Lógica de Retorno ---
-        if (document.getElementById("checkRetorno").checked) {
-            // Invertimos el itinerario
-            puntos = [...puntosOriginales].reverse();
-            // Ajustamos KM y tiempos para que el retorno sea lógico (el km del punto ahora es el tramo anterior)
-            puntos = puntos.map((p, i) => {
-                if (i === 0) return { ...p, km: 0, tiempo: "00:00" };
-                // El tiempo/km para llegar a este punto es el que tenía el punto que antes le seguía
-                let originalIndex = puntosOriginales.findIndex(orig => orig.name === p.name);
-                let dataReferencia = puntosOriginales[originalIndex + 1] || puntosOriginales[originalIndex];
-                return { ...p, km: dataReferencia.km, tiempo: dataReferencia.tiempo };
-            });
-        } else {
-            puntos = puntosOriginales;
-        }
-
-        const cuerpo = document.getElementById("cuerpoItinerario");
-        cuerpo.innerHTML = "";
-        let f = salidaUser.split("T")[0].split("-"), h = salidaUser.split("T")[1].split(":");
-        let tiempoMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime(), kmAcum = 0;
-        
-        puntos.forEach((p, i) => {
-            let perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000), eta, etd;
-            if (i === 0) { etd = tiempoMs; eta = etd - perMs; }
-            else { 
-                let tieMs = (p.tiempo.split(":")[0]*3600000)+(p.tiempo.split(":")[1]*60000); 
-                eta = tiempoMs + tieMs; etd = eta + perMs; kmAcum += parseFloat(p.km || 0); 
+            if (document.getElementById("checkRetorno").checked) {
+                puntos = [...puntosOriginales].reverse();
+                puntos = puntos.map((p, i) => {
+                    if (i === 0) return { ...p, km: 0, tiempo: "00:00" };
+                    let originalIndex = puntosOriginales.findIndex(orig => orig.name === p.name);
+                    let dataReferencia = puntosOriginales[originalIndex + 1] || puntosOriginales[originalIndex];
+                    return { ...p, km: dataReferencia.km, tiempo: dataReferencia.tiempo };
+                });
+            } else {
+                puntos = puntosOriginales;
             }
-            cuerpo.insertRow().innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(2)}</td><td>${new Date(eta).toLocaleString()}</td><td>${new Date(etd).toLocaleString()}</td>`;
-            tiempoMs = etd;
-        });
-    }
-// ... (resto del archivo igual)
+
+            const cuerpo = document.getElementById("cuerpoItinerario");
+            cuerpo.innerHTML = "";
+            let f = salidaUser.split("T")[0].split("-"), h = salidaUser.split("T")[1].split(":");
+            let tiempoMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime(), kmAcum = 0;
+            
+            puntos.forEach((p, i) => {
+                let perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000), eta, etd;
+                if (i === 0) { etd = tiempoMs; eta = etd - perMs; }
+                else { 
+                    let tieMs = (p.tiempo.split(":")[0]*3600000)+(p.tiempo.split(":")[1]*60000); 
+                    eta = tiempoMs + tieMs; etd = eta + perMs; kmAcum += parseFloat(p.km || 0); 
+                }
+                cuerpo.insertRow().innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(2)}</td><td>${new Date(eta).toLocaleString()}</td><td>${new Date(etd).toLocaleString()}</td>`;
+                tiempoMs = etd;
+            });
+        } catch (e) { console.error("Error en calcular:", e); }
     }
 
     async function cargarViajesExistentes() {
@@ -281,9 +266,9 @@
                 cargarDatosGeotab(api);
                 document.getElementById("selectRuta").addEventListener("change", calcular);
                 document.getElementById("fechaSalida").addEventListener("change", calcular);
+                document.getElementById("checkRetorno").addEventListener("change", calcular);
                 document.getElementById("btnCancelar").addEventListener("click", resetearFormularioProgramacion);
                 
-                // EVENTO CONFIRMAR MANUAL
                 document.getElementById("btnProgramar").addEventListener("click", function() {
                     const id = document.getElementById("idEdicion").value, v = document.getElementById("inputVehiculo").value, r = document.getElementById("selectRuta").value, s = document.getElementById("fechaSalida").value;
                     if (!v || (r === "" && !document.getElementById("selectRuta").disabled) || !s) return alert("Faltan datos");
@@ -295,41 +280,31 @@
                     }).then(() => { alert("✅ Éxito"); resetearFormularioProgramacion(); cargarViajesExistentes(); });
                 });
 
-                // EVENTO VALIDAR Y SUBIR EXCEL (RESTAURADO)
-         document.getElementById("btnProcesarExcel").addEventListener("click", function() {
+                document.getElementById("btnProcesarExcel").addEventListener("click", function() {
                     const fileInput = document.getElementById("inputExcel"), log = document.getElementById("errorLog"), btn = this;
                     if (!fileInput.files[0]) return alert("Seleccione archivo");
-                    
                     log.style.display = "none"; log.innerHTML = "";
                     const reader = new FileReader();
-                    
                     reader.onload = async (e) => {
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         const sheet = workbook.Sheets["Programación"];
                         if (!sheet) return alert("No se encontró hoja 'Programación'");
-                        
                         const jsonData = XLSX.utils.sheet_to_json(sheet);
                         let errores = [];
                         const nombresRutas = rutasMaestras.map(r => r.nombre);
-                        
-                        // Validación
                         jsonData.forEach((f, i) => {
                             let n = i + 2;
                             if (!placasValidas.includes(f.PLACA)) errores.push(`Fila ${n}: Placa '${f.PLACA}' inválida.`);
                             if (!nombresRutas.includes(f.RUTA)) errores.push(`Fila ${n}: Ruta '${f.RUTA}' no existe.`);
                             if (!f.FECHA_ETD || !validarFechaReal(f.FECHA_ETD)) errores.push(`Fila ${n}: Fecha inválida.`);
                         });
-
                         if (errores.length > 0) { 
                             log.style.display = "block"; 
                             log.innerHTML = errores.join("<br>"); 
                             return; 
                         }
-                        
-                        // Inicio de carga masiva
                         btn.disabled = true;
                         const total = jsonData.length;
-                        
                         for (let [idx, f] of jsonData.entries()) {
                             btn.innerText = `⏳ Procesando ${idx + 1}/${total}...`;
                             try {
@@ -344,18 +319,14 @@
                                         itinerario: generarItinerarioMasivo(f.RUTA, f.FECHA_ETD) 
                                     }) 
                                 });
-                            } catch (error) {
-                                console.error("Error en fila " + (idx + 2), error);
-                            }
+                            } catch (error) { console.error("Error en fila " + (idx + 2), error); }
                         }
-                        
-                        // LIMPIEZA Y CIERRE DEL PROCESO
                         alert("✅ Carga masiva completada con éxito");
-                        fileInput.value = ""; // Limpia el nombre del archivo en el input
+                        fileInput.value = ""; 
                         btn.innerText = "Validar y Subir";
                         btn.disabled = false;
                         resetearFormularioProgramacion(); 
-                        cargarViajesExistentes(); // Refresca la tabla automáticamente
+                        cargarViajesExistentes(); 
                     };
                     reader.readAsArrayBuffer(fileInput.files[0]);
                 });
