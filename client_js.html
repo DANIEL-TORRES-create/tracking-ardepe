@@ -1,117 +1,66 @@
 <script>
-  window.onload = function() {
-    actualizarDatos();
-    setInterval(actualizarDatos, 300000); 
-  };
+window.onload = function() {
+  actualizar();
+  setInterval(actualizar, 300000); // Actualiza cada 5 minutos
+};
 
-  function actualizarDatos() {
-    console.log("Sincronizando con Servidor...");
-    google.script.run
-      .withSuccessHandler(dibujarInterfaz)
-      .withFailureHandler(err => console.error("Error al obtener datos:", err))
-      .logic_seguimiento.obtenerViajesActivosFull();
+function actualizar() {
+  // Llama directamente a la función en logic_seguimiento.gs
+  google.script.run
+    .withSuccessHandler(renderizar)
+    .logic_seguimiento.obtenerViajesActivosFull();
+}
+
+function renderizar(viajes) {
+  const tbody = document.getElementById('lista-viajes');
+  tbody.innerHTML = "";
+  let ruta = 0, retraso = 0;
+
+  if (!viajes || viajes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay viajes activos en este momento.</td></tr>';
+    return;
   }
 
-  function dibujarInterfaz(viajes) {
-    if(!viajes || viajes.error) {
-      console.error("Error de datos:", viajes ? viajes.error : "Sin respuesta");
-      return;
-    }
+  viajes.forEach(v => {
+    if (v.estado === "EN CURSO") ruta++;
+    if (v.minutosDesv > 15) retraso++;
 
-    const contenedor = document.getElementById('lista-viajes');
-    contenedor.innerHTML = "";
-    
-    let enRuta = 0;
-    let retrasados = 0;
+    let tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${v.placa}</b></td>
+      <td>${v.ruta}</td>
+      <td>
+        <div style="background:#eee; height:8px; border-radius:4px; width:100%;">
+          <div style="background:#2ecc71; height:100%; border-radius:4px; width:${v.progreso}%"></div>
+        </div>
+        <small>${v.progreso}%</small>
+      </td>
+      <td class="${v.minutosDesv > 15 ? 'retraso-critico' : ''}">${v.desviacion}</td>
+      <td>${v.odoActual}</td>
+      <td>
+        <button class="btn-accion" onclick="verDetalle('${v.itinerario.replace(/'/g, "\\'")}')">📋</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
 
-    viajes.forEach(v => {
-      if (v.estado === "EN CURSO") enRuta++;
-      if (v.minutosDesv > 15) retrasados++;
+  document.getElementById('count-ruta').innerText = ruta;
+  document.getElementById('count-retraso').innerText = retraso;
+  document.getElementById('perc-cumplimiento').innerText = (viajes.length > 0 ? (((viajes.length - retraso) / viajes.length) * 100).toFixed(0) : 100) + "%";
+}
 
-      let fila = document.createElement('tr');
-      
-      // Lógica de Odómetro corregida
-      let displayKm = `<span style="color:#95a5a6">---</span>`;
-      
-      if (v.odoActual !== "---" && v.odoActual !== 0) {
-        // Mostramos el KM actual redondeado como referencia
-        displayKm = `<span>${v.odoActual} km</span>`;
-        
-        // Si detectamos exceso (Lógica: si el backend enviara kmPlanTramo)
-        if (v.odoAnterior !== "---" && v.kmPlanTramo > 0) {
-           let dif = (v.odoActual - v.odoAnterior) - v.kmPlanTramo;
-           if (dif > 3) displayKm = `<b style="color:#e74c3c">+${dif.toFixed(1)} km</b>`;
-        }
-      }
+function verDetalle(itiRaw) {
+  const panel = document.getElementById('side-panel');
+  const content = document.getElementById('timeline-content');
+  panel.classList.add('open');
+  const iti = JSON.parse(itiRaw);
+  content.innerHTML = iti.map(p => `
+    <div style="margin-bottom:15px; border-left:2px solid #1a73e8; padding-left:10px;">
+      <b>${p.punto}</b><br>
+      <small>Planificado: ${p.eta || '---'}</small>
+    </div>
+  `).join('');
+}
 
-      fila.innerHTML = `
-        <td><b>${v.placa}</b><br><small>${v.idViaje}</small></td>
-        <td>${v.conductor}<br><small><b>${v.ruta}</b></small></td>
-        <td>
-          <div style="background:#eee; height:10px; border-radius:5px; width:100px; margin-bottom:4px;">
-            <div style="background:#2ecc71; height:100%; border-radius:5px; width:${v.progreso}%"></div>
-          </div>
-          <small>${v.progreso}%</small>
-        </td>
-        <td class="${v.minutosDesv > 15 ? 'retraso-critico' : ''}">${v.desviacion}</td>
-        <td>${displayKm}</td>
-        <td>
-          <button class="btn-action" style="background:#3498db; color:white;" onclick="abrirPanel('${v.idViaje}', '${v.itinerario.replace(/'/g, "\\'")}')">📋</button>
-          <button class="btn-action btn-finalizar" onclick="cierreManual('${v.idViaje}', 'FINALIZADO')">🏁</button>
-          <button class="btn-action btn-cancelar" onclick="cierreManual('${v.idViaje}', 'CANCELADO')">🚫</button>
-        </td>
-      `;
-      contenedor.appendChild(fila);
-    });
-
-    document.getElementById('count-ruta').innerText = enRuta;
-    document.getElementById('count-retraso').innerText = retrasados;
-    document.getElementById('perc-cumplimiento').innerText = (viajes.length > 0 ? (((viajes.length - retrasados) / viajes.length) * 100).toFixed(0) : 100) + "%";
-  }
-
-  function abrirPanel(id, itiRaw) {
-    document.getElementById('side-panel').classList.add('open');
-    document.getElementById('panel-titulo').innerText = "Timeline: " + id;
-    
-    try {
-      const iti = JSON.parse(itiRaw);
-      const timeline = document.getElementById('timeline-content');
-      timeline.innerHTML = "";
-
-      iti.forEach(p => {
-        let item = document.createElement('div');
-        item.className = "timeline-item";
-        item.style = "padding:10px; border-left:2px solid #3498db; margin-left:10px; position:relative;";
-        item.innerHTML = `<span style="position:absolute; left:-6px; top:12px; background:white; border:2px solid #3498db; border-radius:50%; width:10px; height:10px;"></span>
-                          <b>${p.punto}</b><br><small>Plan: ${p.eta || '---'}</small>`;
-        timeline.appendChild(item);
-      });
-
-      // El Mapa requiere que el JSON en Columna E tenga lat y lon
-      const mapImg = document.getElementById('mini-mapa');
-      if (iti.length > 0 && iti[0].lat && iti[0].lon) {
-        const url = `https://maps.googleapis.com/maps/api/staticmap?center=${iti[0].lat},${iti[0].lon}&zoom=13&size=340x250&markers=color:red%7C${iti[0].lat},${iti[0].lon}&key=AIzaSy... (PON_TU_KEY_AQUI)`;
-        mapImg.src = url;
-        mapImg.style.display = "block";
-      } else {
-        mapImg.style.display = "none";
-      }
-    } catch(e) { console.error("Error al parsear itinerario", e); }
-  }
-
-  function cerrarPanel() {
-    document.getElementById('side-panel').classList.remove('open');
-  }
-
-  function cierreManual(id, estado) {
-    if (estado === 'CANCELADO') {
-      let motivo = prompt("Motivo de cancelación (mín. 10 caracteres):");
-      if (!motivo || motivo.length < 10) return alert("Motivo insuficiente.");
-      google.script.run.withSuccessHandler(actualizarDatos).logic_seguimiento.gestionarEstadoViaje(id, estado, "MANUAL: " + motivo);
-    } else {
-      if (confirm("¿Finalizar viaje " + id + "?")) {
-        google.script.run.withSuccessHandler(actualizarDatos).logic_seguimiento.gestionarEstadoViaje(id, estado, "CIERRE_MANUAL");
-      }
-    }
-  }
+function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); }
 </script>
