@@ -6,7 +6,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   </head>
   <body>
-    <div class="dashboard-container">
+    <div class="card-container">
+      <h2 class="titulo-seccion">🚛 Monitor de Tolerancia Cero</h2>
       
       <div class="kpi-row">
         <div class="kpi-card">
@@ -14,7 +15,7 @@
           <div class="number" id="count-ruta">0</div>
         </div>
         <div class="kpi-card alert">
-          <h4>Retrasados (>15m)</h4>
+          <h4>Retrasos</h4>
           <div class="number" id="count-retraso">0</div>
         </div>
         <div class="kpi-card">
@@ -26,28 +27,25 @@
       <table class="monitor-table">
         <thead>
           <tr>
-            <th>Placa / ID</th>
-            <th>Conductor / Ruta</th>
+            <th>Placa</th>
+            <th>Ruta</th>
             <th>Progreso</th>
             <th>Desviación</th>
-            <th>KM Extra (Odo)</th>
+            <th>KM Geotab</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="lista-viajes">
+          <tr><td colspan="6" style="text-align:center; padding:20px;">Cargando datos activos...</td></tr>
         </tbody>
       </table>
-
     </div>
 
     <div id="side-panel">
-      <button onclick="cerrarPanel()" style="float:right; border:none; background:none; font-size:1.5em; cursor:pointer;">&times;</button>
-      <h3 id="panel-titulo">Detalle del Viaje</h3>
+      <button onclick="cerrarPanel()" style="float:right; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
+      <h3>Detalle del Itinerario</h3>
       <hr>
       <div id="timeline-content"></div>
-      <div id="map-container">
-        <img id="mini-mapa" class="static-map" src="" alt="Mapa de ubicación">
-      </div>
     </div>
 
     <?!= HtmlService.createHtmlOutputFromFile('client_js').getContent(); ?>
