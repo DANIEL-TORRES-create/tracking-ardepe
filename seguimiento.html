@@ -2,89 +2,67 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="estilos_addins3.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --primary: #1a73e8; --danger: #d93025; --success: #1e8e3e; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .dashboard { width: 100%; max-width: 1400px; margin: auto; }
-        .kpi-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-        .kpi-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-top: 4px solid var(--primary); }
-        .kpi-card h3 { margin: 0; font-size: 14px; color: #5f6368; }
-        .kpi-card .value { font-size: 28px; font-weight: bold; margin-top: 10px; }
-        .kpi-card.alert { border-top-color: var(--danger); color: var(--danger); }
-        
-        .monitor-table { width: 100%; background: white; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .monitor-table th { background: #3c4043; color: white; padding: 15px; text-align: left; font-size: 13px; }
-        .monitor-table td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
-        .monitor-table tr:hover { background: #f1f3f4; }
-        
-        .progress-bar { background: #e8eaed; border-radius: 10px; height: 10px; width: 100px; position: relative; }
-        .progress-fill { background: var(--success); height: 100%; border-radius: 10px; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .badge-red { background: #fce8e6; color: var(--danger); }
-        .badge-green { background: #e6f4ea; color: var(--success); }
-        
-        .btn-action { border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 5px; transition: 0.2s; }
-        .btn-action:disabled { background: #dadce0; cursor: not-allowed; }
-        .btn-start { background: #e8f0fe; color: var(--primary); }
-        .btn-end { background: #e6f4ea; color: var(--success); }
-        .btn-cancel { background: #fce8e6; color: var(--danger); }
-
-        /* Panel Lateral */
-        #side-panel { position: fixed; right: -400px; top: 0; width: 350px; height: 100%; background: white; box-shadow: -2px 0 10px rgba(0,0,0,0.2); transition: 0.3s; padding: 25px; z-index: 100; overflow-y: auto; }
-        #side-panel.open { right: 0; }
-        .timeline-item { position: relative; padding-left: 30px; margin-bottom: 20px; border-left: 2px solid #dadce0; }
-        .timeline-item.active { border-left-color: var(--primary); }
-        .timeline-item::before { content: ''; position: absolute; left: -7px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #dadce0; }
-        .timeline-item.done::before { background: var(--success); content: '✓'; color: white; font-size: 8px; text-align: center; }
-        .timeline-item.current::before { background: var(--primary); box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.2); }
-    </style>
 </head>
 <body>
 
 <div class="dashboard">
     <div class="kpi-container">
-        <div class="kpi-card"><h3>En Ruta</h3><div class="value" id="kpi-ruta">0</div></div>
-        <div class="kpi-card alert"><h3>Retrasos (>15m)</h3><div class="value" id="kpi-retrasos">0</div></div>
-        <div class="kpi-card"><h3>Por Iniciar</h3><div class="value" id="kpi-pendientes">0</div></div>
-        <div class="kpi-card"><h3>Cumplimiento</h3><div class="value" id="kpi-cumplimiento">0%</div></div>
+        <div class="kpi-card"><h3>En Ruta</h3><span class="value" id="kpi-ruta">0</span></div>
+        <div class="kpi-card alert"><h3>Retrasos (>15m)</h3><span class="value" id="kpi-retrasos">0</span></div>
+        <div class="kpi-card"><h3>Por Iniciar</h3><span class="value" id="kpi-pendientes">0</span></div>
+        <div class="kpi-card"><h3>Cumplimiento</h3><span class="value" id="kpi-cumplimiento">0%</span></div>
     </div>
 
     <table class="monitor-table">
         <thead>
             <tr>
-                <th>PLACA / ID</th>
+                <th>PLACA</th>
                 <th>RUTA</th>
                 <th>PROGRESO</th>
                 <th>DESVIACIÓN</th>
-                <th>HITO RECIENTE</th>
-                <th>KM GPS</th>
+                <th>KM EXTRA TOTAL</th>
+                <th>KM GPS ACTUAL</th>
                 <th>ACCIONES</th>
             </tr>
         </thead>
         <tbody id="lista-viajes">
-            <tr><td colspan="7" style="text-align:center;">Cargando centro de control...</td></tr>
+            <tr><td colspan="7" style="text-align:center; padding:40px;">Sincronizando...</td></tr>
         </tbody>
     </table>
 </div>
 
 <div id="side-panel">
-    <div style="display:flex; justify-content: space-between; align-items: center;">
+    <div style="display:flex; justify-content: space-between;">
         <h2 id="side-placa">Detalle</h2>
-        <button onclick="cerrarPanel()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+        <button onclick="cerrarPanel()" style="border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
     </div>
-    <p id="side-ruta" style="color:#5f6368;"></p>
     <hr>
     <div id="timeline-content"></div>
 </div>
 
+<div id="modal-cancel">
+    <div class="modal-content">
+        <h3>Cancelar Viaje</h3>
+        <p>Motivo (Mín. 10 caracteres):</p>
+        <textarea id="motivo-txt" oninput="validarMotivo()"></textarea>
+        <div style="text-align:right;">
+            <button onclick="cerrarModal()">Salir</button>
+            <button id="btn-confirmar" disabled onclick="confirmarCancelacion()">Confirmar</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/TU_NUEVA_URL_AQUI/exec";
+    let idParaCancelar = null;
 
     function actualizar() {
         const script = document.createElement('script');
         script.src = `${WEB_APP_URL}?read=viajes&full=true&callback=renderizar&v=${new Date().getTime()}`;
         document.body.appendChild(script);
+        script.onload = () => script.remove();
     }
 
     window.renderizar = function(viajes) {
@@ -99,19 +77,16 @@
 
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><b>${v.placa}</b><br><small style="color:gray">${v.idViaje}</small></td>
+                <td><b>${v.placa}</b></td>
                 <td>${v.ruta}</td>
-                <td>
-                    <div class="progress-bar"><div class="progress-fill" style="width:${v.progreso}%"></div></div>
-                    <small>${v.progreso}%</small>
-                </td>
+                <td>${v.progreso}%</td>
                 <td><span class="badge ${v.minutosDesv > 15 ? 'badge-red' : 'badge-green'}">${v.desviacion}</span></td>
-                <td><small>${v.hitoReciente}</small></td>
+                <td class="${v.kmExtra > 5 ? 'km-alerta' : ''}">+ ${v.kmExtra} KM</td>
                 <td>${v.odoActual}</td>
                 <td>
-                    <button class="btn-action btn-start" onclick="gestionar('${v.idViaje}', 'EN CURSO')" ${v.estado === 'EN CURSO' ? 'disabled' : ''} title="Iniciar"><i class="fas fa-play"></i></button>
-                    <button class="btn-action" onclick="abrirTimeline('${encodeURIComponent(JSON.stringify(v))}')" title="Ver Timeline"><i class="fas fa-list-ul"></i></button>
-                    <button class="btn-action btn-cancel" onclick="solicitarCancelacion('${v.idViaje}')" title="Cancelar"><i class="fas fa-times"></i></button>
+                    <button onclick="iniciarViaje('${v.idViaje}')" ${v.estado === 'EN CURSO' ? 'disabled' : ''} title="Iniciar"><i class="fas fa-play"></i></button>
+                    <button onclick="abrirTimeline('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')" title="Detalle"><i class="fas fa-list"></i></button>
+                    <button onclick="abrirModal('${v.idViaje}')" title="Cancelar"><i class="fas fa-ban"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -123,48 +98,36 @@
         document.getElementById('kpi-cumplimiento').innerText = (viajes.length > 0 ? (((viajes.length - retrasos) / viajes.length) * 100).toFixed(0) : 100) + "%";
     }
 
-    function abrirTimeline(dataRaw) {
-        const v = JSON.parse(decodeURIComponent(dataRaw));
-        const iti = JSON.parse(v.itinerario);
-        const hist = JSON.parse(v.historial);
-        
-        document.getElementById('side-placa').innerText = v.placa;
-        document.getElementById('side-ruta').innerText = v.ruta;
-        
+    function abrirTimeline(dataRaw, placa) {
+        const iti = JSON.parse(decodeURIComponent(dataRaw));
+        document.getElementById('side-placa').innerText = placa;
         let html = "";
-        iti.forEach((p, index) => {
-            let statusClass = "";
-            let visitado = hist.find(h => h.punto === p.punto);
-            
-            if (visitado) statusClass = "done";
-            else if (index > 0 && hist.find(h => h.punto === iti[index-1].punto)) statusClass = "current";
-
+        iti.forEach(p => {
             html += `
-                <div class="timeline-item ${statusClass}">
+                <div class="timeline-item ${p.visitado ? 'done' : ''}">
                     <strong>${p.punto}</strong><br>
-                    <small>Plan: ${p.etd || p.eta}</small><br>
-                    ${visitado ? `<small style="color:green">Real: ${visitado.horaReal} (Desv: ${visitado.desv})</small>` : ''}
-                </div>
-            `;
+                    <small>Plan: ${p.planKm} km | Real: ${p.realKm} km</small><br>
+                    <small style="color:${p.exceso > 0 ? 'red' : 'green'}">Exceso: +${p.exceso} km</small>
+                </div>`;
         });
-        
         document.getElementById('timeline-content').innerHTML = html;
         document.getElementById('side-panel').classList.add('open');
     }
 
-    function gestionar(id, estado) {
-        // Aquí llamaremos al doPost en el siguiente paso
-        alert("Cambiando viaje " + id + " a " + estado);
+    function abrirModal(id) { idParaCancelar = id; document.getElementById('modal-cancel').style.display = 'flex'; }
+    function cerrarModal() { document.getElementById('modal-cancel').style.display = 'none'; }
+    function validarMotivo() {
+        const val = document.getElementById('motivo-txt').value;
+        document.getElementById('btn-confirmar').disabled = val.length < 10;
     }
-
     function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); }
 
-    // Inicialización Geotab
+    // Geotab Inicialización
     geotab.addin.seguimiento = () => {
         return {
             initialize(api, state, callback) {
                 actualizar();
-                setInterval(actualizar, 300000); 
+                setInterval(actualizar, 300000);
                 callback();
             }
         };
