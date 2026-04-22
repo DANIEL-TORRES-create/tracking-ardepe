@@ -1,53 +1,31 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <base target="_top">
-    <?!= HtmlService.createHtmlOutputFromFile('estilos_addins3').getContent(); ?>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="estilos_addins3.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  </head>
-  <body>
+</head>
+<body>
     <div class="card-container">
-      <h2 class="titulo-seccion">🚛 Monitor de Tolerancia Cero</h2>
-      
-      <div class="kpi-row">
-        <div class="kpi-card">
-          <h4>En Ruta</h4>
-          <div class="number" id="count-ruta">0</div>
+        <h2 class="titulo-seccion">🚛 Monitor de Tolerancia Cero</h2>
+        <div class="kpi-row">
+            <div class="kpi-card"><h4>En Ruta</h4><div class="number" id="count-ruta">0</div></div>
+            <div class="kpi-card alert"><h4>Retrasos</h4><div class="number" id="count-retraso">0</div></div>
+            <div class="kpi-card"><h4>Cumplimiento</h4><div class="number" id="perc-cumplimiento">0%</div></div>
         </div>
-        <div class="kpi-card alert">
-          <h4>Retrasos</h4>
-          <div class="number" id="count-retraso">0</div>
-        </div>
-        <div class="kpi-card">
-          <h4>Cumplimiento</h4>
-          <div class="number" id="perc-cumplimiento">0%</div>
-        </div>
-      </div>
-
-      <table class="monitor-table">
-        <thead>
-          <tr>
-            <th>Placa</th>
-            <th>Ruta</th>
-            <th>Progreso</th>
-            <th>Desviación</th>
-            <th>KM Geotab</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="lista-viajes">
-          <tr><td colspan="6" style="text-align:center; padding:20px;">Cargando datos activos...</td></tr>
-        </tbody>
-      </table>
+        <table class="monitor-table">
+            <thead>
+                <tr>
+                    <th>Placa</th><th>Ruta</th><th>Progreso</th><th>Desviación</th><th>KM Geotab</th><th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="lista-viajes"><tr><td colspan="6" style="text-align:center; padding:20px;">Cargando monitor...</td></tr></tbody>
+        </table>
     </div>
-
     <div id="side-panel">
-      <button onclick="cerrarPanel()" style="float:right; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
-      <h3>Detalle del Itinerario</h3>
-      <hr>
-      <div id="timeline-content"></div>
+        <button onclick="cerrarPanel()" style="float:right; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
+        <h3>Detalle del Itinerario</h3><hr><div id="timeline-content"></div>
     </div>
-
-    <?!= HtmlService.createHtmlOutputFromFile('client_js').getContent(); ?>
-  </body>
+    <script src="client_js.js"></script>
+</body>
 </html>
