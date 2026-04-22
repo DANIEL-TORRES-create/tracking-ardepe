@@ -18,7 +18,7 @@
                 <tr><th>Placa</th><th>Ruta</th><th>Progreso</th><th>Desviación</th><th>KM Geotab</th><th>Acciones</th></tr>
             </thead>
             <tbody id="lista-viajes">
-                <tr><td colspan="6" style="text-align:center; padding:20px;">Cargando monitor activo...</td></tr>
+                <tr><td colspan="6" style="text-align:center; padding:20px;">Cargando datos desde el servidor...</td></tr>
             </tbody>
         </table>
     </div>
@@ -31,21 +31,8 @@
     <script>
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec";
 
-        window.onload = function() {
-            actualizar();
-            setInterval(actualizar, 300000); 
-        };
-
-        function actualizar() {
-            const script = document.createElement('script');
-            script.src = `${WEB_APP_URL}?read=viajes&full=true&callback=renderizar&v=${new Date().getTime()}`;
-            const oldScript = document.getElementById('jsonp-request');
-            if (oldScript) oldScript.remove();
-            script.id = 'jsonp-request';
-            document.body.appendChild(script);
-        }
-
-        function renderizar(viajes) {
+        // Función que recibe los datos (debe ser global para el callback)
+        window.renderizar = function(viajes) {
             const tbody = document.getElementById('lista-viajes');
             tbody.innerHTML = "";
             let ruta = 0, retraso = 0;
@@ -79,6 +66,33 @@
             document.getElementById('count-retraso').innerText = retraso;
             document.getElementById('perc-cumplimiento').innerText = (viajes.length > 0 ? (((viajes.length - retraso) / viajes.length) * 100).toFixed(0) : 100) + "%";
         }
+
+        function actualizar() {
+            const script = document.createElement('script');
+            script.src = `${WEB_APP_URL}?read=viajes&full=true&callback=renderizar&v=${new Date().getTime()}`;
+            const oldScript = document.getElementById('jsonp-request');
+            if (oldScript) oldScript.remove();
+            script.id = 'jsonp-request';
+            document.body.appendChild(script);
+        }
+
+        // --- INTEGRACIÓN OFICIAL CON GEOTAB ---
+        geotab.addin.seguimiento = (api, state) => {
+            return {
+                initialize(api, state, callback) {
+                    actualizar();
+                    // Actualiza cada 2 minutos mientras el addin esté abierto
+                    setInterval(actualizar, 120000); 
+                    callback();
+                },
+                focus(api, state) {
+                    actualizar(); // Refresca al entrar a la pestaña
+                },
+                blur(api, state) {
+                    // Opcional: pausar si sales de la pestaña
+                }
+            };
+        };
 
         function verDetalle(itiRaw) {
             const panel = document.getElementById('side-panel');
