@@ -15,17 +15,80 @@
         </div>
         <table class="monitor-table">
             <thead>
-                <tr>
-                    <th>Placa</th><th>Ruta</th><th>Progreso</th><th>Desviación</th><th>KM Geotab</th><th>Acciones</th>
-                </tr>
+                <tr><th>Placa</th><th>Ruta</th><th>Progreso</th><th>Desviación</th><th>KM Geotab</th><th>Acciones</th></tr>
             </thead>
-            <tbody id="lista-viajes"><tr><td colspan="6" style="text-align:center; padding:20px;">Cargando monitor...</td></tr></tbody>
+            <tbody id="lista-viajes">
+                <tr><td colspan="6" style="text-align:center; padding:20px;">Cargando monitor activo...</td></tr>
+            </tbody>
         </table>
     </div>
+
     <div id="side-panel">
         <button onclick="cerrarPanel()" style="float:right; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
         <h3>Detalle del Itinerario</h3><hr><div id="timeline-content"></div>
     </div>
-    <script src="client_js.js"></script>
+
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec";
+
+        window.onload = function() {
+            actualizar();
+            setInterval(actualizar, 300000); 
+        };
+
+        function actualizar() {
+            const script = document.createElement('script');
+            script.src = `${WEB_APP_URL}?read=viajes&full=true&callback=renderizar&v=${new Date().getTime()}`;
+            const oldScript = document.getElementById('jsonp-request');
+            if (oldScript) oldScript.remove();
+            script.id = 'jsonp-request';
+            document.body.appendChild(script);
+        }
+
+        function renderizar(viajes) {
+            const tbody = document.getElementById('lista-viajes');
+            tbody.innerHTML = "";
+            let ruta = 0, retraso = 0;
+
+            if (!viajes || viajes.length === 0 || viajes.error) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay viajes activos.</td></tr>';
+                return;
+            }
+
+            viajes.forEach(v => {
+                if (v.estado === "EN CURSO") ruta++;
+                if (v.minutosDesv > 15) retraso++;
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${v.placa}</b></td>
+                    <td>${v.ruta}</td>
+                    <td>
+                        <div style="background:#eee; height:8px; border-radius:4px; width:100%;">
+                            <div style="background:#2ecc71; height:100%; border-radius:4px; width:${v.progreso}%"></div>
+                        </div>
+                        <small>${v.progreso}%</small>
+                    </td>
+                    <td class="${v.minutosDesv > 15 ? 'retraso-critico' : ''}">${v.desviacion}</td>
+                    <td>${v.odoActual}</td>
+                    <td><button class="btn-accion" onclick="verDetalle('${v.itinerario.replace(/'/g, "\\'")}')">📋</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('count-ruta').innerText = ruta;
+            document.getElementById('count-retraso').innerText = retraso;
+            document.getElementById('perc-cumplimiento').innerText = (viajes.length > 0 ? (((viajes.length - retraso) / viajes.length) * 100).toFixed(0) : 100) + "%";
+        }
+
+        function verDetalle(itiRaw) {
+            const panel = document.getElementById('side-panel');
+            const content = document.getElementById('timeline-content');
+            panel.classList.add('open');
+            const iti = JSON.parse(itiRaw);
+            content.innerHTML = iti.map(p => `<div style="margin-bottom:15px; border-left:2px solid #1a73e8; padding-left:10px;"><b>${p.punto}</b><br><small>Planificado: ${p.eta || '---'}</small></div>`).join('');
+        }
+
+        function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); }
+    </script>
 </body>
 </html>
