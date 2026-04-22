@@ -1,85 +1,104 @@
-/* DISEÑO FULL WIDTH - MONITOR DE TOLERANCIA CERO */
+/* DISEÑO PREMIUM - MONITOR DE TOLERANCIA CERO V3 */
 :root {
-    --primary: #1a73e8;
-    --danger: #d93025;
-    --success: #1e8e3e;
-    --warning: #fbbc04;
-    --bg: #ffffff;
+    --primary: #1a73e8;    /* Azul Geotab */
+    --secondary: #3c4043;  /* Gris Oscuro Navisaf */
+    --danger: #d93025;     /* Rojo Alerta */
+    --success: #1e8e3e;    /* Verde Cumplimiento */
+    --warning: #fbbc04;    /* Ambar */
+    --bg: #f8f9fa;
+    --text-main: #202124;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f1f3f4;
+    font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+    background-color: var(--bg);
     margin: 0;
-    padding: 15px;
+    padding: 20px;
+    /* 1. CORRECCIÓN PADDING PARA GEOTAB */
+    padding-top: 70px; 
+    color: var(--text-main);
 }
 
-/* KPIs Superiores */
+/* ENCABEZADO FIJO TIPO NAVISAF */
+.header-top {
+    position: fixed;
+    top: 0; left: 0; width: 100%;
+    background: var(--secondary);
+    color: white;
+    padding: 12px 25px;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.header-top h2 { margin: 0; font-size: 18px; font-weight: 500; }
+
+/* KPIs EN TARJETAS SLIM */
 .kpi-container {
     display: flex;
     gap: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
 .kpi-card {
     background: white;
     flex: 1;
-    padding: 15px;
+    padding: 12px 18px;
     border-radius: 8px;
-    box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
-    border-top: 4px solid var(--primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    border-left: 5px solid var(--primary);
 }
 
-.kpi-card h3 {
-    margin: 0;
-    font-size: 12px;
-    color: #5f6368;
-    text-transform: uppercase;
-}
+.kpi-card h3 { margin: 0; font-size: 11px; color: #70757a; text-transform: uppercase; }
+.kpi-card .value { font-size: 22px; font-weight: 700; color: var(--secondary); }
 
-.kpi-card .value {
-    font-size: 24px;
-    font-weight: bold;
-    display: block;
-    margin-top: 5px;
-}
-
-/* Tabla Principal */
+/* TABLA PRINCIPAL PROFESIONAL */
 .monitor-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     background: white;
     border-radius: 8px;
-    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .monitor-table th {
-    background: #3c4043;
-    color: white;
-    padding: 12px;
+    background: #f1f3f4; /* Fondo claro para contraste con texto oscuro */
+    color: var(--secondary);
+    padding: 14px;
     text-align: left;
-    font-size: 13px;
+    font-size: 12px;
+    text-transform: uppercase;
+    border-bottom: 2px solid #dadce0;
 }
 
 .monitor-table td {
-    padding: 12px;
-    border-bottom: 1px solid #e8eaed;
+    padding: 14px;
+    border-bottom: 1px solid #f1f3f4;
     font-size: 13px;
 }
 
-/* Semáforos y Alertas */
-.badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-weight: bold;
-    font-size: 11px;
+.monitor-table tr:hover { background-color: #f8f9fa; }
+
+/* REEMPLAZO DE RELOJES: BARRA DE PROGRESO SEGMENTADA */
+.progress-container {
+    width: 100px;
+    background-color: #e8eaed;
+    border-radius: 4px;
+    height: 8px;
+    position: relative;
 }
 
-.badge-red { background: #fce8e6; color: var(--danger); }
-.badge-green { background: #e6f4ea; color: var(--success); }
-.km-alerta { color: var(--danger); font-weight: bold; }
+.progress-bar {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--success);
+    transition: width 0.3s;
+}
 
-/* Panel Lateral Deslizable */
+/* PANEL LATERAL (RESUMEN) */
 #side-panel {
     position: fixed;
     right: -450px;
@@ -87,56 +106,88 @@ body {
     width: 400px;
     height: 100%;
     background: white;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.2);
-    transition: 0.4s;
-    padding: 20px;
-    z-index: 100;
-    overflow-y: auto;
+    box-shadow: -4px 0 15px rgba(0,0,0,0.15);
+    transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+    padding: 25px;
+    padding-top: 85px; /* Espacio para el header lateral */
 }
 
 #side-panel.open { right: 0; }
 
-.timeline-item {
-    position: relative;
+/* TIMELINE VERTICAL CON X Y CHECKS */
+.timeline-v {
+    border-left: 2px solid #dadce0;
+    margin-left: 20px;
     padding-left: 30px;
-    border-left: 2px solid #e8eaed;
-    padding-bottom: 20px;
 }
 
-.timeline-item.done { border-left-color: var(--success); }
-.timeline-item::before {
+.step {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.step::before {
     content: '';
     position: absolute;
-    left: -7px;
-    top: 0;
-    width: 12px;
-    height: 12px;
+    left: -37px; top: 0;
+    width: 14px; height: 14px;
     border-radius: 50%;
     background: #dadce0;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #dadce0;
 }
 
-.timeline-item.done::before { background: var(--success); }
+/* Estilo para puntos detectados (Check) */
+.step.done::before {
+    background: var(--success);
+    box-shadow: 0 0 0 2px var(--success);
+    content: 'L'; /* Simula check invertido o usa icon */
+    color: white; font-size: 9px; text-align: center; transform: scaleX(-1) rotate(-35deg);
+}
 
-/* Modal de Cancelación */
-#modal-cancel {
+/* Estilo para puntos FORZADOS (X) */
+.step.forced::before {
+    background: var(--danger);
+    box-shadow: 0 0 0 2px var(--danger);
+    content: '×';
+    color: white; font-size: 16px; font-weight: bold; line-height: 12px; text-align: center;
+}
+
+/* MODAL FULL WINDOW (DETALLE AUDITORÍA) */
+#modal-detalle-full {
     display: none;
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
     background: white;
-    padding: 20px;
-    border-radius: 8px;
-    width: 350px;
+    z-index: 2000;
+    padding: 30px;
+    padding-top: 80px;
+    overflow-y: auto;
 }
 
-textarea {
-    width: 100%;
-    height: 80px;
-    margin: 10px 0;
+.btn-volver {
+    position: absolute;
+    top: 20px; left: 20px;
+    padding: 8px 16px;
+    background: var(--secondary);
+    color: white;
+    border: none; border-radius: 4px; cursor: pointer;
 }
+
+/* BOTONERA ACCIONES */
+.btn-action {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: 0.2s;
+    color: var(--secondary);
+}
+
+.btn-action:hover { background: #f1f3f4; color: var(--primary); }
+
+/* ESTADOS */
+.status-en-ruta { color: var(--success); font-weight: bold; }
+.status-programado { color: var(--primary); font-weight: bold; }
