@@ -2,10 +2,14 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="estilos_addins3.css">
+    <title>Panel de Control de Viajes</title> <link rel="stylesheet" href="estilos_addins3.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+
+<div style="background: #1a73e8; color: white; padding: 10px 20px; margin-bottom: 20px; border-radius: 4px;">
+    <h2 style="margin:0;"><i class="fas fa-truck-loading"></i> Panel de Control de Viajes</h2>
+</div>
 
 <div class="dashboard">
     <div class="kpi-container">
@@ -28,7 +32,7 @@
             </tr>
         </thead>
         <tbody id="lista-viajes">
-            <tr><td colspan="7" style="text-align:center; padding:40px;">Sincronizando...</td></tr>
+            <tr><td colspan="7" style="text-align:center; padding:40px;">Cargando datos de flota...</td></tr>
         </tbody>
     </table>
 </div>
@@ -42,31 +46,41 @@
     <div id="timeline-content"></div>
 </div>
 
-<div id="modal-cancel">
+<div id="modal-cancel" style="display:none;">
     <div class="modal-content">
         <h3>Cancelar Viaje</h3>
-        <p>Motivo (Mín. 10 caracteres):</p>
+        <p>Indique motivo (Mín. 10 caracteres):</p>
         <textarea id="motivo-txt" oninput="validarMotivo()"></textarea>
-        <div style="text-align:right;">
-            <button onclick="cerrarModal()">Salir</button>
-            <button id="btn-confirmar" disabled onclick="confirmarCancelacion()">Confirmar</button>
+        <div style="text-align:right; margin-top:10px;">
+            <button onclick="cerrarModal()" style="padding:8px 15px;">Salir</button>
+            <button id="btn-confirmar" disabled onclick="confirmarCancelacion()" style="padding:8px 15px; background: #d93025; color:white; border:none; border-radius:4px;">Confirmar</button>
         </div>
     </div>
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/TU_NUEVA_URL_AQUI/exec";
+    // IMPORTANTE: Reemplaza con tu URL de implementación actual
+    const WEB_APP_URL = "TU_NUEVA_URL_AQUI"; 
     let idParaCancelar = null;
 
     function actualizar() {
         const script = document.createElement('script');
+        // Agregamos timestamp para evitar caché del navegador
         script.src = `${WEB_APP_URL}?read=viajes&full=true&callback=renderizar&v=${new Date().getTime()}`;
         document.body.appendChild(script);
         script.onload = () => script.remove();
+        script.onerror = () => {
+            document.getElementById('lista-viajes').innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Error de conexión con el servidor. Revisa la URL.</td></tr>';
+        };
     }
 
     window.renderizar = function(viajes) {
         const tbody = document.getElementById('lista-viajes');
+        if (!viajes || viajes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No hay viajes activos hoy.</td></tr>';
+            return;
+        }
+
         tbody.innerHTML = "";
         let enRuta = 0, retrasos = 0, pendientes = 0;
 
@@ -79,14 +93,18 @@
             tr.innerHTML = `
                 <td><b>${v.placa}</b></td>
                 <td>${v.ruta}</td>
-                <td>${v.progreso}%</td>
+                <td>
+                    <div style="width:100%; background:#eee; border-radius:10px; height:8px;">
+                        <div style="width:${v.progreso}%; background:#1e8e3e; height:8px; border-radius:10px;"></div>
+                    </div>
+                    <small>${v.progreso}% completado</small>
+                </td>
                 <td><span class="badge ${v.minutosDesv > 15 ? 'badge-red' : 'badge-green'}">${v.desviacion}</span></td>
                 <td class="${v.kmExtra > 5 ? 'km-alerta' : ''}">+ ${v.kmExtra} KM</td>
                 <td>${v.odoActual}</td>
                 <td>
-                    <button onclick="iniciarViaje('${v.idViaje}')" ${v.estado === 'EN CURSO' ? 'disabled' : ''} title="Iniciar"><i class="fas fa-play"></i></button>
                     <button onclick="abrirTimeline('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')" title="Detalle"><i class="fas fa-list"></i></button>
-                    <button onclick="abrirModal('${v.idViaje}')" title="Cancelar"><i class="fas fa-ban"></i></button>
+                    <button onclick="abrirModal('${v.idViaje}')" title="Cancelar" style="color:#d93025;"><i class="fas fa-ban"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -95,19 +113,21 @@
         document.getElementById('kpi-ruta').innerText = enRuta;
         document.getElementById('kpi-retrasos').innerText = retrasos;
         document.getElementById('kpi-pendientes').innerText = pendientes;
-        document.getElementById('kpi-cumplimiento').innerText = (viajes.length > 0 ? (((viajes.length - retrasos) / viajes.length) * 100).toFixed(0) : 100) + "%";
+        document.getElementById('kpi-cumplimiento').innerText = (((viajes.length - retrasos) / viajes.length) * 100).toFixed(0) + "%";
     }
 
     function abrirTimeline(dataRaw, placa) {
         const iti = JSON.parse(decodeURIComponent(dataRaw));
-        document.getElementById('side-placa').innerText = placa;
+        document.getElementById('side-placa').innerText = "Timeline: " + placa;
         let html = "";
         iti.forEach(p => {
             html += `
                 <div class="timeline-item ${p.visitado ? 'done' : ''}">
                     <strong>${p.punto}</strong><br>
                     <small>Plan: ${p.planKm} km | Real: ${p.realKm} km</small><br>
-                    <small style="color:${p.exceso > 0 ? 'red' : 'green'}">Exceso: +${p.exceso} km</small>
+                    <small style="font-weight:bold; color:${p.exceso > 0 ? '#d93025' : '#1e8e3e'}">
+                        Exceso: +${p.exceso} km
+                    </small>
                 </div>`;
         });
         document.getElementById('timeline-content').innerHTML = html;
@@ -116,18 +136,18 @@
 
     function abrirModal(id) { idParaCancelar = id; document.getElementById('modal-cancel').style.display = 'flex'; }
     function cerrarModal() { document.getElementById('modal-cancel').style.display = 'none'; }
+    function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); }
     function validarMotivo() {
         const val = document.getElementById('motivo-txt').value;
         document.getElementById('btn-confirmar').disabled = val.length < 10;
     }
-    function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); }
 
-    // Geotab Inicialización
+    // Inicialización para Geotab
     geotab.addin.seguimiento = () => {
         return {
             initialize(api, state, callback) {
                 actualizar();
-                setInterval(actualizar, 300000);
+                setInterval(actualizar, 60000); // Actualiza cada 1 minuto
                 callback();
             }
         };
