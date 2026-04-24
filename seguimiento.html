@@ -11,6 +11,9 @@
 
 <div class="header-container">
     <h1 class="neon-title">PANEL - CONTROL DE VIAJES</h1>
+    <div class="header-map-icon">
+        <img src="https://i.ibb.co/LzhZ0Z9/image-7aa8b2.png" alt="Mapa">
+    </div>
 </div>
 
 <div class="dashboard">
@@ -73,8 +76,8 @@
             tr.innerHTML = `
                 <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor || 'Sin Conductor'}</small></td>
                 <td><small>${v.ruta}</small></td>
-                <td><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${v.origen}<br><i class="fas fa-flag-checkered"></i> ${v.destino}</td>
-                <td style="font-weight:bold; color:var(--primary)">${v.salidaReal}</td>
+                <td><i class="fas fa-map-marker-alt" style="color:#004b93"></i> ${v.origen}<br><i class="fas fa-flag-checkered"></i> ${v.destino}</td>
+                <td style="font-weight:bold; color:black">${v.salidaReal}</td>
                 <td style="font-weight:bold;">${v.llegadaEstimada}</td>
                 <td>
                     <div class="segment-bar">${Array.from({length:10}, (_,i) => `<div class="segment ${i < (v.progreso/10) ? 'active' : ''}"></div>`).join('')}</div>
@@ -82,7 +85,7 @@
                 </td>
                 <td class="control-cell">
                     <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" title="Iniciar viaje manualmente" onclick="${estaEnCurso ? '' : `prepararAccion('${v.idViaje}', 'INICIAR')`}"><i class="fas fa-play-circle"></i></button>
-                    <button class="btn-ctrl" title="Finalizar viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')"><i class="fas fa-check-circle" style="color:var(--primary)"></i></button>
+                    <button class="btn-ctrl" title="Finalizar viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')"><i class="fas fa-check-circle" style="color:#004b93"></i></button>
                     <button class="btn-ctrl" title="Cancelar viaje" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')"><i class="fas fa-ban" style="color:var(--danger)"></i></button>
                 </td>
                 <td class="vistas-cell">
@@ -126,7 +129,6 @@
         };
     };
     
-    // Fallback para pruebas fuera de Geotab
     actualizar();
 </script>
 </body>
