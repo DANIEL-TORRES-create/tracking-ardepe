@@ -4,64 +4,125 @@
     --success: #1e8e3e;
     --neon: #00f2ff;
     --bg-dark: #1c1f22;
+    --text-gray: #5f6368;
 }
 
 body {
-    font-family: 'Lexend', sans-serif;
-    background-color: #f8f9fa;
-    margin: 0; padding: 20px; padding-top: 90px;
+    font-family: 'Lexend', 'Roboto', sans-serif;
+    background-color: #f1f3f4;
+    margin: 0;
+    padding: 20px;
+    padding-top: 100px; /* Espacio para que el header no tape la tabla */
 }
 
+/* HEADER FIJO SUPERIOR */
 .main-header {
-    position: fixed; top: 0; left: 0; width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
     background: var(--bg-dark);
-    padding: 15px 30px; z-index: 1000;
+    padding: 20px 35px;
+    z-index: 1200;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
 }
 
 .neon-title {
-    margin: 0; color: white; 
-    font-size: 26px; font-weight: 800; /* Extra Bold */
-    display: inline-block; position: relative;
+    margin: 0;
+    color: white;
+    font-size: 26px;
+    font-weight: 800;
+    display: inline-block;
+    position: relative;
     letter-spacing: 1px;
 }
 
 .neon-title::after {
-    content: ''; position: absolute; left: 0; bottom: -8px;
-    width: 100%; height: 4px; background: var(--neon);
-    box-shadow: 0 0 15px var(--neon), 0 0 5px var(--neon);
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -8px;
+    width: 100%;
+    height: 4px;
+    background: var(--neon);
+    box-shadow: 0 0 15px var(--neon);
 }
 
-.monitor-table { 
-    width: 100%; border-collapse: collapse; background: white; 
-    border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+/* TABLA PRINCIPAL */
+.monitor-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    background: transparent;
 }
-.monitor-table th { 
-    background: #f1f3f4; padding: 15px; text-align: left; 
-    font-size: 11px; color: #5f6368; text-transform: uppercase; border-bottom: 2px solid #dee2e6; 
+
+.monitor-table th {
+    background: #e1e4e8;
+    padding: 15px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--text-gray);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: sticky;
+    top: 80px;
+    z-index: 1000;
 }
-.monitor-table td { padding: 15px; border-bottom: 1px solid #eee; font-size: 13px; }
 
-/* BOTONES */
-.btn-ctrl, .btn-vista { border: none; background: none; cursor: pointer; font-size: 18px; padding: 8px; transition: 0.2s; }
-.btn-ctrl.disabled { color: #ccc !important; cursor: not-allowed; }
-.btn-ctrl:hover:not(.disabled) { transform: scale(1.2); }
+.monitor-table tr {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
 
-/* BARRAS SEGMENTADAS */
-.segment-bar { display: flex; gap: 3px; height: 10px; width: 110px; background: #eee; border-radius: 5px; overflow: hidden; margin-bottom: 4px; }
+.monitor-table td {
+    padding: 15px;
+    vertical-align: middle;
+    border: none;
+}
+
+.monitor-table tr td:first-child { border-radius: 8px 0 0 8px; border-left: 5px solid var(--primary); }
+.monitor-table tr td:last-child { border-radius: 0 8px 8px 0; }
+
+/* BARRAS DE PROGRESO */
+.segment-bar {
+    display: flex;
+    gap: 3px;
+    height: 10px;
+    width: 120px;
+    background: #eee;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
 .segment { flex: 1; background: #eee; }
-.segment.active { background: var(--success); }
+.segment.active { background: var(--success); box-shadow: 0 0 5px var(--success); }
 
-/* COLUMNAS SEPARADAS */
-.control-cell { border-right: 1px solid #eee; text-align: center; background-color: #fafafa; }
+/* COLUMNAS DE ACCIÓN */
+.control-cell { border-right: 2px solid #f0f0f0 !important; text-align: center; background: #fafafa; }
 .vistas-cell { text-align: center; }
 
-/* MODALES Y PANELES (Recuperados de tu original) */
-#side-panel { position: fixed; right: -450px; top: 0; width: 400px; height: 100%; background: white; box-shadow: -4px 0 15px rgba(0,0,0,0.1); transition: 0.4s; z-index: 1001; padding: 25px; padding-top: 100px; }
+.btn-ctrl, .btn-vista {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 8px;
+    transition: 0.2s;
+    color: #444;
+}
+
+.btn-ctrl.disabled { color: #ccc !important; cursor: not-allowed; }
+.btn-ctrl:hover:not(.disabled), .btn-vista:hover { transform: scale(1.2); color: var(--primary); }
+
+/* MODALES Y PANELES */
+#side-panel { position: fixed; right: -450px; top: 0; width: 400px; height: 100%; background: white; box-shadow: -5px 0 20px rgba(0,0,0,0.1); transition: 0.4s; z-index: 1300; padding: 30px; padding-top: 100px; }
 #side-panel.open { right: 0; }
-.timeline-v { border-left: 2px solid #dadce0; margin-left: 20px; padding-left: 30px; }
-.step { position: relative; margin-bottom: 30px; }
-.step::before { content: ''; position: absolute; left: -37px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: #dadce0; border: 2px solid white; box-shadow: 0 0 0 2px #dadce0; }
-.step.done::before { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
-.step.forced::before { background: var(--danger); box-shadow: 0 0 0 2px var(--danger); }
-#modal-detalle-full { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 40px; overflow-y: auto; }
-.btn-volver { padding: 8px 16px; background: var(--bg-dark); color: white; border: none; border-radius: 4px; cursor: pointer; }
+#modal-detalle-full { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1400; padding: 40px; overflow-y: auto; }
+.modal-full-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1500; }
+.modal-content { background: white; padding: 30px; border-radius: 12px; width: 450px; }
+textarea { width: 100%; height: 100px; margin: 15px 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: inherit; }
