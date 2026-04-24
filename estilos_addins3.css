@@ -9,6 +9,7 @@ body {
     font-family: 'Lexend', sans-serif;
     background-color: #f8f9fa;
     margin: 0;
+    padding: 0;
 }
 
 /* HEADER NAVISAF STYLE */
@@ -77,25 +78,29 @@ body {
 .vistas-cell { text-align: center; }
 
 /* BOTONES TABLA */
-.btn-ctrl, .btn-vista { border: none; background: none; cursor: pointer; font-size: 20px; padding: 5px 12px; }
+.btn-ctrl, .btn-vista { border: none; background: none; cursor: pointer; font-size: 20px; padding: 5px 12px; transition: 0.2s; color: #444; }
 .btn-ctrl.disabled { color: #bdbdbd !important; cursor: not-allowed; }
 .btn-ctrl:hover:not(.disabled), .btn-vista:hover { transform: scale(1.2); color: var(--primary); }
 
-/* BARRA PROGRESO */
+/* BARRA PROGRESO SEGMENTADA */
 .segment-bar { display: flex; gap: 3px; height: 10px; width: 110px; background: #eee; border-radius: 5px; margin-bottom: 4px; }
 .segment { flex: 1; background: #eee; }
 .segment.active { background: var(--success); }
 
-/* MODALES Y TIMELINE */
-#side-panel { position: fixed; right: -450px; top: 0; width: 400px; height: 100%; background: white; transition: 0.4s; z-index: 1001; padding: 25px; padding-top: 80px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
+/* MODALES */
+.modal-full-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+.modal-content { background: white; padding: 30px; border-radius: 10px; width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+textarea { width: 100%; height: 100px; margin-top: 10px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+
+.btn-primario { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-primario:disabled { background: #fabfb7; cursor: not-allowed; }
+.btn-secundario { background: #eee; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+
+/* TIMELINE LATERAL */
+#side-panel { position: fixed; right: -450px; top: 0; width: 400px; height: 100%; background: white; transition: 0.4s; z-index: 1001; padding: 25px; padding-top: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
 #side-panel.open { right: 0; }
-.timeline-v { border-left: 2px solid #eee; margin-left: 20px; padding-left: 25px; }
-.step { position: relative; margin-bottom: 25px; }
+.timeline-v { border-left: 2px solid #eee; margin-left: 20px; padding-left: 25px; position: relative; }
+.step { position: relative; margin-bottom: 25px; font-size: 13px; }
 .step::before { content: ''; position: absolute; left: -32px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #ccc; border: 2px solid white; box-shadow: 0 0 0 2px #ccc; }
 .step.done::before { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
 .step.forced::before { background: var(--danger); box-shadow: 0 0 0 2px var(--danger); }
-#modal-detalle-full { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1400; padding: 40px; overflow-y: auto; }
-.modal-full-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-.modal-content { background: white; padding: 30px; border-radius: 10px; width: 400px; }
-textarea { width: 100%; height: 100px; margin-top: 10px; padding: 10px; border: 1px solid #ccc; }
-.btn-volver { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
