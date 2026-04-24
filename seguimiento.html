@@ -2,7 +2,6 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Panel de Control de Viajes</title> 
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="estilos_addins3.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -12,9 +11,9 @@
 <div class="header-container">
     <h1 class="neon-title">PANEL - CONTROL DE VIAJES</h1>
     <div class="nav-shortcuts">
-        <button class="btn-nav" onclick="window.location.href='https://DANIEL-TORRES-create.github.io/tracking-ardepe/configurar.html'"><i class="fas fa-cog"></i> Configurar</button>
-        <button class="btn-nav" onclick="window.location.href='https://DANIEL-TORRES-create.github.io/tracking-ardepe/programar.html'"><i class="fas fa-calendar-plus"></i> Programar</button>
-        <button class="btn-nav" onclick="window.location.href='https://tu-servidor.com/historico.html'"><i class="fas fa-history"></i> Histórico</button>
+        <button class="btn-nav" id="btn-config"><i class="fas fa-cog"></i> Configurar</button>
+        <button class="btn-nav" id="btn-prog"><i class="fas fa-calendar-plus"></i> Programar</button>
+        <button class="btn-nav" id="btn-hist"><i class="fas fa-history"></i> Histórico</button>
     </div>
 </div>
 
@@ -51,7 +50,7 @@
     <div class="modal-content">
         <h3 id="modal-accion-titulo">Confirmar Acción</h3>
         <p>Indique motivo (Mín. 10 caracteres):</p>
-        <textarea id="motivo-txt" oninput="validarMotivo()" placeholder="Escriba aquí..."></textarea>
+        <textarea id="motivo-txt" oninput="validarMotivo()"></textarea>
         <div style="text-align:right; margin-top:15px;">
             <button onclick="cerrarModal()" class="btn-secundario">Salir</button>
             <button id="btn-confirmar" disabled onclick="ejecutarAccionManual()" class="btn-primario">Confirmar</button>
@@ -74,6 +73,7 @@
 
     window.renderizar = function(viajes) {
         const tbody = document.getElementById('lista-viajes');
+        if (!tbody) return;
         tbody.innerHTML = "";
         viajes.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
@@ -89,47 +89,34 @@
                     <small style="font-size:10px; font-weight:bold;">${v.progreso}%</small>
                 </td>
                 <td class="control-cell">
-                    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" title="Iniciar" onclick="${estaEnCurso ? '' : `prepararAccion('${v.idViaje}', 'INICIAR')`}"><i class="fas fa-play-circle"></i></button>
-                    <button class="btn-ctrl" title="Finalizar" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')"><i class="fas fa-check-circle" style="color:var(--primary)"></i></button>
-                    <button class="btn-ctrl" title="Cancelar" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')"><i class="fas fa-ban" style="color:var(--danger)"></i></button>
+                    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" onclick="${estaEnCurso ? '' : `prepararAccion('${v.idViaje}', 'INICIAR')`}"><i class="fas fa-play-circle"></i></button>
+                    <button class="btn-ctrl" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')"><i class="fas fa-check-circle" style="color:var(--primary)"></i></button>
+                    <button class="btn-ctrl" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')"><i class="fas fa-ban" style="color:var(--danger)"></i></button>
                 </td>
                 <td class="vistas-cell">
-                    <button class="btn-vista" title="Línea de Tiempo" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')"><i class="fas fa-stream"></i></button>
+                    <button class="btn-vista" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')"><i class="fas fa-stream"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    function prepararAccion(id, tipo) {
-        _viajeSeleccionado = id;
-        _tipoAccionManual = tipo;
-        document.getElementById('modal-accion-titulo').innerText = tipo + " VIAJE";
-        document.getElementById('modal-cancel').style.display = 'flex';
-    }
-
     function ejecutarAccionManual() {
         const btn = document.getElementById('btn-confirmar');
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        btn.innerHTML = 'Procesando...';
         const motivo = document.getElementById('motivo-txt').value;
-
         fetch(`${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${_usuarioLogueado}`)
-        .then(() => {
-            cerrarModal();
-            actualizar();
-        });
+        .then(() => { cerrarModal(); actualizar(); });
     }
 
     function abrirResumen(data, placa) {
         const puntos = JSON.parse(decodeURIComponent(data));
         document.getElementById('side-placa').innerText = placa;
-        let html = "";
-        puntos.forEach(p => {
-            const clase = p.deteccion === "SI" ? "done" : (p.deteccion === "FORZADO" ? "forced" : "");
-            html += `<div class="step ${clase}"><strong>${p.punto}</strong><br><small>${p.realHora !== "--:--" ? p.realHora : 'Pendiente'}</small></div>`;
-        });
-        document.getElementById('timeline-v').innerHTML = html;
+        document.getElementById('timeline-v').innerHTML = puntos.map(p => `
+            <div class="step ${p.deteccion === 'SI' ? 'done' : (p.deteccion === 'FORZADO' ? 'forced' : '')}">
+                <strong>${p.punto}</strong><br><small>${p.realHora}</small>
+            </div>`).join('');
         document.getElementById('side-panel').classList.add('open');
     }
 
@@ -141,6 +128,12 @@
         return {
             initialize(api, state, callback) {
                 api.getSession(s => { _usuarioLogueado = s.userName; });
+                
+                // NAVEGACIÓN CORREGIDA SEGÚN JSON
+                document.getElementById('btn-config').onclick = () => api.setState("TRK_ARDEPE_CONTAINER/ActivityLink/TRK_ARDEPE_CONFIG");
+                document.getElementById('btn-prog').onclick = () => api.setState("TRK_ARDEPE_CONTAINER/ActivityLink/TRK_ARDEPE_PROG");
+                document.getElementById('btn-hist').onclick = () => api.setState("TRK_ARDEPE_CONTAINER/ActivityLink/TRK_ARDEPE_HIST");
+                
                 actualizar();
                 setInterval(actualizar, 60000);
                 callback();
