@@ -9,9 +9,8 @@
 </head>
 <body>
 
-<div class="main-header">
+<div class="header-container">
     <h1 class="neon-title">PANEL - CONTROL DE VIAJES</h1>
-    <div id="user-display" style="color: white; font-size: 13px; font-weight: bold;"></div>
 </div>
 
 <div class="dashboard">
@@ -29,53 +28,25 @@
             </tr>
         </thead>
         <tbody id="lista-viajes">
-            <tr><td colspan="8" style="text-align:center; padding:50px;">Sincronizando con el servidor...</td></tr>
+            <tr><td colspan="8" style="text-align:center; padding:40px;">Cargando datos de flota...</td></tr>
         </tbody>
-    </table>
-</div>
-
-<div id="side-panel">
-    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:20px;">
-        <h2 id="side-placa" style="margin:0; font-weight:800;">Resumen</h2>
-        <button onclick="cerrarPanel()" style="border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
-    </div>
-    <div id="timeline-v" style="border-left: 2px solid #eee; margin-left: 15px; padding-left: 25px;"></div>
-</div>
-
-<div id="modal-detalle-full">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-        <h2 id="det-titulo" style="margin:0; font-weight:800; font-size:28px;">Detalle de Viaje</h2>
-        <button onclick="cerrarDetalle()" style="background:var(--bg-dark); color:white; border:none; padding:10px 25px; border-radius:30px; cursor:pointer; font-weight:bold;">VOLVER AL PANEL</button>
-    </div>
-    <table class="monitor-table">
-        <thead>
-            <tr style="background: var(--bg-dark); color: white;">
-                <th>Punto Control</th>
-                <th>Hora Plan</th>
-                <th>Llegada Real</th>
-                <th>KM Plan</th>
-                <th>KM Real</th>
-                <th style="text-align:center;">Detección</th>
-            </tr>
-        </thead>
-        <tbody id="det-tabla-body"></tbody>
     </table>
 </div>
 
 <div id="modal-cancel" style="display:none;" class="modal-full-bg">
     <div class="modal-content">
-        <h3 id="modal-accion-titulo" style="margin-top:0;">Acción Manual</h3>
-        <p style="font-size:14px; color:#555;">Indique el motivo o comentario (Mín. 10 caracteres):</p>
-        <textarea id="motivo-txt" oninput="validarMotivo()"></textarea>
-        <div style="text-align:right;">
-            <button onclick="cerrarModal()" style="padding:10px 20px; border:none; background:#eee; border-radius:6px; cursor:pointer; margin-right:10px;">Cerrar</button>
-            <button id="btn-confirmar" disabled onclick="ejecutarAccionManual()" style="padding:10px 20px; border:none; background:var(--danger); color:white; border-radius:6px; cursor:pointer; font-weight:bold;">Confirmar Registro</button>
+        <h3 id="modal-accion-titulo">Confirmar Acción</h3>
+        <p>Indique motivo (Mín. 10 caracteres):</p>
+        <textarea id="motivo-txt" oninput="validarMotivo()" placeholder="Escriba aquí..."></textarea>
+        <div style="text-align:right; margin-top:15px;">
+            <button onclick="cerrarModal()" style="padding:8px 15px; cursor:pointer;">Salir</button>
+            <button id="btn-confirmar" disabled onclick="ejecutarAccionManual()" style="padding:8px 15px; background:var(--danger); color:white; border:none; cursor:pointer;">Confirmar</button>
         </div>
     </div>
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec"; 
     let _usuarioLogueado = "Monitor";
     let _viajeSeleccionado = null;
     let _tipoAccionManual = "";
@@ -89,40 +60,40 @@
 
     window.renderizar = function(viajes) {
         const tbody = document.getElementById('lista-viajes');
-        if (!viajes || viajes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px;">No se encontraron viajes activos.</td></tr>';
-            return;
-        }
         tbody.innerHTML = "";
         
+        if (!viajes || viajes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay viajes activos en este momento.</td></tr>';
+            return;
+        }
+
         viajes.forEach(v => {
-            const estaEnCurso = v.estado === "EN CURSO";
+            const estaEnCurso = (v.estado === "EN CURSO");
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><b style="font-size:15px;">${v.placa}</b><br><small style="color:#777; font-weight:bold;">${v.conductor || 'Sin Conductor'}</small></td>
+                <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor || 'Sin Conductor'}</small></td>
                 <td><small>${v.ruta}</small></td>
-                <td><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${v.origen}<br><i class="fas fa-flag-checkered" style="color:#333"></i> ${v.destino}</td>
-                <td style="font-weight:800; color:var(--primary); font-size:14px;">${v.salidaReal}</td>
-                <td style="font-weight:800; font-size:14px;">${v.llegadaEstimada}</td>
+                <td><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${v.origen}<br><i class="fas fa-flag-checkered"></i> ${v.destino}</td>
+                <td style="font-weight:bold; color:var(--primary)">${v.salidaReal}</td>
+                <td style="font-weight:bold;">${v.llegadaEstimada}</td>
                 <td>
                     <div class="segment-bar">${Array.from({length:10}, (_,i) => `<div class="segment ${i < (v.progreso/10) ? 'active' : ''}"></div>`).join('')}</div>
-                    <small style="font-weight:bold; color:var(--success);">${v.progreso}% completado</small>
+                    <small style="font-size:10px; font-weight:bold;">${v.progreso}%</small>
                 </td>
                 <td class="control-cell">
                     <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" title="Iniciar viaje manualmente" onclick="${estaEnCurso ? '' : `prepararAccion('${v.idViaje}', 'INICIAR')`}"><i class="fas fa-play-circle"></i></button>
-                    <button class="btn-ctrl" title="Finalizar y mover a histórico" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')"><i class="fas fa-check-circle" style="color:var(--primary)"></i></button>
+                    <button class="btn-ctrl" title="Finalizar viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')"><i class="fas fa-check-circle" style="color:var(--primary)"></i></button>
                     <button class="btn-ctrl" title="Cancelar viaje" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')"><i class="fas fa-ban" style="color:var(--danger)"></i></button>
                 </td>
                 <td class="vistas-cell">
-                    <button class="btn-vista" title="Ver línea de tiempo" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')"><i class="fas fa-list-ul"></i></button>
-                    <button class="btn-vista" title="Ver detalle de viaje" onclick="abrirDetalle('${v.placa}', '${encodeURIComponent(v.itinerarioFull)}')"><i class="fas fa-file-invoice"></i></button>
+                    <button class="btn-vista" title="Ver línea de tiempo" onclick="alert('Abriendo Resumen...')"><i class="fas fa-stream"></i></button>
+                    <button class="btn-vista" title="Ver detalle de viaje" onclick="alert('Abriendo Detalle...')"><i class="fas fa-file-alt"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // --- OPERACIONES ---
     function prepararAccion(id, tipo) {
         _viajeSeleccionado = id;
         _tipoAccionManual = tipo;
@@ -139,45 +110,6 @@
         });
     }
 
-    // --- VISTAS ---
-    function abrirResumen(data, placa) {
-        const puntos = JSON.parse(decodeURIComponent(data));
-        document.getElementById('side-placa').innerText = "Timeline: " + placa;
-        let html = "";
-        puntos.forEach(p => {
-            let color = p.deteccion === "SI" ? "#1e8e3e" : (p.deteccion === "FORZADO" ? "#d93025" : "#ccc");
-            html += `<div style="margin-bottom:20px; position:relative; padding-left:10px;">
-                <div style="position:absolute; left:-33px; top:0; width:14px; height:14px; border-radius:50%; background:${color}; border:3px solid white; box-shadow:0 0 0 2px ${color};"></div>
-                <strong style="font-size:13px;">${p.punto}</strong><br>
-                <small style="color:#666;">Llegada: ${p.realHora}</small>
-            </div>`;
-        });
-        document.getElementById('timeline-v').innerHTML = html;
-        document.getElementById('side-panel').classList.add('open');
-    }
-
-    function abrirDetalle(placa, data) {
-        const puntos = JSON.parse(decodeURIComponent(data));
-        document.getElementById('det-titulo').innerText = "Detalle de Ruta: " + placa;
-        let html = "";
-        puntos.forEach(p => {
-            let icono = p.deteccion === 'FORZADO' ? '<b style="color:red">X</b>' : (p.deteccion === 'SI' ? '<b style="color:green">✓</b>' : '--');
-            html += `<tr>
-                <td><b>${p.punto}</b></td>
-                <td>${p.planHora}</td>
-                <td>${p.realHora}</td>
-                <td>${p.planKm} km</td>
-                <td>${p.realKm} km</td>
-                <td style="text-align:center">${icono}</td>
-            </tr>`;
-        });
-        document.getElementById('det-tabla-body').innerHTML = html;
-        document.getElementById('modal-detalle-full').style.display = 'block';
-    }
-
-    // --- UTILS ---
-    function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); }
-    function cerrarDetalle() { document.getElementById('modal-detalle-full').style.display = 'none'; }
     function cerrarModal() { document.getElementById('modal-cancel').style.display = 'none'; document.getElementById('motivo-txt').value = ""; }
     function validarMotivo() { document.getElementById('btn-confirmar').disabled = document.getElementById('motivo-txt').value.length < 10; }
 
@@ -186,7 +118,6 @@
             initialize(api, state, callback) {
                 api.getSession(s => { 
                     _usuarioLogueado = s.userName;
-                    document.getElementById('user-display').innerText = "Monitor: " + s.userName; 
                 });
                 actualizar();
                 setInterval(actualizar, 60000);
@@ -194,6 +125,9 @@
             }
         };
     };
+    
+    // Fallback para pruebas fuera de Geotab
+    actualizar();
 </script>
 </body>
 </html>
