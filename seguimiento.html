@@ -2,37 +2,35 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;800&display=swap" rel="stylesheet">
+    <title>Panel de Control de Viajes</title> 
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="estilos_addins3.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-<div class="header-top">
-    <h2><i class="fas fa-satellite-dish"></i> PANEL DE CONTROL DE VIAJES</h2>
-    <div id="clock" style="font-weight: 800; color: var(--neon-accent);"></div>
+<div class="main-header">
+    <h1 class="neon-title">PANEL - CONTROL DE VIAJES</h1>
+    <div id="user-info" style="font-size: 12px; color: #fff; opacity: 0.7;"></div>
 </div>
 
 <div class="dashboard">
-    <div class="kpi-container">
-        <div class="kpi-card"><h3>En Ruta</h3><span class="value" id="kpi-ruta">0</span></div>
-        <div class="kpi-card" style="border-left-color: var(--danger);"><h3>Retrasos</h3><span class="value" id="kpi-retrasos">0</span></div>
-        <div class="kpi-card" style="border-left-color: var(--warning);"><h3>Programados</h3><span class="value" id="kpi-pendientes">0</span></div>
-        <div class="kpi-card" style="border-left-color: var(--success);"><h3>Eficiencia</h3><span class="value" id="kpi-cumplimiento">0%</span></div>
-    </div>
-
     <table class="monitor-table">
         <thead>
             <tr>
                 <th>UNIDAD / CONDUCTOR</th>
                 <th>RUTA</th>
                 <th>ORIGEN / DESTINO</th>
-                <th>PROGRESO</th>
+                <th>SALIDA REAL</th>
                 <th>LLEGADA EST.</th>
-                <th>ACCIONES</th>
+                <th>PROGRESO</th>
+                <th>CONTROL DEL VIAJE</th>
+                <th>VISTAS</th>
             </tr>
         </thead>
-        <tbody id="lista-viajes"></tbody>
+        <tbody id="lista-viajes">
+            <tr><td colspan="8" style="text-align:center; padding:40px;">Cargando flota...</td></tr>
+        </tbody>
     </table>
 </div>
 
@@ -46,44 +44,42 @@
 </div>
 
 <div id="modal-detalle-full">
-    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px;">
-        <h2 id="det-titulo" style="font-weight: 800;"></h2>
-        <button onclick="cerrarDetalle()" class="btn-action" style="background:var(--secondary); color:white; padding:10px 20px; border-radius:30px;">CERRAR</button>
-    </div>
+    <button class="btn-volver" onclick="cerrarDetalle()"><i class="fas fa-arrow-left"></i> VOLVER</button>
+    <button class="btn-volver" style="left:120px; background:var(--primary);" onclick="verEnMapa()"><i class="fas fa-map-marked-alt"></i> VER EN MAPA</button>
     
-    <table class="monitor-table" style="font-size: 13px;">
-        <thead>
-            <tr style="background: var(--secondary); color: white;">
-                <th>Punto</th>
-                <th>Hora Plan</th>
-                <th>Llegada Real</th>
-                <th>Salida Real</th>
-                <th style="color:var(--neon-accent);">Pernocte Real</th>
-                <th>KM Tramo Plan</th>
-                <th>KM Tramo Real</th>
-                <th>Detección</th>
+    <h2 id="det-titulo" style="margin-top:20px;">Auditoría de Viaje</h2>
+    <table class="monitor-table">
+        <thead style="background:#3c4043; color:white;">
+            <tr>
+                <th>PUNTO</th>
+                <th>HORA PLAN</th>
+                <th>HORA REAL</th>
+                <th>KM TRAMO PLAN</th>
+                <th>KM TRAMO REAL</th>
+                <th>DETECCIÓN</th>
             </tr>
         </thead>
         <tbody id="det-tabla-body"></tbody>
     </table>
 </div>
 
-<script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec";
-    let _usuarioLogueado = "Monitor";
+<div id="modal-cancel" style="display:none;" class="modal-full-bg">
+    <div class="modal-content">
+        <h3 id="modal-accion-titulo">Confirmar Acción</h3>
+        <p id="modal-instruccion">Indique motivo (Mín. 10 caracteres):</p>
+        <textarea id="motivo-txt" oninput="validarMotivo()" placeholder="Escriba aquí la razón..."></textarea>
+        <div style="text-align:right; margin-top:10px;">
+            <button onclick="cerrarModal()" class="btn-volver" style="position:static; background:#777;">Salir</button>
+            <button id="btn-confirmar" disabled onclick="ejecutarAccionManual()" style="padding:8px 15px; background: var(--danger); color:white; border:none; border-radius:4px; cursor:pointer;">Confirmar</button>
+        </div>
+    </div>
+</div>
 
-    function calcularPernocteReal(entrada, salida) {
-        if (!entrada || !salida || entrada === "--:--" || salida === "--:--") return "00:00";
-        try {
-            let e = new Date(entrada.split(' ').reverse().join(' '));
-            let s = new Date(salida.split(' ').reverse().join(' '));
-            let diff = Math.floor((s - e) / 60000);
-            if (diff < 0) return "00:00";
-            let h = Math.floor(diff / 60);
-            let m = diff % 60;
-            return (h < 10 ? "0"+h : h) + ":" + (m < 10 ? "0"+m : m);
-        } catch(err) { return "00:00"; }
-    }
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec"; 
+    let _usuarioLogueado = "Monitor";
+    let _viajeSeleccionado = null;
+    let _tipoAccionManual = "";
 
     function actualizar() {
         const script = document.createElement('script');
@@ -95,38 +91,45 @@
     window.renderizar = function(viajes) {
         const tbody = document.getElementById('lista-viajes');
         tbody.innerHTML = "";
-        let ruta = 0, pendientes = 0;
-
+        
         viajes.forEach(v => {
-            if (v.estado === "EN CURSO") ruta++; else pendientes++;
+            const estaEnCurso = v.estado === "EN CURSO";
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><div style="font-weight:800;">${v.placa}</div><div style="font-size:10px; color:#8e8e93;">${v.conductor}</div></td>
-                <td><small>${v.ruta}</small></td>
-                <td><div style="font-size:11px;"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${v.origen}<br><i class="fas fa-flag-checkered"></i> ${v.destino}</div></td>
+                <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
+                <td>${v.ruta}</td>
+                <td><i class="fas fa-map-marker-alt"></i> ${v.origen}<br><i class="fas fa-flag-checkered"></i> ${v.destino}</td>
+                <td style="font-weight:bold; color:var(--primary)">${v.salidaReal}</td>
+                <td style="font-weight:bold;">${v.llegadaEstimada}</td>
                 <td>
                     <div class="segment-bar">${Array.from({length:10}, (_,i) => `<div class="segment ${i < (v.progreso/10) ? 'active' : ''}"></div>`).join('')}</div>
-                    <small style="font-size:9px; font-weight:bold;">${v.progreso}%</small>
+                    <small>${v.progreso}% completado</small>
                 </td>
-                <td style="font-weight:800; color:var(--primary);">${v.llegadaEstimada}</td>
-                <td>
-                    <button class="btn-action" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')"><i class="fas fa-stream"></i></button>
-                    <button class="btn-action" onclick="abrirDetalle('${v.placa}', '${encodeURIComponent(v.itinerarioFull)}')"><i class="fas fa-file-invoice"></i></button>
+                <td class="control-cell">
+                    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" onclick="${estaEnCurso ? '' : `prepararAccion('${v.idViaje}', 'INICIAR')`}" title="Iniciar viaje manualmente"><i class="fas fa-play"></i></button>
+                    <button class="btn-ctrl" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')" title="Cerrar viaje y enviar a histórico"><i class="fas fa-check-circle" style="color:var(--primary)"></i></button>
+                    <button class="btn-ctrl" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')" title="Anular viaje por incidencia"><i class="fas fa-ban" style="color:var(--danger)"></i></button>
+                </td>
+                <td class="vistas-cell">
+                    <button class="btn-vista" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')" title="Ver línea de tiempo"><i class="fas fa-stream"></i></button>
+                    <button class="btn-vista" onclick="abrirDetalle('${v.placa}', '${encodeURIComponent(v.itinerarioFull)}')" title="Ver detalle de viaje"><i class="fas fa-file-alt"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
-        document.getElementById('kpi-ruta').innerText = ruta;
-        document.getElementById('kpi-pendientes').innerText = pendientes;
     }
 
+    // --- FUNCIONES DE VISTA ---
     function abrirResumen(data, placa) {
         const puntos = JSON.parse(decodeURIComponent(data));
         document.getElementById('side-placa').innerText = placa;
         let html = "";
         puntos.forEach(p => {
             const clase = p.deteccion === "SI" ? "done" : (p.deteccion === "FORZADO" ? "forced" : "");
-            html += `<div class="step ${clase}"><strong>${p.punto}</strong><br><small>${p.realHora}</small></div>`;
+            html += `<div class="step ${clase}">
+                <strong>${p.punto}</strong><br>
+                <small>${p.realHora !== "--:--" ? '<i class="fas fa-clock"></i> '+p.realHora : 'Pendiente'}</small>
+            </div>`;
         });
         document.getElementById('timeline-v').innerHTML = html;
         document.getElementById('side-panel').classList.add('open');
@@ -134,33 +137,54 @@
 
     function abrirDetalle(placa, data) {
         const puntos = JSON.parse(decodeURIComponent(data));
-        document.getElementById('det-titulo').innerText = "AUDITORÍA: " + placa;
+        document.getElementById('det-titulo').innerText = "Detalle de Ruta: " + placa;
         let html = "";
         puntos.forEach(p => {
-            let pReal = calcularPernocteReal(p.realHora, p.realSalida);
+            const detLog = p.deteccion === "FORZADO" ? `<span style="color:red"><b>X</b></span>` : (p.deteccion === "SI" ? `<span style="color:green">✓</span>` : "--");
             html += `<tr>
                 <td><b>${p.punto}</b></td>
                 <td>${p.planHora}</td>
                 <td>${p.realHora}</td>
-                <td>${p.realSalida}</td>
-                <td style="font-weight:800; color:var(--primary);">${pReal}</td>
                 <td>${p.planKm} km</td>
                 <td>${p.realKm} km</td>
-                <td>${p.deteccion === 'FORZADO' ? '<b style="color:red">X MANUAL</b>' : '✓ GPS'}</td>
+                <td style="text-align:center">${detLog}</td>
             </tr>`;
         });
         document.getElementById('det-tabla-body').innerHTML = html;
         document.getElementById('modal-detalle-full').style.display = 'block';
     }
 
+    // --- FUNCIONES OPERATIVAS ---
+    function prepararAccion(id, tipo) {
+        _viajeSeleccionado = id;
+        _tipoAccionManual = tipo;
+        document.getElementById('modal-accion-titulo').innerText = tipo + " VIAJE";
+        document.getElementById('modal-cancel').style.display = 'flex';
+    }
+
+    function ejecutarAccionManual() {
+        const motivo = document.getElementById('motivo-txt').value;
+        const url = `${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${encodeURIComponent(_usuarioLogueado)}`;
+        fetch(url).then(() => {
+            cerrarModal();
+            actualizar();
+        });
+    }
+
+    // --- UTILIDADES ---
     function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); }
     function cerrarDetalle() { document.getElementById('modal-detalle-full').style.display = 'none'; }
-    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+    function cerrarModal() { document.getElementById('modal-cancel').style.display = 'none'; document.getElementById('motivo-txt').value = ""; }
+    function validarMotivo() { document.getElementById('btn-confirmar').disabled = document.getElementById('motivo-txt').value.length < 10; }
+    function verEnMapa() { alert("Sincronizando con mapa..."); }
 
     geotab.addin.seguimiento = () => {
         return {
             initialize(api, state, callback) {
-                api.getSession(s => { document.getElementById('user-info').innerText = "Monitor: " + s.userName; });
+                api.getSession(s => { 
+                    _usuarioLogueado = s.userName;
+                    document.getElementById('user-info').innerText = "Monitor: " + s.userName; 
+                });
                 actualizar();
                 setInterval(actualizar, 60000);
                 callback();
