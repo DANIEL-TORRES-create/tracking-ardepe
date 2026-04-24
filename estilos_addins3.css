@@ -1,8 +1,13 @@
+/* =========================================
+   VARIABLES Y ESTILOS BASE
+   ========================================= */
 :root {
-    --primary: #004b93;
-    --navisaf-light: #e6f1fa;
-    --danger: #d93025;
-    --success: #1e8e3e;
+    --primary: #004b93;      /* Azul Navisaf */
+    --navisaf-light: #e6f1fa; /* Fondo celeste suave */
+    --danger: #d93025;       /* Rojo alertas/cancelar */
+    --success: #1e8e3e;      /* Verde progreso/confirmar */
+    --text-dark: #333333;
+    --border-color: #dddddd;
 }
 
 body {
@@ -10,8 +15,12 @@ body {
     background-color: #f8f9fa;
     margin: 0;
     padding: 0;
+    color: var(--text-dark);
 }
 
+/* =========================================
+   ENCABEZADO (NAV BAR)
+   ========================================= */
 .header-container {
     background-color: var(--navisaf-light);
     padding: 20px 35px;
@@ -31,6 +40,7 @@ body {
     position: relative;
 }
 
+/* El subrayado blanco grueso bajo el título */
 .neon-title::after {
     content: '';
     position: absolute;
@@ -57,42 +67,227 @@ body {
     font-weight: bold;
     cursor: pointer;
     transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .btn-nav:hover {
     background-color: #003366;
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-.dashboard { padding: 20px; }
-.monitor-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-.monitor-table thead { background: #e1e4e8; }
-.monitor-table th { padding: 15px; text-align: left; font-size: 11px; color: #444; text-transform: uppercase; border-bottom: 2px solid #ccc; }
-.monitor-table td { padding: 15px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
+/* =========================================
+   CONTENEDOR Y TABLA MONITOR
+   ========================================= */
+.dashboard {
+    padding: 20px;
+}
 
-.control-cell { border-right: 2px solid #ddd !important; text-align: center; background: #fafafa; }
-.vistas-cell { text-align: center; }
+.monitor-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
 
-.btn-ctrl, .btn-vista { border: none; background: none; cursor: pointer; font-size: 20px; padding: 5px 12px; transition: 0.2s; color: #444; }
-.btn-ctrl.disabled { color: #bdbdbd !important; cursor: not-allowed; }
-.btn-ctrl:hover:not(.disabled), .btn-vista:hover { transform: scale(1.2); color: var(--primary); }
+.monitor-table thead {
+    background: #e1e4e8;
+}
 
-.segment-bar { display: flex; gap: 3px; height: 10px; width: 110px; background: #eee; border-radius: 5px; margin-bottom: 4px; }
-.segment { flex: 1; background: #eee; }
-.segment.active { background: var(--success); }
+.monitor-table th {
+    padding: 15px;
+    text-align: left;
+    font-size: 11px;
+    color: #444;
+    text-transform: uppercase;
+    border-bottom: 2px solid #ccc;
+}
 
-.modal-full-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-.modal-content { background: white; padding: 30px; border-radius: 10px; width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-textarea { width: 100%; height: 100px; margin-top: 10px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+.monitor-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    vertical-align: middle;
+}
 
-.btn-primario { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-.btn-primario:disabled { background: #fabfb7; cursor: not-allowed; }
-.btn-secundario { background: #eee; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+/* Columnas con diseño específico */
+.control-cell {
+    border-right: 2px solid #ddd !important;
+    text-align: center;
+    background: #fafafa;
+}
 
-#side-panel { position: fixed; right: -450px; top: 0; width: 400px; height: 100%; background: white; transition: 0.4s; z-index: 1001; padding: 25px; padding-top: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
-#side-panel.open { right: 0; }
-.timeline-v { border-left: 2px solid #eee; margin-left: 20px; padding-left: 25px; position: relative; }
-.step { position: relative; margin-bottom: 25px; font-size: 13px; }
-.step::before { content: ''; position: absolute; left: -32px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #ccc; border: 2px solid white; box-shadow: 0 0 0 2px #ccc; }
-.step.done::before { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
-.step.forced::before { background: var(--danger); box-shadow: 0 0 0 2px var(--danger); }
+.vistas-cell {
+    text-align: center;
+}
+
+/* Botones dentro de la tabla */
+.btn-ctrl, .btn-vista {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 5px 12px;
+    transition: 0.2s;
+    color: #444;
+}
+
+.btn-ctrl.disabled {
+    color: #bdbdbd !important;
+    cursor: not-allowed;
+}
+
+.btn-ctrl:hover:not(.disabled), .btn-vista:hover {
+    transform: scale(1.2);
+    color: var(--primary);
+}
+
+/* =========================================
+   BARRA DE PROGRESO SEGMENTADA
+   ========================================= */
+.segment-bar {
+    display: flex;
+    gap: 3px;
+    height: 10px;
+    width: 110px;
+    background: #eee;
+    border-radius: 5px;
+    margin-bottom: 4px;
+}
+
+.segment {
+    flex: 1;
+    background: #eee;
+}
+
+.segment.active {
+    background: var(--success);
+}
+
+/* =========================================
+   MODALES (ACCIONES MANUALES)
+   ========================================= */
+.modal-full-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 400px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+textarea {
+    width: 100%;
+    height: 100px;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    font-family: inherit;
+    resize: none;
+}
+
+.btn-primario {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-primario:disabled {
+    background: #fabfb7;
+    cursor: not-allowed;
+}
+
+.btn-secundario {
+    background: #eee;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+/* =========================================
+   TIMELINE LATERAL (SIDE PANEL)
+   ========================================= */
+#side-panel {
+    position: fixed;
+    right: -450px; /* Oculto por defecto */
+    top: 0;
+    width: 400px;
+    height: 100%;
+    background: white;
+    transition: 0.4s ease-in-out;
+    z-index: 1001;
+    padding: 25px;
+    padding-top: 20px;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+#side-panel.open {
+    right: 0;
+}
+
+.timeline-v {
+    border-left: 2px solid #eee;
+    margin-left: 20px;
+    padding-left: 25px;
+    position: relative;
+    margin-top: 30px;
+}
+
+.step {
+    position: relative;
+    margin-bottom: 25px;
+    font-size: 13px;
+    color: #555;
+}
+
+/* El círculo del timeline */
+.step::before {
+    content: '';
+    position: absolute;
+    left: -32px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ccc; /* Pendiente */
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #ccc;
+}
+
+/* Círculo cuando el punto está completado (GPS) */
+.step.done::before {
+    background: var(--success);
+    box-shadow: 0 0 0 2px var(--success);
+}
+
+/* Círculo cuando el punto fue forzado manualmente */
+.step.forced::before {
+    background: var(--danger);
+    box-shadow: 0 0 0 2px var(--danger);
+}
