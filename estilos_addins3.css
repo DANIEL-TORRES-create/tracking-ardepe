@@ -4,31 +4,23 @@
     --success: #1e8e3e;
     --neon: #00f2ff;
     --bg-dark: #1c1f22;
-    --text-gray: #5f6368;
 }
 
 body {
-    font-family: 'Lexend', 'Roboto', sans-serif;
-    background-color: #f1f3f4;
+    font-family: 'Lexend', sans-serif;
+    background-color: #f8f9fa;
     margin: 0;
-    padding: 20px;
-    padding-top: 100px; /* Espacio para que el header no tape la tabla */
+    padding: 0;
 }
 
-/* HEADER FIJO SUPERIOR */
-.main-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
+/* HEADER CONTENEDOR - Empuja el contenido hacia abajo para que nada se tape */
+.header-container {
     background: var(--bg-dark);
-    padding: 20px 35px;
-    z-index: 1200;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
+    padding: 25px 35px;
+    border-bottom: 4px solid var(--primary);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 100;
 }
 
 .neon-title {
@@ -38,7 +30,6 @@ body {
     font-weight: 800;
     display: inline-block;
     position: relative;
-    letter-spacing: 1px;
 }
 
 .neon-title::after {
@@ -52,77 +43,87 @@ body {
     box-shadow: 0 0 15px var(--neon);
 }
 
-/* TABLA PRINCIPAL */
+/* DASHBOARD Y TABLA */
+.dashboard {
+    padding: 20px;
+}
+
 .monitor-table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 10px;
-    background: transparent;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.monitor-table thead {
+    background: #e1e4e8;
 }
 
 .monitor-table th {
-    background: #e1e4e8;
     padding: 15px;
     text-align: left;
     font-size: 11px;
-    color: var(--text-gray);
+    color: #444;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    position: sticky;
-    top: 80px;
-    z-index: 1000;
-}
-
-.monitor-table tr {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-bottom: 2px solid #ccc;
 }
 
 .monitor-table td {
     padding: 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
     vertical-align: middle;
-    border: none;
 }
 
-.monitor-table tr td:first-child { border-radius: 8px 0 0 8px; border-left: 5px solid var(--primary); }
-.monitor-table tr td:last-child { border-radius: 0 8px 8px 0; }
-
-/* BARRAS DE PROGRESO */
-.segment-bar {
-    display: flex;
-    gap: 3px;
-    height: 10px;
-    width: 120px;
-    background: #eee;
-    border-radius: 5px;
-    overflow: hidden;
-    margin-bottom: 5px;
+/* COLUMNAS SEPARADAS */
+.control-cell {
+    border-right: 2px solid #ddd !important;
+    text-align: center;
+    background: #fafafa;
 }
 
-.segment { flex: 1; background: #eee; }
-.segment.active { background: var(--success); box-shadow: 0 0 5px var(--success); }
+.vistas-cell {
+    text-align: center;
+}
 
-/* COLUMNAS DE ACCIÓN */
-.control-cell { border-right: 2px solid #f0f0f0 !important; text-align: center; background: #fafafa; }
-.vistas-cell { text-align: center; }
-
+/* BOTONES */
 .btn-ctrl, .btn-vista {
     border: none;
     background: none;
     cursor: pointer;
-    font-size: 18px;
-    padding: 8px;
+    font-size: 20px;
+    padding: 5px 12px;
     transition: 0.2s;
-    color: #444;
 }
 
-.btn-ctrl.disabled { color: #ccc !important; cursor: not-allowed; }
-.btn-ctrl:hover:not(.disabled), .btn-vista:hover { transform: scale(1.2); color: var(--primary); }
+/* Botón Iniciar (Play) Desactivado - Gris sólido visible */
+.btn-ctrl.disabled {
+    color: #bdbdbd !important;
+    cursor: not-allowed;
+    opacity: 1 !important;
+}
 
-/* MODALES Y PANELES */
-#side-panel { position: fixed; right: -450px; top: 0; width: 400px; height: 100%; background: white; box-shadow: -5px 0 20px rgba(0,0,0,0.1); transition: 0.4s; z-index: 1300; padding: 30px; padding-top: 100px; }
-#side-panel.open { right: 0; }
-#modal-detalle-full { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1400; padding: 40px; overflow-y: auto; }
-.modal-full-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1500; }
-.modal-content { background: white; padding: 30px; border-radius: 12px; width: 450px; }
-textarea { width: 100%; height: 100px; margin: 15px 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: inherit; }
+.btn-ctrl:hover:not(.disabled), .btn-vista:hover {
+    transform: scale(1.15);
+}
+
+/* BARRAS SEGMENTADAS */
+.segment-bar {
+    display: flex;
+    gap: 3px;
+    height: 10px;
+    width: 110px;
+    background: #eee;
+    border-radius: 5px;
+    margin-bottom: 4px;
+}
+
+.segment { flex: 1; background: #eee; }
+.segment.active { background: var(--success); }
+
+/* MODALES (Mantenidos para funcionalidad) */
+.modal-full-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+.modal-content { background: white; padding: 30px; border-radius: 10px; width: 400px; }
+textarea { width: 100%; height: 100px; margin-top: 10px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; }
