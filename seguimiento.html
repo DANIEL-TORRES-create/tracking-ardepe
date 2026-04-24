@@ -33,24 +33,25 @@
             </tr>
         </thead>
         <tbody id="lista-viajes">
-            <tr><td colspan="8" style="text-align:center; padding:40px;">Cargando flota...</td></tr>
+            <tr><td colspan="8" style="text-align:center; padding:40px;">Sincronizando datos...</td></tr>
         </tbody>
     </table>
 </div>
 
 <div id="side-panel">
     <div style="display:flex; justify-content: space-between; align-items:center;">
-        <h2 id="side-placa" style="margin:0;">Resumen</h2>
+        <h2 id="side-placa" style="margin:0; font-weight:800; color:var(--primary);">Resumen</h2>
         <button onclick="cerrarPanel()" style="border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
     </div>
-    <div id="timeline-v" style="margin-top:20px;"></div>
+    <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
+    <div id="timeline-v" class="timeline-v"></div>
 </div>
 
 <div id="modal-cancel" class="modal-full-bg" style="display:none;">
     <div class="modal-content">
         <h3 id="modal-accion-titulo">Confirmar Acción</h3>
         <p>Indique motivo (Mín. 10 caracteres):</p>
-        <textarea id="motivo-txt" oninput="validarMotivo()" placeholder="Escriba el motivo aquí..."></textarea>
+        <textarea id="motivo-txt" oninput="validarMotivo()" placeholder="Escriba aquí..."></textarea>
         <div style="text-align:right; margin-top:15px;">
             <button onclick="cerrarModal()" class="btn-secundario">Salir</button>
             <button id="btn-confirmar" disabled onclick="ejecutarAccionManual()" class="btn-primario">Confirmar</button>
@@ -59,7 +60,7 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "TU_NUEVA_URL_DE_DESPLIEGUE_AQUI"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxsjiko1gXPneCtXlyv7ql3wdRQtWYZJJAjC2DwP1wyRRi4zhIFShVzsKlu54wNMNfl/exec"; 
     let _usuarioLogueado = "Monitor";
     let _viajeSeleccionado = null;
     let _tipoAccionManual = "";
@@ -78,19 +79,22 @@
             const estaEnCurso = (v.estado === "EN CURSO");
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><b>${v.placa}</b><br><small>${v.conductor}</small></td>
+                <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
                 <td><small>${v.ruta}</small></td>
-                <td>${v.origen}<br>${v.destino}</td>
+                <td><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${v.origen}<br><i class="fas fa-flag-checkered"></i> ${v.destino}</td>
                 <td style="color:black; font-weight:bold;">${v.salidaReal}</td>
                 <td style="font-weight:bold;">${v.llegadaEstimada}</td>
-                <td>${v.progreso}%</td>
+                <td>
+                    <div class="segment-bar">${Array.from({length:10}, (_,i) => `<div class="segment ${i < (v.progreso/10) ? 'active' : ''}"></div>`).join('')}</div>
+                    <small style="font-size:10px; font-weight:bold;">${v.progreso}%</small>
+                </td>
                 <td class="control-cell">
-                    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" onclick="${estaEnCurso ? '' : `prepararAccion('${v.idViaje}', 'INICIAR')`}"><i class="fas fa-play"></i></button>
-                    <button class="btn-ctrl" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')"><i class="fas fa-check" style="color:var(--primary)"></i></button>
-                    <button class="btn-ctrl" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')"><i class="fas fa-times" style="color:var(--danger)"></i></button>
+                    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" title="Iniciar" onclick="${estaEnCurso ? '' : `prepararAccion('${v.idViaje}', 'INICIAR')`}"><i class="fas fa-play-circle"></i></button>
+                    <button class="btn-ctrl" title="Finalizar" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')"><i class="fas fa-check-circle" style="color:var(--primary)"></i></button>
+                    <button class="btn-ctrl" title="Cancelar" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')"><i class="fas fa-ban" style="color:var(--danger)"></i></button>
                 </td>
                 <td class="vistas-cell">
-                    <button class="btn-vista" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')"><i class="fas fa-bars"></i></button>
+                    <button class="btn-vista" title="Línea de Tiempo" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')"><i class="fas fa-stream"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -106,29 +110,43 @@
 
     function ejecutarAccionManual() {
         const btn = document.getElementById('btn-confirmar');
-        const motivo = document.getElementById('motivo-txt').value;
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        const motivo = document.getElementById('motivo-txt').value;
 
         fetch(`${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${_usuarioLogueado}`)
         .then(() => {
             cerrarModal();
-            actualizar(); // AUTO-REFRESH
+            actualizar();
         });
     }
 
     function abrirResumen(data, placa) {
-        document.getElementById('side-placa').innerText = placa;
-        document.getElementById('side-panel').classList.add('open');
-        // Lógica simple de timeline
         const puntos = JSON.parse(decodeURIComponent(data));
-        document.getElementById('timeline-v').innerHTML = puntos.map(p => `<div>${p.punto}: ${p.realHora}</div>`).join('');
+        document.getElementById('side-placa').innerText = placa;
+        let html = "";
+        puntos.forEach(p => {
+            const clase = p.deteccion === "SI" ? "done" : (p.deteccion === "FORZADO" ? "forced" : "");
+            html += `<div class="step ${clase}"><strong>${p.punto}</strong><br><small>${p.realHora !== "--:--" ? p.realHora : 'Pendiente'}</small></div>`;
+        });
+        document.getElementById('timeline-v').innerHTML = html;
+        document.getElementById('side-panel').classList.add('open');
     }
 
     function cerrarModal() { document.getElementById('modal-cancel').style.display = 'none'; document.getElementById('motivo-txt').value = ""; }
     function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); }
     function validarMotivo() { document.getElementById('btn-confirmar').disabled = document.getElementById('motivo-txt').value.length < 10; }
 
+    geotab.addin.seguimiento = () => {
+        return {
+            initialize(api, state, callback) {
+                api.getSession(s => { _usuarioLogueado = s.userName; });
+                actualizar();
+                setInterval(actualizar, 60000);
+                callback();
+            }
+        };
+    };
     actualizar();
 </script>
 </body>
