@@ -70,7 +70,7 @@
     // 1. FUNCIÓN DE REFRESCO DE DATOS
     function actualizar() {
         const script = document.createElement('script');
-        script.src = `${WEB_APP_URL}?read=viajes&callback=renderizar&v=${Date.now()}`;
+        script.src = '${WEB_APP_URL}?read=viajes&full=true&callback=renderizar&v=${Date.now()}';
         document.body.appendChild(script);
         script.onload = () => script.remove();
     }
