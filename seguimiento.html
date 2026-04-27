@@ -69,11 +69,12 @@
 
     // 1. FUNCIÓN DE REFRESCO DE DATOS
     function actualizar() {
-        const script = document.createElement('script');
-        script.src = '${WEB_APP_URL}?read=viajes&callback=renderizar&v=${Date.now()}';
-        document.body.appendChild(script);
-        script.onload = () => script.remove();
-    }
+    const script = document.createElement('script');
+    // Usamos concatenación simple para evitar errores de símbolos
+    script.src = WEB_APP_URL + "?read=viajes&callback=renderizar&nocache=" + new Date().getTime();
+    document.body.appendChild(script);
+    script.onload = function() { script.remove(); };
+}
 
     // 2. RENDERIZADO DE LA TABLA
     window.renderizar = function(viajes) {
