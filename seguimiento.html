@@ -324,11 +324,6 @@
                 // Obtener usuario real de Geotab
                 api.getSession(s => { _usuarioLogueado = s.userName; });
                 
-                // Configurar Navegación entre Add-ins
-                document.getElementById('nav-config').onclick = () => api.setState("TRK_ARDEPE_CONTAINER/TRK_ARDEPE_CONFIG");
-                document.getElementById('nav-prog').onclick = () => api.setState("TRK_ARDEPE_CONTAINER/TRK_ARDEPE_PROG");
-                document.getElementById('nav-hist').onclick = () => api.setState("TRK_ARDEPE_CONTAINER/TRK_ARDEPE_HIST");
-                
                 // Carga inicial y auto-refresco cada 1 minuto
                 actualizar();
                 setInterval(actualizar, 60000);
