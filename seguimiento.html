@@ -142,6 +142,19 @@
     function prepararAccion(id, tipo) {
         _viajeSeleccionado = id;
         _tipoAccionManual = tipo;
+        
+        // Limpiamos el modal antes de abrirlo
+        document.getElementById('motivo-txt').value = "";
+        document.getElementById('btn-confirmar').disabled = true;
+        document.getElementById('btn-confirmar').innerHTML = "Confirmar";
+        
+        // Ajustamos dinámicamente el estilo del botón según la acción
+        const btnConfirmar = document.getElementById('btn-confirmar');
+        btnConfirmar.className = ""; // Limpiar clases previas
+        if (tipo === "INICIAR") btnConfirmar.classList.add("btn-primario", "bg-iniciar");
+        if (tipo === "FINALIZAR") btnConfirmar.classList.add("btn-primario", "bg-finalizar");
+        if (tipo === "CANCELAR") btnConfirmar.classList.add("btn-primario", "bg-cancelar");
+
         document.getElementById('modal-accion-titulo').innerText = "CONFIRMAR " + tipo;
         document.getElementById('modal-cancel').style.display = 'flex';
     }
@@ -174,24 +187,24 @@
 
     // 4. LÓGICA DEL PANEL LATERAL (RESUMEN)
     function abrirResumen(data, placa, logAuditoria) {
-        const puntos = JSON.parse(decodeURIComponent(data));
+        let puntos = JSON.parse(decodeURIComponent(data));
         const rawLog = decodeURIComponent(logAuditoria);
         
         document.getElementById('side-placa').innerText = "Ruta: " + placa;
         const timeline = document.getElementById('timeline-v');
         timeline.innerHTML = "";
         
-        // Inyectar sección de auditoría visual si existen registros
+        // 1. RENDERIZADO DE COMENTARIOS DE AUDITORÍA SUPERIOR
         if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
-            let logsHtml = `<div class="auditoria-panel-box" style="background:#fff3cd; border-left:4px solid #ffc107; padding:10px; margin-bottom:15px; border-radius:4px; font-size:12px;">`;
-            
-            // Separar logs si hay inicio y fin juntos
+            let logsHtml = `<div class="auditoria-panel-box">`;
             let partesLog = rawLog.split(" / ");
             partesLog.forEach(log => {
                 if (log.includes("INICIO")) {
-                    logsHtml += `<p style="margin:4px 0;"><i class="fas fa-flag" style="color:var(--danger); margin-right:6px;"></i> <b>Auditoría Inicio:</b> ${log}</p>`;
-                } else if (log.includes("FIN")) {
-                    logsHtml += `<p style="margin:4px 0;"><i class="fas fa-flag-checkered" style="color:var(--primary); margin-right:6px;"></i> <b>Auditoría Fin:</b> ${log}</p>`;
+                    logsHtml += `<p style="margin:4px 0; color:#b58105;"><i class="fas fa-play" style="margin-right:6px;"></i> <b>Auditoría Inicio:</b> ${log}</p>`;
+                } else if (log.includes("FIN") || log.includes("CANCELADO")) {
+                    let icono = log.includes("CANCELADO") ? "fa-ban" : "fa-flag-checkered";
+                    let etiqueta = log.includes("CANCELADO") ? "Auditoría Cancelar:" : "Auditoría Fin:";
+                    logsHtml += `<p style="margin:4px 0; color:#004b93;"><i class="fas ${icono}" style="margin-right:6px;"></i> <b>${etiqueta}</b> ${log}</p>`;
                 } else {
                     logsHtml += `<p style="margin:4px 0;"><i class="fas fa-user-edit" style="margin-right:6px;"></i> <b>Nota:</b> ${log}</p>`;
                 }
@@ -200,20 +213,61 @@
             timeline.innerHTML += logsHtml;
         }
 
-        // Construir la línea de tiempo de hitos
-        timeline.innerHTML += puntos.map(p => {
-            let claseCirculo = "";
-            if (p.deteccion === "SI") claseCirculo = "done";
-            if (p.deteccion === "FORZADO") claseCirculo = "forced";
+        // 2. REUBICACIÓN LÓGICA E INTELIGENTE DEL INICIO_MANUAL
+        // Buscamos si existe un hito de inicio manual en el array
+        let indiceInicioManual = puntos.findIndex(p => p.punto === "INICIO_MANUAL");
+        if (indiceInicioManual > -1) {
+            let [inicioManualNode] = puntos.splice(indiceInicioManual, 1); // Lo removemos de su posición actual
+            // Lo insertamos en la segunda posición (índice 1), justo al costado/debajo de Cochera Tambo
+            puntos.splice(1, 0, inicioManualNode);
+        }
 
-            return `
-                <div class="step ${claseCirculo}" style="margin-bottom:20px;">
-                    <strong style="color:var(--primary);">${p.punto}</strong><br>
-                    <span style="font-size:11px; color:#555;">Plan: ${p.planHora}</span><br>
-                    <span style="font-size:11px; font-weight:bold; color:#333;">Real: ${p.realHora}</span>
+        // 3. CONTENEDOR INTERNO PARA LAS TARJETAS CON CONEXIÓN CONECTOR-LÍNEA
+        let containerHtml = `<div class="timeline-cards-container">`;
+        
+        puntos.forEach((p, index) => {
+            let esCompletado = (p.deteccion === "SI" || p.deteccion === "FORZADO");
+            let esInicioManual = (p.punto === "INICIO_MANUAL");
+            
+            // Asignación de iconos temáticos por jerarquía
+            let iconoHito = "fa-map-marker-alt"; // Icono estándar intermedio
+            if (index === 0) iconoHito = "fa-warehouse"; // Origen / Cochera
+            if (index === puntos.length - 1) iconoHito = "fa-flag-checkered"; // Fin real de ruta
+            if (esInicioManual) iconoHito = "fa-play-circle";
+
+            // Determinar clases CSS para el conector y la tarjeta
+            let claseEstado = "pending";
+            if (p.deteccion === "SI") claseEstado = "done";
+            if (p.deteccion === "FORZADO" || esInicioManual) claseEstado = "forced";
+
+            // Determinar si la línea que conecta con el Siguiente punto debe ser sólida o gris/punteada
+            let sigPunto = puntos[index + 1];
+            let lineaClase = "line-pending";
+            if (esCompletado && sigPunto && (sigPunto.deteccion === "SI" || sigPunto.deteccion === "FORZADO")) {
+                lineaClase = "line-done"; // Conexión activa/recorrida
+            }
+
+            containerHtml += `
+                <div class="timeline-card-wrapper ${claseEstado}">
+                    <div class="timeline-node">
+                        <i class="fas ${iconoHito}"></i>
+                    </div>
+                    
+                    ${index < puntos.length - 1 ? `<div class="timeline-connector-line ${lineaClase}"></div>` : ''}
+                    
+                    <div class="timeline-card">
+                        <div class="card-header-point">${p.punto}</div>
+                        <div class="card-body-times">
+                            <div><i class="far fa-clock"></i> Plan: <span>${p.planHora}</span></div>
+                            <div class="time-real"><i class="fas fa-satellite-dish"></i> Real: <span>${p.realHora}</span></div>
+                        </div>
+                    </div>
                 </div>
             `;
-        }).join('');
+        });
+
+        containerHtml += `</div>`;
+        timeline.innerHTML += containerHtml;
         
         document.getElementById('side-panel').classList.add('open');
     }
