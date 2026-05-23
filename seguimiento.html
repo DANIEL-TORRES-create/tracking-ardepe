@@ -41,8 +41,8 @@
 <div id="side-panel">
     <div class="side-panel-header">
         <div>
-            <h2 id="side-placa" style="margin:0; font-weight:800; color:var(--primary); font-size:18px;">Ruta</h2>
-            <small style="color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px;">Resumen de Viaje</small>
+            <h2 style="margin:0; font-weight:800; color:var(--primary); font-size:18px; text-transform:uppercase; letter-spacing:0.5px;">Resumen de Viaje</h2>
+            <small id="side-placa" style="color:#444; font-weight:bold; font-size:13px; display:block; margin-top:2px;">Placa: </small>
         </div>
         <button onclick="cerrarPanel()" class="btn-close-panel" title="Cerrar Vista">&times;</button>
     </div>
@@ -190,14 +190,35 @@
 
     // 4. LÓGICA DEL PANEL LATERAL (RESUMEN)
     function abrirResumen(data, placa, logAuditoria) {
+        // ====================================================================
+        // EFECTO VISUAL: MARCAR FILA ACTIVA EN LA TABLA PRINCIPAL (LÍNEA ROJA)
+        // ====================================================================
+        // 1. Quitamos la marca roja a cualquier otra fila previamente seleccionada
+        document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
+        
+        // 2. Detectamos el botón presionado y encuadramos su fila (TR) en rojo oscuro
+        if (typeof event !== 'undefined' && event.currentTarget) {
+            const botonActivo = event.currentTarget;
+            if (botonActivo.closest('tr')) {
+                botonActivo.closest('tr').classList.add('fila-activa');
+            }
+        }
+
+        // ====================================================================
+        // PROCESAMIENTO DE DATOS ENTRANTES
+        // ====================================================================
         let puntos = JSON.parse(decodeURIComponent(data));
         const rawLog = decodeURIComponent(logAuditoria);
         
-        document.getElementById('side-placa').innerText = "Ruta: " + placa;
+        // Inyectamos el número de unidad en la cabecera (La alineación se controla por CSS)
+        document.getElementById('side-placa').innerText = "Placa: " + placa;
+        
         const timeline = document.getElementById('timeline-v');
         timeline.innerHTML = "";
         
-        // 1. RENDERIZADO DE COMENTARIOS DE AUDITORÍA SUPERIOR
+        // ====================================================================
+        // 1. RENDERIZADO DE COMENTARIOS DE AUDITORÍA SUPERIOR (CAJA AMARILLA)
+        // ====================================================================
         if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
             let logsHtml = `<div class="auditoria-panel-box">`;
             let partesLog = rawLog.split(" / ");
@@ -216,38 +237,41 @@
             timeline.innerHTML += logsHtml;
         }
 
+        // ====================================================================
         // 2. REUBICACIÓN LÓGICA E INTELIGENTE DEL INICIO_MANUAL
-        // Buscamos si existe un hito de inicio manual en el array
+        // ====================================================================
         let indiceInicioManual = puntos.findIndex(p => p.punto === "INICIO_MANUAL");
         if (indiceInicioManual > -1) {
-            let [inicioManualNode] = puntos.splice(indiceInicioManual, 1); // Lo removemos de su posición actual
-            // Lo insertamos en la segunda posición (índice 1), justo al costado/debajo de Cochera Tambo
+            let [inicioManualNode] = puntos.splice(indiceInicioManual, 1); 
+            // Lo insertamos en la segunda posición, justo debajo del origen (Cochera)
             puntos.splice(1, 0, inicioManualNode);
         }
 
-        // 3. CONTENEDOR INTERNO PARA LAS TARJETAS CON CONEXIÓN CONECTOR-LÍNEA
+        // ====================================================================
+        // 3. GENERACIÓN DINÁMICA DE TARJETAS (CARDS VISUALES)
+        // ====================================================================
         let containerHtml = `<div class="timeline-cards-container">`;
         
         puntos.forEach((p, index) => {
             let esCompletado = (p.deteccion === "SI" || p.deteccion === "FORZADO");
             let esInicioManual = (p.punto === "INICIO_MANUAL");
             
-            // Asignación de iconos temáticos por jerarquía
-            let iconoHito = "fa-map-marker-alt"; // Icono estándar intermedio
-            if (index === 0) iconoHito = "fa-warehouse"; // Origen / Cochera
-            if (index === puntos.length - 1) iconoHito = "fa-flag-checkered"; // Fin real de ruta
+            // Asignación de iconos temáticos operativos
+            let iconoHito = "fa-map-marker-alt"; 
+            if (index === 0) iconoHito = "fa-warehouse"; 
+            if (index === puntos.length - 1) iconoHito = "fa-flag-checkered"; 
             if (esInicioManual) iconoHito = "fa-play-circle";
 
-            // Determinar clases CSS para el conector y la tarjeta
+            // Clases de estado para los nodos circulares
             let claseEstado = "pending";
             if (p.deteccion === "SI") claseEstado = "done";
             if (p.deteccion === "FORZADO" || esInicioManual) claseEstado = "forced";
 
-            // Determinar si la línea que conecta con el Siguiente punto debe ser sólida o gris/punteada
+            // Cálculo para determinar el color y estilo de la línea conectora
             let sigPunto = puntos[index + 1];
             let lineaClase = "line-pending";
             if (esCompletado && sigPunto && (sigPunto.deteccion === "SI" || sigPunto.deteccion === "FORZADO")) {
-                lineaClase = "line-done"; // Conexión activa/recorrida
+                lineaClase = "line-done"; 
             }
 
             containerHtml += `
@@ -272,6 +296,7 @@
         containerHtml += `</div>`;
         timeline.innerHTML += containerHtml;
         
+        // Abrimos el panel lateral deslizándolo en pantalla
         document.getElementById('side-panel').classList.add('open');
     }
 
@@ -282,7 +307,10 @@
         document.getElementById('btn-confirmar').disabled = true;
     }
     
-    function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); }
+    function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); 
+        // Al cerrar el panel, le quitamos la marca roja a la fila de la tabla
+        document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
+    }
     
     function validarMotivo() { 
         const txt = document.getElementById('motivo-txt').value.trim();
