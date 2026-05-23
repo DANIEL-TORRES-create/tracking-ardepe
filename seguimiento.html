@@ -94,19 +94,21 @@
         }
 
         // ====================================================================
-        // MEJORA: ORDENAR DE MENOR A MAYOR POR SALIDA REAL O DISPONIBLE
+        // PROTECCIÓN TOTAL: ORDENAR DE MENOR A MAYOR SIN CAÍDAS POR CAMPOS VACÍOS
         // ====================================================================
         viajes.sort((a, b) => {
-            let fechaA = a.salidaReal || "";
-            let fechaB = b.salidaReal || "";
-            if (fechaA < fechaB) return -1;
-            if (fechaA > fechaB) return 1;
+            // Convertimos a String seguro para evitar que un valor null o undefined rompa el código
+            let horaA = String(a.salidaReal || "").trim();
+            let horaB = String(b.salidaReal || "").trim();
+            
+            if (horaA < horaB) return -1;
+            if (horaA > horaB) return 1;
             return 0;
         });
 
         viajes.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
-
+            
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
