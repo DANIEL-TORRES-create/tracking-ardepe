@@ -39,12 +39,15 @@
 </div>
 
 <div id="side-panel">
-    <div style="display:flex; justify-content: space-between; align-items:center;">
-        <h2 id="side-placa" style="margin:0; font-weight:800; color:var(--primary);">Resumen</h2>
-        <button onclick="cerrarPanel()" style="border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
+    <div class="side-panel-header">
+        <div>
+            <h2 id="side-placa" style="margin:0; font-weight:800; color:var(--primary); font-size:18px;">Ruta</h2>
+            <small style="color:#666; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px;">Resumen de Viaje</small>
+        </div>
+        <button onclick="cerrarPanel()" class="btn-close-panel" title="Cerrar Vista">&times;</button>
     </div>
-    <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-    <div id="timeline-v" class="timeline-v"></div>
+    
+    <div id="timeline-v" class="timeline-v-container"></div>
 </div>
 
 <div id="modal-cancel" class="modal-full-bg" style="display:none;">
