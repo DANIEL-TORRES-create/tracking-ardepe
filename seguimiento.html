@@ -94,11 +94,11 @@
         }
 
         // ====================================================================
-        // MEJORA INTERNA: ORDENAR CRONOLÓGICAMENTE DE MENOR A MAYOR POR SALIDA
+        // MEJORA INTERNA BLINDADA: ORDENAR CRONOLÓGICAMENTE TRATANDO TEXTOS SEGUROS
         // ====================================================================
         viajes.sort((a, b) => {
-            let horaA = a.salidaReal || "";
-            let horaB = b.salidaReal || "";
+            let horaA = String(a.salidaReal || "").trim();
+            let horaB = String(b.salidaReal || "").trim();
             if (horaA < horaB) return -1;
             if (horaA > horaB) return 1;
             return 0;
@@ -107,12 +107,27 @@
         viajes.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
             
+            // ====================================================================
+            // RESPALDO INTELIGENTE: SI SALIDAREAL VIENE VACÍA, EXTRAE LA DEL PRIMER HITO
+            // ====================================================================
+            let salidaVisual = v.salidaReal || "---";
+            if (salidaVisual === "---" || salidaVisual.trim() === "") {
+                try {
+                    let puntosRuta = JSON.parse(decodeURIComponent(v.itinerarioFull));
+                    if (puntosRuta && puntosRuta.length > 0 && puntosRuta[0].realHora && puntosRuta[0].realHora !== "--:--") {
+                        salidaVisual = puntosRuta[0].realHora; // Usa la hora real del primer hito operativo
+                    }
+                } catch(e) {
+                    salidaVisual = "---";
+                }
+            }
+            
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
                 <td><small>${v.ruta}</small></td>
                 <td><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${v.origen}<br><i class="fas fa-flag-checkered"></i> ${v.destino}</td>
-                <td style="color:black; font-weight:bold;">${v.salidaReal}</td>
+                <td style="color:black; font-weight:bold;">${salidaVisual}</td>
                 <td style="font-weight:bold;">${v.llegadaEstimada}</td>
                 <td>
                     <div class="segment-bar">
