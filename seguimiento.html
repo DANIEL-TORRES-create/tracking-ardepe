@@ -94,13 +94,11 @@
         }
 
         // ====================================================================
-        // PROTECCIÓN TOTAL: ORDENAR DE MENOR A MAYOR SIN CAÍDAS POR CAMPOS VACÍOS
+        // MEJORA INTERNA: ORDENAR CRONOLÓGICAMENTE DE MENOR A MAYOR POR SALIDA
         // ====================================================================
         viajes.sort((a, b) => {
-            // Convertimos a String seguro para evitar que un valor null o undefined rompa el código
-            let horaA = String(a.salidaReal || "").trim();
-            let horaB = String(b.salidaReal || "").trim();
-            
+            let horaA = a.salidaReal || "";
+            let horaB = b.salidaReal || "";
             if (horaA < horaB) return -1;
             if (horaA > horaB) return 1;
             return 0;
