@@ -10,12 +10,9 @@
 <body>
 
 <div class="header-container">
-    <h1 class="neon-title">PANEL V.REAL 2026</h1>
+    <h1 class="neon-title">Tablero de Control de Viajes</h1>
     <div class="nav-shortcuts">
-        <button class="btn-nav" id="nav-config">Configurar</button>
-        <button class="btn-nav" id="nav-prog">Programar</button>
-        <button class="btn-nav" id="nav-hist">Histórico</button>
-    </div>
+        </div>
 </div>
 
 <div class="dashboard">
@@ -96,20 +93,19 @@
             return;
         }
 
+        // ====================================================================
+        // MEJORA: ORDENAR DE MENOR A MAYOR POR SALIDA PLANIFICADA
+        // ====================================================================
+        viajes.sort((a, b) => {
+            // Asumimos formato de texto o fecha estándar comparable directamente
+            if (a.salidaPlanificada < b.salidaPlanificada) return -1;
+            if (a.salidaPlanificada > b.salidaPlanificada) return 1;
+            return 0;
+        });
+
         viajes.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
             
-            // TRADUCTOR DE MINUTOS NUMÉRICOS A HH:MM VISUAL
-            let minutos = parseFloat(v.desviacion);
-            let desvVisual = "00:00";
-            if (!isNaN(minutos) && minutos !== 0) {
-                let signo = minutos > 0 ? "+" : "-"; // (+) Retraso, (-) Adelanto
-                let absMinutos = Math.abs(minutos);
-                let hh = Math.floor(absMinutos / 60);
-                let mm = Math.round(absMinutos % 60);
-                desvVisual = signo + (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
-            }
-
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
@@ -137,9 +133,6 @@
                 <td class="vistas-cell">
                     <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
                         <i class="fas fa-stream"></i>
-                    </button>
-                    <button class="btn-vista" title="Desviación total" style="font-size:12px; font-weight:bold; color:${minutos > 0 ? 'var(--danger)' : 'var(--success)'};">
-                        ${desvVisual}
                     </button>
                 </td>
             `;
