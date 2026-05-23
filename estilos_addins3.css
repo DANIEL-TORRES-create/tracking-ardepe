@@ -256,7 +256,8 @@ textarea {
     background: #ffffff;
     padding: 15px 20px;
     display: grid;
-    grid-template-columns: 140px 1fr 40px; /* Subimos a 140px para que entre la placa completa */
+    /* Cambiamos a 140px a los extremos para asegurar una simetría perfecta con el título al centro */
+    grid-template-columns: 140px 1fr 140px; 
     align-items: center;
     border-bottom: 3px solid var(--primary);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -267,18 +268,31 @@ textarea {
 /* Alineaciones específicas e inamovibles */
 .header-left-box {
     display: flex;
-    justify-content: flex-start;
-    align-items: center;
+    flex-direction: column; /* Cambiado a columna para que la placa se muestre debajo */
+    justify-content: center;
+    align-items: flex-start; /* Alinea todo el bloque a la izquierda */
     overflow: hidden; 
-    white-space: nowrap; /* PROHIBIDO romper línea. Mantener texto horizontal */
+    text-align: left;
+}
+
+/* Forzamos el texto "PLACA:" encima de la variable */
+.header-left-box::before {
+    content: "PLACA:";
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    text-transform: uppercase;
+    margin-bottom: 1px; /* Separación sutil con el número */
+    display: block;
 }
 
 /* Ajuste directo al texto de la placa */
 #side-placa {
     color: #444; 
     font-weight: bold; 
-    font-size: 13px; /* Bajamos un punto para asegurar que encaje */
+    font-size: 14px; /* Subimos a 14px para que se lea imponente */
     text-transform: uppercase;
+    white-space: nowrap; /* PROHIBIDO romper línea. Mantener texto horizontal */
 }
 
 .header-center-box {
@@ -290,7 +304,7 @@ textarea {
 
 .header-right-box {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-end; /* Empuja el botón circular de la X a la esquina derecha */
     align-items: center;
 }
 
