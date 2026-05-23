@@ -256,7 +256,7 @@ textarea {
     background: #ffffff;
     padding: 15px 20px;
     display: grid;
-    grid-template-columns: 110px 1fr 40px; /* Anchos fijos a los extremos para blindar el centro */
+    grid-template-columns: 140px 1fr 40px; /* Subimos a 140px para que entre la placa completa */
     align-items: center;
     border-bottom: 3px solid var(--primary);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -270,8 +270,15 @@ textarea {
     justify-content: flex-start;
     align-items: center;
     overflow: hidden; 
-    white-space: normal; /* Permite saltar línea si es necesario sin deformar el contenedor */
-    line-height: 1.2;
+    white-space: nowrap; /* PROHIBIDO romper línea. Mantener texto horizontal */
+}
+
+/* Ajuste directo al texto de la placa */
+#side-placa {
+    color: #444; 
+    font-weight: bold; 
+    font-size: 13px; /* Bajamos un punto para asegurar que encaje */
+    text-transform: uppercase;
 }
 
 .header-center-box {
