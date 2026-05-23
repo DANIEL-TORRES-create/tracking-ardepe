@@ -291,3 +291,153 @@ textarea {
     background: var(--danger);
     box-shadow: 0 0 0 2px var(--danger);
 }
+
+#side-panel {
+    width: 450px !important;
+    right: -500px;
+    background: #f4f6f9 !important; /* Fondo gris claro ejecutivo para resaltar las tarjetas */
+    display: flex;
+    flex-direction: column;
+    padding: 20px !important;
+}
+
+/* Contenedor del título superior fijo */
+#side-panel > div:first-child {
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary);
+    margin-bottom: 15px;
+}
+
+/* El contenedor principal con scroll vertical estilizado */
+.timeline-cards-container {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+    padding-left: 5px;
+    position: relative;
+    max-height: calc(100vh - 120px);
+}
+
+/* Ocultar barra de scroll tosca y estilizarla */
+.timeline-cards-container::-webkit-scrollbar {
+    width: 6px;
+}
+.timeline-cards-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+.timeline-cards-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+.timeline-cards-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Estructura envolvente de cada fila hito */
+.timeline-card-wrapper {
+    display: flex;
+    position: relative;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+/* Diseño del Conector Circular con su Icono */
+.timeline-node {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #888;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+/* Línea Conectora Vertical */
+.timeline-connector-line {
+    position: absolute;
+    left: 17px;
+    top: 36px;
+    width: 3px;
+    height: calc(100% + 20px - 36px);
+    z-index: 5;
+}
+.timeline-connector-line.line-pending {
+    background: #dcdcdc;
+    border-left: 2px dashed #b5b5b5; /* Línea punteada para tramos pendientes */
+}
+.timeline-connector-line.line-done {
+    background: var(--success); /* Línea continua brillante para tramos completados */
+}
+
+/* VARIACIONES DE COLORES EN LOS CONECTORES SEGÚN DETECCIÓN */
+.timeline-card-wrapper.done .timeline-node {
+    border-color: var(--success);
+    color: white;
+    background: var(--success);
+}
+.timeline-card-wrapper.forced .timeline-node {
+    border-color: var(--danger);
+    color: white;
+    background: var(--danger);
+}
+
+/* DISEÑO DE LA TARJETA (CARD VISUAL EN RECUADRO) */
+.timeline-card {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-left: 20px;
+    flex: 1;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+    border: 1px solid #eef0f4;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.timeline-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.12);
+}
+
+/* Cabecera interna del punto */
+.card-header-point {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 6px;
+}
+
+/* Cuerpo de tiempos dentro de la tarjeta */
+.card-body-times {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #666;
+}
+.card-body-times span {
+    font-weight: 600;
+    color: #333;
+}
+.card-body-times .time-real span {
+    color: #111;
+    font-weight: 700;
+}
+
+/* Ajustes de color dinámico para bordes de tarjeta según su estado */
+.timeline-card-wrapper.done .timeline-card {
+    border-left: 4px solid var(--success);
+}
+.timeline-card-wrapper.forced .timeline-card {
+    border-left: 4px solid var(--danger);
+}
+
+/* Colores de fondo para el botón confirmar del modal según acción */
+.bg-iniciar { background-color: var(--success) !important; }
+.bg-finalizar { background-color: var(--primary) !important; }
+.bg-cancelar { background-color: var(--danger) !important; }
