@@ -255,8 +255,8 @@ textarea {
 .side-panel-header {
     background: #ffffff;
     padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr; /* Izquierda (Placa), Centro (Título), Derecha (X) */
     align-items: center;
     border-bottom: 3px solid var(--primary);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -264,7 +264,27 @@ textarea {
     flex-shrink: 0;
 }
 
-/* Botón de la X Circular */
+/* Alineaciones específicas de cada bloque de la cabecera */
+.header-left-box {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.header-center-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.header-right-box {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Botón de la X Circular Ajustado */
 .btn-close-panel {
     border: none;
     background: #f1f3f5;
@@ -419,3 +439,15 @@ textarea {
 .bg-iniciar { background-color: var(--success) !important; }
 .bg-finalizar { background-color: var(--primary) !important; }
 .bg-cancelar { background-color: var(--danger) !important; }
+
+.monitor-table tbody tr.fila-activa td {
+    background-color: #f9e6e6 !important; /* Fondo sutil rojizo para la fila */
+    border-top: 2px solid #990000 !important;
+    border-bottom: 2px solid #990000 !important;
+    transition: background-color 0.2s ease;
+}
+
+/* Forzamos que la primera y última celda cierren el recuadro rojo oscuro */
+.monitor-table tbody tr.fila-activa td:first-child {
+    border-left: 4px solid #990000 !important;
+}
