@@ -94,7 +94,7 @@
         }
 
         // ====================================================================
-        // MEJORA INTERNA BLINDADA: ORDENAR CRONOLÓGICAMENTE TRATANDO TEXTOS SEGUROS
+        // MEJORA INTERNA BLINDADA: ORDENAR CRONOLÓGICAMENTE DE MENOR A MAYOR
         // ====================================================================
         viajes.sort((a, b) => {
             let horaA = String(a.salidaReal || "").trim();
@@ -107,20 +107,8 @@
         viajes.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
             
-            // ====================================================================
-            // RESPALDO INTELIGENTE: SI SALIDAREAL VIENE VACÍA, EXTRAE LA DEL PRIMER HITO
-            // ====================================================================
-            let salidaVisual = v.salidaReal || "---";
-            if (salidaVisual === "---" || salidaVisual.trim() === "") {
-                try {
-                    let puntosRuta = JSON.parse(decodeURIComponent(v.itinerarioFull));
-                    if (puntosRuta && puntosRuta.length > 0 && puntosRuta[0].realHora && puntosRuta[0].realHora !== "--:--") {
-                        salidaVisual = puntosRuta[0].realHora; // Usa la hora real del primer hito operativo
-                    }
-                } catch(e) {
-                    salidaVisual = "---";
-                }
-            }
+            // Si por alguna razón viene vacío desde el Sheet, muestra los guiones estándar
+            let salidaVisual = (v.salidaReal && v.salidaReal !== "---") ? v.salidaReal : "---";
             
             let tr = document.createElement('tr');
             tr.innerHTML = `
