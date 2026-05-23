@@ -88,24 +88,38 @@
         if (!tbody) return;
         tbody.innerHTML = "";
         
-        if (viajes.length === 0) {
+        if (!viajes || viajes.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">No hay viajes activos en este momento.</td></tr>';
             return;
         }
 
         // ====================================================================
-        // MEJORA: ORDENAR DE MENOR A MAYOR POR SALIDA PLANIFICADA
+        // SEGURO ANTICAÍDAS: ORDENAR USANDO LAS VARIABLES REALEZ DEL OBJETO
         // ====================================================================
         viajes.sort((a, b) => {
-            // Asumimos formato de texto o fecha estándar comparable directamente
-            if (a.salidaPlanificada < b.salidaPlanificada) return -1;
-            if (a.salidaPlanificada > b.salidaPlanificada) return 1;
+            // Evaluamos dinámicamente cuál variable de tiempo está disponible en tu Sheet
+            let fechaA = a.salidaPlanificada || a.salidaReal || "";
+            let fechaB = b.salidaPlanificada || b.salidaReal || "";
+            
+            if (fechaA < fechaB) return -1;
+            if (fechaA > fechaB) return 1;
             return 0;
         });
 
         viajes.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
             
+            // TRADUCTOR DE MINUTOS NUMÉRICOS A HH:MM VISUAL (Recuperado para evitar errores)
+            let minutos = parseFloat(v.desviacion);
+            let desvVisual = "00:00";
+            if (!isNaN(minutos) && minutos !== 0) {
+                let signo = minutos > 0 ? "+" : "-"; 
+                let absMinutos = Math.abs(minutos);
+                let hh = Math.floor(absMinutos / 60);
+                let mm = Math.round(absMinutos % 60);
+                desvVisual = signo + (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
+            }
+
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
