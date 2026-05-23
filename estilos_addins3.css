@@ -256,7 +256,7 @@ textarea {
     background: #ffffff;
     padding: 15px 20px;
     display: grid;
-    grid-template-columns: 1fr auto 1fr; /* Izquierda (Placa), Centro (Título), Derecha (X) */
+    grid-template-columns: 110px 1fr 40px; /* Anchos fijos a los extremos para blindar el centro */
     align-items: center;
     border-bottom: 3px solid var(--primary);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -264,11 +264,14 @@ textarea {
     flex-shrink: 0;
 }
 
-/* Alineaciones específicas de cada bloque de la cabecera */
+/* Alineaciones específicas e inamovibles */
 .header-left-box {
     display: flex;
     justify-content: flex-start;
     align-items: center;
+    overflow: hidden; 
+    white-space: normal; /* Permite saltar línea si es necesario sin deformar el contenedor */
+    line-height: 1.2;
 }
 
 .header-center-box {
