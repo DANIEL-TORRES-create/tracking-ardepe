@@ -268,31 +268,29 @@ textarea {
 /* Alineaciones específicas e inamovibles */
 .header-left-box {
     display: flex;
-    flex-direction: column; /* Cambiado a columna para que la placa se muestre debajo */
+    flex-direction: column; /* Apila el texto "PLACA" arriba y el código abajo */
     justify-content: center;
-    align-items: flex-start; /* Alinea todo el bloque a la izquierda */
+    align-items: flex-start; /* Alinea ambos textos al extremo izquierdo de su caja */
     overflow: hidden; 
     text-align: left;
-}
-
-/* Forzamos el texto "PLACA:" encima de la variable */
-.header-left-box::before {
-    content: "PLACA:";
+    
+    /* Aplicamos el estilo del label directamente aquí para el texto del HTML */
     font-size: 11px;
     font-weight: bold;
     color: #555;
     text-transform: uppercase;
-    margin-bottom: 1px; /* Separación sutil con el número */
-    display: block;
+    line-height: 1.2;
 }
 
-/* Ajuste directo al texto de la placa */
+/* Ajuste directo al texto de la placa (Segunda fila) */
 #side-placa {
     color: #444; 
     font-weight: bold; 
-    font-size: 14px; /* Subimos a 14px para que se lea imponente */
+    font-size: 14px; /* Se mantiene imponente */
     text-transform: uppercase;
     white-space: nowrap; /* PROHIBIDO romper línea. Mantener texto horizontal */
+    margin-top: 2px; /* Separación sutil con la palabra de arriba */
+    display: block;
 }
 
 .header-center-box {
