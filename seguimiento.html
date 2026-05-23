@@ -89,6 +89,18 @@
 
         viajes.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
+            
+            // TRADUCTOR DE MINUTOS NUMÉRICOS A HH:MM VISUAL
+            let minutos = parseFloat(v.desviacion);
+            let desvVisual = "00:00";
+            if (!isNaN(minutos) && minutos !== 0) {
+                let signo = minutos > 0 ? "+" : "-"; // (+) Retraso, (-) Adelanto
+                let absMinutos = Math.abs(minutos);
+                let hh = Math.floor(absMinutos / 60);
+                let mm = Math.round(absMinutos % 60);
+                desvVisual = signo + (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
+            }
+
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
@@ -107,18 +119,18 @@
                         <i class="fas fa-play-circle"></i>
                     </button>
                     <button class="btn-ctrl" title="Finalizar Viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')">
-                        <i class="fas fa-check-circle" style="color:var(--primary)"></i>
+                        <i class="fas fa-check-circle" style="color:var(--success)"></i>
                     </button>
                     <button class="btn-ctrl" title="Cancelar Viaje" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')">
                         <i class="fas fa-ban" style="color:var(--danger)"></i>
                     </button>
                 </td>
                 <td class="vistas-cell">
-                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}')">
+                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
                         <i class="fas fa-stream"></i>
                     </button>
-                    <button class="btn-vista" title="Ver Detalle de Auditoría" onclick="alert('Abriendo Detalle para ID: ' + '${v.idViaje}')">
-                        <i class="fas fa-info-circle" style="color:var(--primary)"></i>
+                    <button class="btn-vista" title="Desviación total" style="font-size:12px; font-weight:bold; color:${minutos > 0 ? 'var(--danger)' : 'var(--success)'};">
+                        ${desvVisual}
                     </button>
                 </td>
             `;
@@ -161,20 +173,44 @@
     }
 
     // 4. LÓGICA DEL PANEL LATERAL (RESUMEN)
-    function abrirResumen(data, placa) {
+    function abrirResumen(data, placa, logAuditoria) {
         const puntos = JSON.parse(decodeURIComponent(data));
-        document.getElementById('side-placa').innerText = "Ruta: " + placa;
+        const rawLog = decodeURIComponent(logAuditoria);
         
+        document.getElementById('side-placa').innerText = "Ruta: " + placa;
         const timeline = document.getElementById('timeline-v');
-        timeline.innerHTML = puntos.map(p => {
+        timeline.innerHTML = "";
+        
+        // Inyectar sección de auditoría visual si existen registros
+        if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
+            let logsHtml = `<div class="auditoria-panel-box" style="background:#fff3cd; border-left:4px solid #ffc107; padding:10px; margin-bottom:15px; border-radius:4px; font-size:12px;">`;
+            
+            // Separar logs si hay inicio y fin juntos
+            let partesLog = rawLog.split(" / ");
+            partesLog.forEach(log => {
+                if (log.includes("INICIO")) {
+                    logsHtml += `<p style="margin:4px 0;"><i class="fas fa-flag" style="color:var(--danger); margin-right:6px;"></i> <b>Auditoría Inicio:</b> ${log}</p>`;
+                } else if (log.includes("FIN")) {
+                    logsHtml += `<p style="margin:4px 0;"><i class="fas fa-flag-checkered" style="color:var(--primary); margin-right:6px;"></i> <b>Auditoría Fin:</b> ${log}</p>`;
+                } else {
+                    logsHtml += `<p style="margin:4px 0;"><i class="fas fa-user-edit" style="margin-right:6px;"></i> <b>Nota:</b> ${log}</p>`;
+                }
+            });
+            logsHtml += `</div>`;
+            timeline.innerHTML += logsHtml;
+        }
+
+        // Construir la línea de tiempo de hitos
+        timeline.innerHTML += puntos.map(p => {
             let claseCirculo = "";
             if (p.deteccion === "SI") claseCirculo = "done";
             if (p.deteccion === "FORZADO") claseCirculo = "forced";
 
             return `
-                <div class="step ${claseCirculo}">
-                    <strong>${p.punto}</strong><br>
-                    <small>Plan: ${p.planHora} | Real: ${p.realHora}</small>
+                <div class="step ${claseCirculo}" style="margin-bottom:20px;">
+                    <strong style="color:var(--primary);">${p.punto}</strong><br>
+                    <span style="font-size:11px; color:#555;">Plan: ${p.planHora}</span><br>
+                    <span style="font-size:11px; font-weight:bold; color:#333;">Real: ${p.realHora}</span>
                 </div>
             `;
         }).join('');
