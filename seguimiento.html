@@ -20,6 +20,7 @@
         <thead>
             <tr>
                 <th>UNIDAD / CONDUCTOR</th>
+                <th>ESTADO MONITOR</th>
                 <th>RUTA</th>
                 <th>ORIGEN / DESTINO</th>
                 <th>SALIDA REAL</th>
@@ -89,7 +90,7 @@
         tbody.innerHTML = "";
         
         if (!viajes || viajes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">No hay viajes activos en este momento.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px;">No hay viajes activos en este momento.</td></tr>';
             return;
         }
 
@@ -110,9 +111,22 @@
             // Si por alguna razón viene vacío desde el Sheet, muestra los guiones estándar
             let salidaVisual = (v.salidaReal && v.salidaReal !== "---") ? v.salidaReal : "---";
             
+            // 🚀 ASIGNACIÓN DINÁMICA DE BADGES SEGÚN EL ESTADO VISUAL DEL SERVIDOR
+            let badgeColor = "";
+            if (v.estadoVisual === "RETRASADO") {
+                badgeColor = '<span style="background-color: #ffcccc; color: #cc0000; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; animation: blinker 1.5s linear infinite;"><i class="fas fa-exclamation-triangle"></i> RETRASADO</span>';
+            } else if (v.estadoVisual === "NO INICIADO") {
+                badgeColor = '<span style="background-color: #e0e0e0; color: #555555; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;"><i class="far fa-clock"></i> NO INICIADO</span>';
+            } else if (v.estadoVisual === "EN CURSO") {
+                badgeColor = '<span style="background-color: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;"><i class="fas fa-truck"></i> EN CURSO</span>';
+            } else {
+                badgeColor = `<span style="background-color: #e2e3e5; color: #383d41; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${v.estadoVisual}</span>`;
+            }
+            
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
+                <td>${badgeColor}</td>
                 <td><small>${v.ruta}</small></td>
                 <td><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${v.origen}<br><i class="fas fa-flag-checkered"></i> ${v.destino}</td>
                 <td style="color:black; font-weight:bold;">${salidaVisual}</td>
