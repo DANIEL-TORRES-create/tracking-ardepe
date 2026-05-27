@@ -56,15 +56,74 @@
     <div id="timeline-v" class="timeline-v-container"></div>
 </div>
 
-<div id="modal-cancel" class="modal-full-bg" style="display:none;">
-    <div class="modal-content">
-        <h3 id="modal-accion-titulo">Confirmar Acción</h3>
-        <p>Indique motivo (Mín. 10 caracteres):</p>
-        <textarea id="motivo-txt" oninput="validarMotivo()" placeholder="Escriba el motivo de la intervención manual..."></textarea>
-        <div style="text-align:right; margin-top:15px;">
-            <button onclick="cerrarModal()" class="btn-secundario">Salir</button>
-            <button id="btn-confirmar" disabled onclick="ejecutarAccionManual()" class="btn-primario">Confirmar</button>
+<div id="mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
+    <div class="mega-modal-content">
+        
+        <div class="mega-cabecera-satelital">
+            <div class="mega-bloque-identidad">
+                <h2>DETALLE DE VIAJE</h2>
+                <div class="mega-subtitulos">
+                    <span class="badge-sat-placa">PLACA: <strong id="lbl-sat-placa">---</strong></span>
+                    <span class="badge-sat-ruta">RUTA: <strong id="lbl-sat-ruta">---</strong></span>
+                </div>
+            </div>
+            
+            <div class="mega-bloque-mapa">
+                <div id="sat-map-container"></div>
+            </div>
+            
+            <div class="mega-bloque-controles">
+                <button onclick="cerrarMegaDetalle()" class="btn-close-mega" title="Cerrar Ventana">&times;</button>
+                <div class="mega-termometro-inputs">
+                    <div id="lbl-sat-estado-badge" class="sat-badge-estado">
+                        <span class="sat-ping"></span>
+                        <span id="lbl-sat-estado-texto">---</span>
+                    </div>
+                    <div class="sat-progreso-wrapper">
+                        <div class="sat-progreso-texto">
+                            <span>PROGRESO GLOBAL</span>
+                            <strong id="lbl-sat-porcentaje">0%</strong>
+                        </div>
+                        <div class="sat-barra-bg">
+                            <div id="lbl-sat-barra-fill" class="sat-barra-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div class="mega-barra-filtros">
+            <button id="sat-btn-historial" class="sat-btn-f activo" onclick="filtrarTablaSatelital('historial')"><i class="fas fa-file-alt"></i> Ver Historial</button>
+            <button id="sat-btn-completados" class="sat-btn-f" onclick="filtrarTablaSatelital('completados')"><i class="fas fa-check-circle"></i> Completados</button>
+            <button id="sat-btn-pendientes" class="sat-btn-f" onclick="filtrarTablaSatelital('pendientes')"><i class="fas fa-clock"></i> Por Completar</button>
+            <button id="sat-btn-desviaciones" class="sat-btn-f" onclick="filtrarTablaSatelital('desviaciones')"><i class="fas fa-exclamation-triangle"></i> Desviaciones</button>
+        </div>
+
+        <div class="mega-bunker-tabla">
+            <table class="mega-tabla-datos">
+                <thead>
+                    <tr>
+                        <th style="width: 45px; text-align: center;">ST</th>
+                        <th>PUNTO / CONTROL</th>
+                        <th>TIPO</th>
+                        <th>PLAN LLEGADA</th>
+                        <th>REAL LLEGADA</th>
+                        <th>DESVIACIÓN TIEMPO</th>
+                        <th>TIEMPO VIAJE PLAN</th>
+                        <th>TIEMPO VIAJE REAL</th>
+                        <th>DIST. PLAN (KM)</th>
+                        <th>DIST. REAL TRAMO</th>
+                        <th>DIF. KM</th>
+                        <th>PERNOCTE PLAN</th>
+                        <th>PERNOCTE REAL</th>
+                        <th>REAL SALIDA</th>
+                    </tr>
+                </thead>
+                <tbody id="sat-tbody-rows">
+                    </tbody>
+            </table>
+        </div>
+
     </div>
 </div>
 
