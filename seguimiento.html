@@ -151,13 +151,13 @@
                     </button>
                 </td>
                 <td class="vistas-cell" style="display: flex; gap: 8px; justify-content: center;">
-    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
-        <i class="fas fa-stream"></i>
-    </button>
-    <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalle('${v.idViaje}', '${v.placa}', '${v.ruta}', '${v.estadoVisual}', ${v.progreso}, '${encodeURIComponent(v.itinerarioFull)}')">
-        <i class="fas fa-search-plus"></i>
-    </button>
-</td>>
+                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
+                        <i class="fas fa-stream"></i>
+                    </button>
+                    <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalle('${v.idViaje}', '${v.placa}', '${v.ruta}', '${v.estadoVisual}', ${v.progreso}, '${encodeURIComponent(v.itinerarioFull)}')">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
