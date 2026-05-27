@@ -473,3 +473,102 @@ textarea {
 .monitor-table tbody tr.fila-activa td:first-child {
     border-left: 4px solid #990000 !important;
 }
+
+.btn-vista-detalle {
+    border: none; background: none; cursor: pointer; font-size: 18px;
+    padding: 5px 8px; transition: 0.2s; color: #555;
+}
+.btn-vista-detalle:hover { transform: scale(1.2); color: #0284c7; }
+
+/* Contenedor principal con efecto esmerilado / Blur de fondo */
+#mega-modal-detalle {
+    background: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.mega-modal-content {
+    background: #ffffff; width: 96vw; height: 94vh; border-radius: 14px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    padding: 18px; box-sizing: border-box; display: flex; flex-direction: column;
+}
+
+/* Cabecera Simétrica en 3 Bloques */
+.mega-cabecera-satelital {
+    display: grid; grid-template-columns: 260px 1fr 280px; gap: 15px;
+    height: 145px; margin-bottom: 12px; flex-shrink: 0;
+}
+.mega-bloque-identidad h2 {
+    font-size: 19px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0; letter-spacing: -0.5px;
+}
+.mega-subtitulos { display: flex; flex-direction: column; gap: 6px; }
+.badge-sat-placa, .badge-sat-ruta {
+    background: #f1f5f9; padding: 5px 10px; border-radius: 5px; font-size: 12px;
+    color: #475569; border-left: 4px solid #004b93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.badge-sat-placa strong, .badge-sat-ruta strong { color: #0f172a; }
+
+/* Búnker del Minimapa */
+.mega-bloque-mapa { background: #e2e8f0; border-radius: 10px; border: 1px solid #cbd5e1; overflow: hidden; }
+#sat-map-container { width: 100%; height: 100%; z-index: 1000; }
+
+/* Bloque Control Derecho vertical */
+.mega-bloque-controles { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
+.btn-close-mega {
+    border: none; background: #f1f3f5; font-size: 22px; cursor: pointer; color: #555;
+    width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s;
+}
+.btn-close-mega:hover { background: #e63946; color: white; transform: rotate(90deg); }
+.mega-termometro-inputs { width: 100%; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+
+/* Etiquetas de Estado con Ping vivo */
+.sat-badge-estado { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 11px; }
+.sat-ping { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.sat-status-en-curso { background: #dcfce7; color: #15803d; }
+.sat-status-en-curso .sat-ping { background: #16a34a; animation: satPingAnim 1.2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.sat-status-no-iniciado { background: #f1f5f9; color: #475569; }
+.sat-status-no-iniciado .sat-ping { background: #94a3b8; }
+.sat-status-atrasado { background: #fee2e2; color: #b91c1c; }
+.sat-status-atrasado .sat-ping { background: #dc2626; animation: satPingAnim 1s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes satPingAnim { 75%, 100% { transform: scale(2); opacity: 0; } }
+
+/* Barra de progreso global lineal */
+.sat-progreso-wrapper { width: 100%; max-width: 240px; }
+.sat-progreso-texto { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 3px; }
+.sat-barra-bg { width: 100%; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+.sat-barra-fill { height: 100%; background: linear-gradient(90deg, #004b93, #1e8e3e); transition: width 0.4s ease; }
+
+/* Micro-Filtros sobre la Tabla */
+.mega-barra-filtros { display: flex; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
+.sat-btn-f {
+    background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; color: #475569; cursor: pointer; transition: 0.2s;
+}
+.sat-btn-f:hover { background: #f1f5f9; }
+.sat-btn-f.activo { background: #0f172a; border-color: #0f172a; color: #ffffff; font-weight: 600; }
+
+/* El Búnker Rígido de la Tabla: Scroll Infinito */
+.mega-bunker-tabla {
+    flex: 1; border: 1px solid #e2e8f0; border-radius: 10px;
+    overflow-x: auto; overflow-y: auto; background: #ffffff;
+}
+.mega-tabla-datos { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; min-width: 1650px; }
+.mega-tabla-datos th {
+    position: sticky; top: 0; background: #f8fafc; color: #475569;
+    font-weight: 600; padding: 10px 12px; border-bottom: 2px solid #cbd5e1; z-index: 50;
+}
+.mega-tabla-datos td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+.mega-tabla-datos tbody tr:hover { background: #f8fafc; }
+
+/* Desviación Semáforo: Puntos Clínicos sólidos */
+.sat-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+.sat-dot-verde { background: #16a34a; box-shadow: 0 0 5px #22c55e; }
+.sat-dot-mostaza { background: #d97706; box-shadow: 0 0 5px #f59e0b; }
+.sat-dot-rojo { background: #dc2626; box-shadow: 0 0 5px #ef4444; }
+
+/* Resaltado completo de tramos de descanso (Pernoctes) en Oro Suave */
+.sat-row-pernocte { background: #fffbeb !important; }
+.sat-row-pernocte td { border-bottom: 1px solid #fde68a !important; color: #b45309 !important; }
+
+/* Scrollbars Ejecutivos Delgados */
+.mega-bunker-tabla::-webkit-scrollbar { width: 5px; height: 5px; }
+.mega-bunker-tabla::-webkit-scrollbar-track { background: #f8fafc; }
+.bunker-tabla-auditoria::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
