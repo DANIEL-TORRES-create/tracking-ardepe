@@ -198,7 +198,7 @@
                     <small style="font-size:10px; font-weight:bold; color:var(--primary)">${v.progreso}% completado</small>
                 </td>
                 <td class="control-cell">
-                    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" title="Iniciar Viaje" onclick="${estaEnCurso ? '' : `prepararAccion('${v.idViaje}', 'INICIAR')`}">
+                    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" title="Iniciar Viaje" onclick="${estaEnCurso ? '' : "prepararAccion('" + v.idViaje + "', 'INICIAR')" International}">
                         ▶️
                     </button>
                     <button class="btn-ctrl" title="Finalizar Viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')">
