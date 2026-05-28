@@ -568,19 +568,44 @@ textarea {
     background: #ffffff;
     margin-top: 5px;
 }
+
 .mega-tabla-datos { 
     width: 100%; 
     border-collapse: collapse; 
     font-size: 11px; 
-    text-align: left; 
-    min-width: 1500px; /* Tamaño ideal equilibrado */
+    text-align: center; /* 🚀 CAMBIO CLAVE: Todo el contenido de validación se centra automáticamente */
+    min-width: 100%;    /* 🚀 CAMBIO CLAVE: La tabla ya no se estira a la derecha, entra al 100% del cuadro */
 }
+
 .mega-tabla-datos th {
-    position: sticky; top: 0; background: #f8fafc; color: #475569;
-    font-weight: 600; padding: 8px 10px; border-bottom: 2px solid #cbd5e1; z-index: 50;
+    position: sticky; 
+    top: 0; 
+    background: #f8fafc; 
+    color: #475569;
+    font-weight: 700; 
+    padding: 10px 6px; 
+    border-bottom: 2px solid #cbd5e1; 
+    z-index: 50;
+    text-align: center; /* Centra los títulos de las columnas */
 }
-.mega-tabla-datos td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
-.mega-tabla-datos tbody tr:hover { background: #f8fafc; }
+
+.mega-tabla-datos td { 
+    padding: 8px 6px; 
+    border-bottom: 1px solid #f1f5f9; 
+    color: #334155; 
+    vertical-align: middle; 
+}
+
+.mega-tabla-datos tbody tr:hover { 
+    background: #f8fafc; 
+}
+
+/* Alineación específica para la columna del nombre del Hito (para que no pierda lectura) */
+.mega-tabla-datos td:nth-child(2), 
+.mega-tabla-datos th:nth-child(2) {
+    text-align: left; /* Mantiene el nombre del punto alineado a la izquierda */
+    padding-left: 12px;
+}
 
 /* Desviación Semáforo: Puntos Clínicos sólidos */
 .sat-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
