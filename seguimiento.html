@@ -54,7 +54,18 @@
     
     <div id="timeline-v" class="timeline-v-container"></div>
 </div>
-
+    
+<div id="modal-cancel" class="modal-full-bg" style="display:none; z-index: 6000 !important;">
+    <div class="modal-content">
+        <h3 id="modal-accion-titulo">Confirmar Acción</h3>
+        <p>Indique motivo (Mín. 10 caracteres):</p>
+        <textarea id="motivo-txt" oninput="validarMotivo()" placeholder="Escriba el motivo de la intervención manual..."></textarea>
+        <div style="text-align:right; margin-top:15px;">
+            <button onclick="cerrarModal()" class="btn-secundario">Salir</button>
+            <button id="btn-confirmar" disabled onclick="ejecutarAccionManual()" class="btn-primario">Confirmar</button>
+        </div>
+    </div>
+</div>
 <div id="mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
     <div class="mega-modal-content">
         
@@ -226,19 +237,17 @@
         _viajeSeleccionado = id;
         _tipoAccionManual = tipo;
         
-        // Limpiamos tu cuadro de texto original antes de abrirlo
+        // Limpia tu cuadro de texto físico que acabas de reinsertar
         document.getElementById('motivo-txt').value = "";
         document.getElementById('btn-confirmar').disabled = true;
         document.getElementById('btn-confirmar').innerHTML = "Confirmar";
         
-        // Ajustamos dinámicamente el estilo de tu botón según la acción
         const btnConfirmar = document.getElementById('btn-confirmar');
-        btnConfirmar.className = "btn-primario"; // Mantiene tu clase base
+        btnConfirmar.className = "btn-primario"; 
         if (tipo === "INICIAR") btnConfirmar.classList.add("bg-iniciar");
         if (tipo === "FINALIZAR") btnConfirmar.classList.add("bg-finalizar");
-        if (tipo === "CANCELAR") btnConfirmar.classList.add("btn-primario", "bg-cancelar");
+        if (tipo === "CANCELAR") btnConfirmar.classList.add("bg-cancelar");
 
-        // Cambiamos el título de tu modal real y lo mostramos en pantalla
         document.getElementById('modal-accion-titulo').innerText = "CONFIRMAR " + tipo;
         document.getElementById('modal-cancel').style.display = 'flex';
     }
@@ -250,7 +259,7 @@
         btn.disabled = true;
         btn.innerHTML = 'Procesando...';
 
-        // Usamos inyección de script dinámico (JSONP) para saltar el bloqueo de seguridad CORS
+        // Inyección JSONP limpia que conecta con tu Google Script sin romper CORS
         const script = document.createElement('script');
         script.src = `${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${encodeURIComponent(_usuarioLogueado)}&callback=respuestaAccionServidor&nocache=${Date.now()}`;
         document.body.appendChild(script);
