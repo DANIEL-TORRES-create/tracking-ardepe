@@ -226,25 +226,21 @@
         _viajeSeleccionado = id;
         _tipoAccionManual = tipo;
         
-        let mensajeConfirmacion = "¿Está seguro de que desea " + tipo + " este viaje?";
-        let motivo = "Acción manual desde monitor";
+        // Limpiamos tu cuadro de texto original antes de abrirlo
+        document.getElementById('motivo-txt').value = "";
+        document.getElementById('btn-confirmar').disabled = true;
+        document.getElementById('btn-confirmar').innerHTML = "Confirmar";
+        
+        // Ajustamos dinámicamente el estilo de tu botón según la acción
+        const btnConfirmar = document.getElementById('btn-confirmar');
+        btnConfirmar.className = "btn-primario"; // Mantiene tu clase base
+        if (tipo === "INICIAR") btnConfirmar.classList.add("bg-iniciar");
+        if (tipo === "FINALIZAR") btnConfirmar.classList.add("bg-finalizar");
+        if (tipo === "CANCELAR") btnConfirmar.classList.add("btn-primario", "bg-cancelar");
 
-        // Si es FINALIZAR o CANCELAR, pedimos el motivo de forma segura
-        if (tipo === "FINALIZAR" || tipo === "CANCELAR") {
-            let entradaUser = prompt("Ingrese el motivo para " + tipo + " el viaje (Mínimo 10 caracteres):", "");
-            if (entradaUser === null) return; // Si cancela, no hace nada
-            if (entradaUser.trim().length < 10) {
-                alert("El motivo debe tener al menos 10 caracteres.");
-                return;
-            }
-            motivo = entradaUser.trim();
-        } else {
-            // Si es INICIAR, solo confirmación directa de Sí/No
-            if (!confirm(mensajeConfirmacion)) return;
-        }
-
-        // Ejecuta tu lógica original de envío sin alterar una sola letra
-        ejecutarAccionManual(motivo);
+        // Cambiamos el título de tu modal real y lo mostramos en pantalla
+        document.getElementById('modal-accion-titulo').innerText = "CONFIRMAR " + tipo;
+        document.getElementById('modal-cancel').style.display = 'flex';
     }
 
     function ejecutarAccionManual() {
