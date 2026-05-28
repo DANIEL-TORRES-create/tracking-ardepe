@@ -494,13 +494,13 @@
             itinerarioPlan = JSON.parse(decodeURIComponent(itinerarioDecoded));
         } catch(e) { console.error("Error itinerario satelital:", e); }
 
-        // NUEVO PUENTE GLOBAL: Creamos una función temporal para recibir los datos de Google sin bloqueo CORS
+        // Creamos la función receptora temporal para capturar la respuesta sin bloqueos de red
         const nombreCallbackTemporal = "cb_satelital_" + Date.now();
         window[nombreCallbackTemporal] = function(datosSeguimiento) {
             _satCacheDatosRows = [];
             let coordenadasRecorridas = [];
             let coordenadasPendientes = [];
-            let camiónCoordenadaVivo = null;
+            let camionCoordenadaVivo = null;
 
             itinerarioPlan.forEach((plan, index) => {
                 let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
@@ -545,11 +545,13 @@
                     realLlegada: horaRealLlegada,
                     desvTiempo: desvTiempoTexto,
                     semTiempo: semaforoTiempo,
+                    themeSemTiempo: semaforoTiempo === "rojo" ? "rojo" : (semaforoTiempo === "mostaza" ? "mostaza" : "verde"),
                     tiempoPlan: tiempoViajePlan,
                     tiempoReal: tiempoViajeReal,
                     distPlan: distPlanKm,
                     distReal: distRealTramo,
                     semDist: semaforoDistancia,
+                    themeSemDist: semaforoDistancia === "rojo" ? "rojo" : (semaforoDistancia === "mostaza" ? "mostaza" : "verde"),
                     difKm: difKm,
                     pernoctePlan: pernoctePlan,
                     pernocteReal: pernocteReal,
@@ -561,7 +563,7 @@
                 let hitoLatLng = [latHito, lngHito];
                 if (esCompletado) {
                     coordenadasRecorridas.push(hitoLatLng);
-                    camiónCoordenadaVivo = hitoLatLng; 
+                    camionCoordenadaVivo = hitoLatLng; 
                 } else {
                     coordenadasPendientes.push(hitoLatLng);
                 }
@@ -571,28 +573,29 @@
                 marcadorHito.bindPopup(`<b>Hito: ${plan.punto}</b><br>Real: ${horaRealLlegada}`);
             });
 
-            if (camiónCoordenadaVivo) {
-                _satMarcadorCamion = L.marker(camiónCoordenadaVivo).addTo(_satMapa);
-                _satMapa.setView(camiónCoordenadaVivo, 9);
+            if (camionCoordenadaVivo) {
+                _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
+                _satMarcadorCamion.bindPopup("<b>Unidad en Ruta</b>").openPopup();
+                _satMapa.setView(camionCoordenadaVivo, 9);
             }
 
             if (coordenadasRecorridas.length > 0) L.polyline(coordenadasRecorridas, { color: '#004b93', weight: 4 }).addTo(_satMapa);
             if (coordenadasPendientes.length > 0) {
-                if (camiónCoordenadaVivo) coordenadasPendientes.unshift(camiónCoordenadaVivo);
+                if (camionCoordenadaVivo) coordenadasPendientes.unshift(camionCoordenadaVivo);
                 L.polyline(coordenadasPendientes, { color: '#94a3b8', weight: 3, dashArray: '5, 8' }).addTo(_satMapa);
             }
 
             filtrarTablaSatelital('historial');
-            delete window[nombreCallbackTemporal]; // Limpieza de memoria
+            delete window[nombreCallbackTemporal]; 
         };
 
-        // Cambiamos el fetch viejo por una inyección de script dinámico que evita el bloqueo de red
+        // CORRECCIÓN DE URL EXCLUSIVA: Apunta directo al IF número 2 de tu .gs original sin mezclar lecturas
         const script = document.createElement('script');
-        script.src = `${WEB_APP_URL}?read=viajes&action=auditoria_detalle&idViaje=${idViaje}&callback=${nombreCallbackTemporal}&nocache=${Date.now()}`;
+        script.src = `${WEB_APP_URL}?read=auditoria_detalle&idViaje=${idViaje}&callback=${nombreCallbackTemporal}&nocache=${Date.now()}`;
         document.body.appendChild(script);
         script.onload = function() { script.remove(); };
         script.onerror = function() {
-            if (tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:30px; color:#b91c1c; font-weight:bold;">❌ Error de respuesta de red del servidor.</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:30px; color:#b91c1c; font-weight:bold;">❌ Error de red al consultar el detalle.</td></tr>';
         };
     }
 
