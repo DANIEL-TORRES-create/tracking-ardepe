@@ -259,9 +259,9 @@
         btn.disabled = true;
         btn.innerHTML = 'Procesando...';
 
-        // Inyección JSONP limpia que conecta con tu Google Script sin romper CORS
+        // Solo cambiamos el inicio a ?read=viajes para que tu doGet lo procese, lo demás queda intacto
         const script = document.createElement('script');
-        script.src = `${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${encodeURIComponent(_usuarioLogueado)}&callback=respuestaAccionServidor&nocache=${Date.now()}`;
+        script.src = `${WEB_APP_URL}?read=viajes&action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${encodeURIComponent(_usuarioLogueado)}&callback=respuestaAccionServidor&nocache=${Date.now()}`;
         document.body.appendChild(script);
         script.onload = function() { script.remove(); };
         script.onerror = function() {
@@ -271,7 +271,7 @@
         };
     }
 
-    // NUEVA FUNCIÓN OBLIGATORIA: Recibe la respuesta exitosa de Google Sheets
+    // TU FUNCIÓN ORIGINAL COMPLETA (PRESERVADA AL 100%)
     window.respuestaAccionServidor = function(res) {
         const btn = document.getElementById('btn-confirmar');
         if (res && (res.success || res.status === "OK")) {
