@@ -5,7 +5,6 @@
     <title>Panel de Control de Viajes</title> 
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="estilos_addins3.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
@@ -189,7 +188,7 @@
                 <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
                 <td>${badgeColor}</td>
                 <td><small>${v.ruta}</small></td>
-                <td><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${v.origen}<br><i class="fas fa-flag-checkered"></i> ${v.destino}</td>
+                <td>📍 ${v.origen}<br>🏁 ${v.destino}</td>
                 <td style="color:black; font-weight:bold;">${salidaVisual}</td>
                 <td style="font-weight:bold;">${v.llegadaEstimada}</td>
                 <td>
@@ -200,21 +199,21 @@
                 </td>
                 <td class="control-cell">
                     <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" title="Iniciar Viaje" onclick="${estaEnCurso ? '' : `prepararAccion('${v.idViaje}', 'INICIAR')`}">
-                        <i class="fas fa-play-circle"></i>
+                        ▶️
                     </button>
                     <button class="btn-ctrl" title="Finalizar Viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')">
-                        <i class="fas fa-check-circle" style="color:var(--success)"></i>
+                        ✅
                     </button>
                     <button class="btn-ctrl" title="Cancelar Viaje" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')">
-                        <i class="fas fa-ban" style="color:var(--danger)"></i>
+                        🚫
                     </button>
                 </td>
                 <td class="vistas-cell" style="display: flex; gap: 8px; justify-content: center;">
                     <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
-                        <i class="fas fa-stream"></i>
+                        📋
                     </button>
                     <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalle('${v.idViaje}', '${v.placa}', '${v.ruta}', '${v.estadoVisual}', '${v.progreso}', '${encodeURIComponent(v.itinerarioFull)}')">
-                        <i class="fas fa-search-plus"></i>
+                        🔍
                     </button>
                 </td>
             `;
