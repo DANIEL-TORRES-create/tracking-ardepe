@@ -259,10 +259,9 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
-        // CONEXIÓN SEGURA DUAL: Entramos por read=viajes para que el doGet de tu .gs lo reciba,
-        // pasándole los parámetros originales que procesarán tu Sheets sin restricciones CORS.
+        // Cambiamos el orden de las variables en la URL para alinearse con el doGet mapeado
         const script = document.createElement('script');
-        script.src = `${WEB_APP_URL}?read=viajes&action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${encodeURIComponent(_usuarioLogueado)}&callback=respuestaAccionServidor&nocache=${Date.now()}`;
+        script.src = `${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${encodeURIComponent(_usuarioLogueado)}&callback=respuestaAccionServidor&nocache=${Date.now()}`;
         document.body.appendChild(script);
         
         script.onload = function() { script.remove(); };
@@ -273,11 +272,20 @@
         };
     }
 
-    // FUNCIÓN DE RETORNO (CALLBACK): Cierra el modal de inmediato y actualiza los camiones
+    // Callback limpio que procesa el refresco inmediato
     window.respuestaAccionServidor = function(res) {
-        cerrarModal();
-        alert("Viaje actualizado con éxito.");
-        actualizar(); // Refresco inmediato de la tabla monitora
+        if (res && res.success) {
+            cerrarModal();
+            alert("Viaje actualizado con éxito.");
+            actualizar(); // Refresca el monitor en vivo
+        } else {
+            alert("Error del servidor: " + (res ? res.error : "No se pudo procesar la acción."));
+            const btn = document.getElementById('btn-confirmar');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = "Confirmar";
+            }
+        }
     };
 
     // 4. LÓGICA DEL PANEL LATERAL (RESUMEN)
