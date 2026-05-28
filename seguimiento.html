@@ -247,22 +247,40 @@
         ejecutarAccionManual(motivo);
     }
 
-    function ejecutarAccionManual(motivo) {
-        // TU LÓGICA ENLAZADA AL SHEET DE FORMA INTACTA
-        fetch(`${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${_usuarioLogueado}`)
-        .then(response => response.json())
-        .then(res => {
-            if (res.success) {
-                alert("Viaje actualizado con éxito.");
-                actualizar(); // Tu refresco automático idéntico
-            } else {
-                alert("Error: " + res.error);
-            }
-        })
-        .catch(err => {
-            alert("Error de conexión");
-        });
+    function ejecutarAccionManual() {
+        const btn = document.getElementById('btn-confirmar');
+        const motivo = document.getElementById('motivo-txt').value;
+        
+        btn.disabled = true;
+        btn.innerHTML = 'Procesando...';
+
+        // Usamos inyección de script dinámico (JSONP) para saltar el bloqueo de seguridad CORS
+        const script = document.createElement('script');
+        script.src = `${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${encodeURIComponent(_usuarioLogueado)}&callback=respuestaAccionServidor&nocache=${Date.now()}`;
+        document.body.appendChild(script);
+        script.onload = function() { script.remove(); };
+        script.onerror = function() {
+            alert("Error de respuesta de red del servidor. Intente nuevamente.");
+            btn.disabled = false;
+            btn.innerHTML = "Confirmar";
+        };
     }
+
+    // NUEVA FUNCIÓN OBLIGATORIA: Recibe la respuesta exitosa de Google Sheets
+    window.respuestaAccionServidor = function(res) {
+        const btn = document.getElementById('btn-confirmar');
+        if (res && (res.success || res.status === "OK")) {
+            cerrarModal();
+            alert("Viaje actualizado con éxito.");
+            actualizar(); 
+        } else {
+            alert("Error del servidor: " + (res ? res.error : "No se pudo procesar la acción."));
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = "Confirmar";
+            }
+        }
+    };
 
     // 4. LÓGICA DEL PANEL LATERAL (RESUMEN)
     function abrirResumen(data, placa, logAuditoria) {
@@ -666,8 +684,9 @@
                 <td>${dReal}</td>
                 <td style="font-weight:600;">${dDif}</td>
                 <td>${r.pernoctePlan}</td>
-                <td style="font-weight:700;">${r.pernocteReal}</td>
-                <td style="font-weight:600; color:#004b93;">${r.realSalida}</td></tr>`;
+                <td>${r.pernocteReal}</td>
+                <td style="font-weight:600; color:#004b93;">${r.realSalida}</td>
+            </tr>`;
             tbody.appendChild(tr);
         });
     };
