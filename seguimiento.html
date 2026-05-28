@@ -558,12 +558,14 @@
                     realSalida: horaRealSalida
                 });
 
+                // Generación de coordenadas simuladas de ruta en base al índice
                 let latHito = -12.046374 - (index * 0.15); 
                 let lngHito = -77.042793 - (index * 0.10);
                 let hitoLatLng = [latHito, lngHito];
+                
                 if (esCompletado) {
                     coordenadasRecorridas.push(hitoLatLng);
-                    camionCoordenadaVivo = hitoLatLng; 
+                    camionCoordenadaVivo = hitoLatLng; // El último hito completado es la ubicación actual
                 } else {
                     coordenadasPendientes.push(hitoLatLng);
                 }
@@ -571,12 +573,15 @@
                 let colorIcono = esCompletado ? '#16a34a' : '#94a3b8';
                 let marcadorHito = L.circleMarker(hitoLatLng, { radius: 6, fillColor: colorIcono, color: '#fff', weight: 2, fillOpacity: 1 }).addTo(_satMapa);
                 marcadorHito.bindPopup(`<b>Hito: ${plan.punto}</b><br>Real: ${horaRealLlegada}`);
-            });
+            }); // <-- AQUÍ TERMINA TU FOREACH DE HITOS SEGURAMENTE
 
+            // ====================================================================
+            // LOGICA DE MARCADOR VIVO Y RECENTRAJE OPTIMIZADO
+            // ====================================================================
             if (camionCoordenadaVivo) {
+                if (_satMarcadorCamion) _satMapa.removeLayer(_satMarcadorCamion);
                 _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
-                _satMarcadorCamion.bindPopup("<b>Unidad en Ruta</b>").openPopup();
-                _satMapa.setView(camionCoordenadaVivo, 9);
+                _satMarcadorCamion.bindPopup("<b>Unidad en Ruta</b>");
             }
 
             if (coordenadasRecorridas.length > 0) L.polyline(coordenadasRecorridas, { color: '#004b93', weight: 4 }).addTo(_satMapa);
@@ -585,11 +590,25 @@
                 L.polyline(coordenadasPendientes, { color: '#94a3b8', weight: 3, dashArray: '5, 8' }).addTo(_satMapa);
             }
 
+            // Recentraje asíncrono con delay para esperar el CSS modificado
+            setTimeout(function() {
+                if (_satMapa) {
+                    _satMapa.invalidateSize(true); // Estira el mapa a las nuevas medidas del CSS
+                    
+                    if (camionCoordenadaVivo) {
+                        _satMapa.setView(camionCoordenadaVivo, 9, { animate: true });
+                        _satMarcadorCamion.openPopup();
+                    } else if (coordenadasRecorridas.length > 0) {
+                        var bounds = L.polyline(coordenadasRecorridas).getBounds();
+                        _satMapa.fitBounds(bounds, { padding: [30, 30] });
+                    }
+                }
+            }, 300);
+
             filtrarTablaSatelital('historial');
             delete window[nombreCallbackTemporal]; 
         };
 
-        // CORRECCIÓN DE URL EXCLUSIVA: Apunta directo al IF número 2 de tu .gs original sin mezclar lecturas
         const script = document.createElement('script');
         script.src = `${WEB_APP_URL}?read=auditoria_detalle&idViaje=${idViaje}&callback=${nombreCallbackTemporal}&nocache=${Date.now()}`;
         document.body.appendChild(script);
