@@ -348,7 +348,7 @@
         }
 
         // ====================================================================
-        // 3. GENERACIÓN DINÁMICA DE TARJETAS (CARDS VISUALES)
+        // 3. GENERACIÓN DINÁMICA DE TARJETAS (CARDS VISUALES ORIGINALES)
         // ====================================================================
         let containerHtml = `<div class="timeline-cards-container">`;
         
@@ -356,7 +356,7 @@
             let esCompletado = (p.deteccion === "SI" || p.deteccion === "FORZADO");
             let esInicioManual = (p.punto === "INICIO_MANUAL");
             
-            // Asignación de iconos temáticos operativos
+            // Asignación de iconos temáticos operativos originales de FontAwesome
             let iconoHito = "fa-map-marker-alt"; 
             if (index === 0) iconoHito = "fa-warehouse"; 
             if (index === puntos.length - 1) iconoHito = "fa-flag-checkered"; 
