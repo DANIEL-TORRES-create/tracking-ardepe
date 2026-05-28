@@ -573,8 +573,8 @@ textarea {
     width: 100%; 
     border-collapse: collapse; 
     font-size: 11px; 
-    text-align: center; /* 🚀 CAMBIO CLAVE: Todo el contenido de validación se centra automáticamente */
-    min-width: 100%;    /* 🚀 CAMBIO CLAVE: La tabla ya no se estira a la derecha, entra al 100% del cuadro */
+    text-align: center; /* Centra horizontalmente todo el contenido de validación */
+    min-width: 1380px;  /* 🚀 EL BALANCE PERFECTO: Evita que se amontone y crea un scroll horizontal suave */
 }
 
 .mega-tabla-datos th {
@@ -583,17 +583,19 @@ textarea {
     background: #f8fafc; 
     color: #475569;
     font-weight: 700; 
-    padding: 10px 6px; 
+    padding: 10px 4px; /* Compactamos el espaciado interno */
     border-bottom: 2px solid #cbd5e1; 
     z-index: 50;
-    text-align: center; /* Centra los títulos de las columnas */
+    text-align: center; /* Centra los títulos de todas las columnas */
+    white-space: nowrap; /* Evita que los títulos se rompan en dos líneas feas */
 }
 
 .mega-tabla-datos td { 
-    padding: 8px 6px; 
+    padding: 8px 4px; 
     border-bottom: 1px solid #f1f5f9; 
     color: #334155; 
-    vertical-align: middle; 
+    vertical-align: middle;
+    white-space: nowrap; /* Mantiene las fechas y horas en un solo renglón limpio */
 }
 
 .mega-tabla-datos tbody tr:hover { 
