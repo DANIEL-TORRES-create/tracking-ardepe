@@ -507,8 +507,18 @@ textarea {
 .badge-sat-placa strong, .badge-sat-ruta strong { color: #0f172a; }
 
 /* Búnker del Minimapa */
-.mega-bloque-mapa { background: #e2e8f0; border-radius: 10px; border: 1px solid #cbd5e1; overflow: hidden; }
-#sat-map-container { width: 100%; height: 100%; z-index: 1000; }
+.mega-bloque-mapa { 
+    background: #e2e8f0; 
+    border-radius: 10px; 
+    border: 1px solid #cbd5e1; 
+    overflow: hidden; 
+    height: 350px !important; /* Forzamos una altura rectangular perfecta para que el mapa respire */
+}
+#sat-map-container { 
+    width: 100% !important; 
+    height: 100% !important; 
+    z-index: 1000; 
+}
 
 /* Bloque Control Derecho vertical */
 .mega-bloque-controles { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
@@ -545,17 +555,24 @@ textarea {
 .sat-btn-f:hover { background: #f1f5f9; }
 .sat-btn-f.activo { background: #0f172a; border-color: #0f172a; color: #ffffff; font-weight: 600; }
 
-/* El Búnker Rígido de la Tabla: Scroll Infinito */
+/* El Búnker Rígido de la Tabla: Scroll Infinito Ajustado */
 .mega-bunker-tabla {
     flex: 1; border: 1px solid #e2e8f0; border-radius: 10px;
     overflow-x: auto; overflow-y: auto; background: #ffffff;
+    max-height: calc(100% - 530px); /* Forzamos a la tabla a no empujar el diseño hacia abajo */
 }
-.mega-tabla-datos { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; min-width: 1650px; }
+.mega-tabla-datos { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 11px; /* Bajamos ligeramente a 11px para compactar los textos */
+    text-align: left; 
+    min-width: 1350px; /* Reducimos de 1650px a 1350px para evitar el estiramiento descentrado */
+}
 .mega-tabla-datos th {
     position: sticky; top: 0; background: #f8fafc; color: #475569;
-    font-weight: 600; padding: 10px 12px; border-bottom: 2px solid #cbd5e1; z-index: 50;
+    font-weight: 600; padding: 8px 10px; border-bottom: 2px solid #cbd5e1; z-index: 50;
 }
-.mega-tabla-datos td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+.mega-tabla-datos td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
 .mega-tabla-datos tbody tr:hover { background: #f8fafc; }
 
 /* Desviación Semáforo: Puntos Clínicos sólidos */
@@ -569,6 +586,6 @@ textarea {
 .sat-row-pernocte td { border-bottom: 1px solid #fde68a !important; color: #b45309 !important; }
 
 /* Scrollbars Ejecutivos Delgados */
-.mega-bunker-tabla::-webkit-scrollbar { width: 5px; height: 5px; }
+.mega-bunker-tabla::-webkit-scrollbar { width: 6px; height: 6px; }
 .mega-bunker-tabla::-webkit-scrollbar-track { background: #f8fafc; }
-.bunker-tabla-auditoria::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.mega-bunker-tabla::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
