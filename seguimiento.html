@@ -226,45 +226,41 @@
         _viajeSeleccionado = id;
         _tipoAccionManual = tipo;
         
-        // Limpiamos el modal antes de abrirlo
-        document.getElementById('motivo-txt').value = "";
-        document.getElementById('btn-confirmar').disabled = true;
-        document.getElementById('btn-confirmar').innerHTML = "Confirmar";
-        
-        // Ajustamos dinámicamente el estilo del botón según la acción
-        const btnConfirmar = document.getElementById('btn-confirmar');
-        btnConfirmar.className = ""; // Limpiar clases previas
-        if (tipo === "INICIAR") btnConfirmar.classList.add("btn-primario", "bg-iniciar");
-        if (tipo === "FINALIZAR") btnConfirmar.classList.add("btn-primario", "bg-finalizar");
-        if (tipo === "CANCELAR") btnConfirmar.classList.add("btn-primario", "bg-cancelar");
+        let mensajeConfirmacion = "¿Está seguro de que desea " + tipo + " este viaje?";
+        let motivo = "Acción manual desde monitor";
 
-        document.getElementById('modal-accion-titulo').innerText = "CONFIRMAR " + tipo;
-        document.getElementById('modal-cancel').style.display = 'flex';
+        // Si es FINALIZAR o CANCELAR, pedimos el motivo de forma segura
+        if (tipo === "FINALIZAR" || tipo === "CANCELAR") {
+            let entradaUser = prompt("Ingrese el motivo para " + tipo + " el viaje (Mínimo 10 caracteres):", "");
+            if (entradaUser === null) return; // Si cancela, no hace nada
+            if (entradaUser.trim().length < 10) {
+                alert("El motivo debe tener al menos 10 caracteres.");
+                return;
+            }
+            motivo = entradaUser.trim();
+        } else {
+            // Si es INICIAR, solo confirmación directa de Sí/No
+            if (!confirm(mensajeConfirmacion)) return;
+        }
+
+        // Ejecuta tu lógica original de envío sin alterar una sola letra
+        ejecutarAccionManual(motivo);
     }
 
-    function ejecutarAccionManual() {
-        const btn = document.getElementById('btn-confirmar');
-        const motivo = document.getElementById('motivo-txt').value;
-        
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-
+    function ejecutarAccionManual(motivo) {
+        // TU LÓGICA ENLAZADA AL SHEET DE FORMA INTACTA
         fetch(`${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${_usuarioLogueado}`)
         .then(response => response.json())
         .then(res => {
             if (res.success) {
-                cerrarModal();
-                actualizar(); // Refresco inmediato para ver el cambio
+                alert("Viaje actualizado con éxito.");
+                actualizar(); // Tu refresco automático idéntico
             } else {
                 alert("Error: " + res.error);
-                btn.disabled = false;
-                btn.innerHTML = "Confirmar";
             }
         })
         .catch(err => {
             alert("Error de conexión");
-            btn.disabled = false;
-            btn.innerHTML = "Confirmar";
         });
     }
 
