@@ -433,19 +433,20 @@ textarea {
     background: rgba(15, 23, 42, 0.75) !important; 
     backdrop-filter: blur(8px) !important; 
     -webkit-backdrop-filter: blur(8px) !important;
-    display: none; /* Controlado dinámicamente por JavaScript */
-    justify-content: flex-end !important; /* 🚀 CAMBIO TÁCTICO: Alinea a la derecha útil de la pantalla */
-    align-items: center !important;    /* Lo mantiene centrado de arriba a abajo */
+    display: none; 
+    justify-content: flex-end !important; 
+    align-items: flex-start !important; /* 🚀 CAMBIO: Alinea arriba para controlar el margen vertical exacto */
     z-index: 999999 !important; 
     box-sizing: border-box !important;
 }
 
-/* EL CUADRO BLANCO INTERNO (ENCUADRADO Y CENTRADO EN EL ÁREA ÚTIL DE GEOTAB) */
+/* EL CUADRO BLANCO INTERNO (BAJADO Y CENTRADO EN EL ESPACIO ÚTIL) */
 .mega-modal-content {
     background: #ffffff !important; 
-    width: calc(100% - 290px) !important; /* 🚀 LA CLAVE: Resta el espacio exacto del menú gris para que el cuadro blanco no lo pise */
-    height: 92vh !important; /* Mantiene una altura cómoda y equilibrada en vertical */
-    margin-right: 25px !important; /* 🚀 Separa sutilmente el cuadro del extremo derecho de la pantalla */
+    width: calc(100% - 290px) !important; 
+    height: 90vh !important; /* 🚀 CAMBIO: Ajuste de altura para equilibrio visual */
+    margin-top: 5vh !important; /* 🚀 CAMBIO: Baja el cuadro completo para eliminar el vacío inferior */
+    margin-right: 25px !important; 
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
     padding: 24px !important; 
@@ -455,6 +456,7 @@ textarea {
     overflow: hidden !important; 
     z-index: 1000000 !important;
 }
+
 /* CABECERA EN FILAS NATURALES */
 .mega-cabecera-satelital {
     display: flex !important;
@@ -492,6 +494,7 @@ textarea {
     white-space: nowrap !important;
 }
 .badge-sat-placa strong, .badge-sat-ruta strong { color: #0f172a !important; }
+
 /* BÚNKER DEL MAPA */
 .mega-bloque-mapa { 
     background: #e2e8f0 !important; 
@@ -507,6 +510,7 @@ textarea {
     height: 100% !important; 
     z-index: 10 !important; 
 }
+
 /* CONTROLES DERECHOS */
 .mega-bloque-controles { display: flex !important; align-items: center !important; gap: 20px !important; }
 .btn-close-mega {
@@ -515,6 +519,7 @@ textarea {
 }
 .btn-close-mega:hover { background: #e63946 !important; color: white !important; transform: rotate(90deg) !important; }
 .mega-termometro-inputs { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 15px !important; }
+
 /* BADGES DE TELEMETRÍA */
 .sat-badge-estado { display: inline-flex !important; align-items: center !important; gap: 6px !important; padding: 5px 14px !important; border-radius: 20px !important; font-weight: 700 !important; font-size: 11px !important; }
 .sat-ping { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
@@ -529,6 +534,7 @@ textarea {
 .sat-progreso-texto { display: flex !important; justify-content: space-between !important; font-size: 10px !important; font-weight: 700 !important; color: #64748b !important; margin-bottom: 3px !important; }
 .sat-barra-bg { width: 100% !important; height: 8px !important; background: #e2e8f0 !important; border-radius: 4px !important; overflow: hidden !important; }
 .sat-barra-fill { height: 100% !important; background: linear-gradient(90deg, #004b93, #1e8e3e) !important; transition: width 0.4s ease !important; }
+
 /* BARRA DE FILTROS */
 .mega-barra-filtros { display: flex !important; gap: 8px !important; margin-bottom: 12px !important; flex-shrink: 0 !important; }
 .sat-btn-f {
@@ -537,15 +543,14 @@ textarea {
 }
 .sat-btn-f:hover { background: #f1f5f9 !important; }
 .sat-btn-f.activo { background: #0f172a !important; border-color: #0f172a !important; color: #ffffff !important; font-weight: 600 !important; }
-/* ====================================================================
-   🚀 NUEVO AJUSTE: TABLA CON LETRAS GRANDES Y SCROLL INTERNO PROTEGIDO
-   ==================================================================== */
+
+/* TABLA CON SCROLL INTERNO PROTEGIDO */
 .mega-bunker-tabla {
     flex: 1 !important; 
     border: 1px solid #e2e8f0 !important; 
     border-radius: 10px !important;
-    overflow-x: auto !important; /* 🚀 Activa los segmentadores horizontales nativos si el contenido es grande */
-    overflow-y: auto !important; /* Activa los segmentadores verticales */
+    overflow-x: auto !important; 
+    overflow-y: auto !important; 
     background: #ffffff !important;
     margin-top: 5px !important;
     width: 100% !important;
@@ -554,9 +559,9 @@ textarea {
 .mega-tabla-datos { 
     width: 100% !important; 
     border-collapse: collapse !important; 
-    font-size: 12.5px !important; /* 🚀 MODIFICACIÓN: Subimos el tamaño de letra de 10px a 12.5px para legibilidad impecable */
+    font-size: 12.5px !important; 
     text-align: center !important; 
-    min-width: 1580px !important;  /* 🚀 MODIFICACIÓN: Expandimos el ancho base para que la letra grande respire de forma horizontal */
+    min-width: 1580px !important; 
 }
 .mega-tabla-datos th {
     position: sticky !important; 
@@ -564,18 +569,18 @@ textarea {
     background: #f8fafc !important; 
     color: #475569 !important;
     font-weight: 700 !important; 
-    padding: 12px 10px !important; /* Más espacio en celdas de títulos */
+    padding: 12px 10px !important; 
     border-bottom: 2px solid #cbd5e1 !important; 
     z-index: 50 !important;
     text-align: center !important;
-    white-space: nowrap !important; /* Los títulos quedan limpios en una sola línea horizontal */
+    white-space: nowrap !important; 
 }
 .mega-tabla-datos td { 
-    padding: 10px 10px !important; /* Más espacio vertical en las filas */
+    padding: 10px 10px !important; 
     border-bottom: 1px solid #f1f5f9 !important; 
     color: #334155 !important; 
     vertical-align: middle !important;
-    white-space: nowrap !important; /* Las fechas y datos no se rompen hacia abajo */
+    white-space: nowrap !important; 
 }
 .mega-tabla-datos td:nth-child(2), 
 .mega-tabla-datos th:nth-child(2) {
@@ -583,20 +588,26 @@ textarea {
     padding-left: 15px !important;
 }
 
+/* ====================================================================
+   🚀 FASE 4.1: BLINDAJE ULTRA-GRIS PARA BOTONES DE CONTROL DE VIAJE
+   ==================================================================== */
 .btn-ctrl:disabled,
 .btn-ctrl[disabled],
-.btn-ctrl.disabled {
-    color: #94a3b8 !important;         /* Gris pizarra claro */
-    background-color: #f1f5f9 !important;   /* Fondo gris apagado */
-    cursor: not-allowed !important;     /* Cursor de bloqueo internacional */
-    opacity: 0.55 !important;           /* Opacidad baja para denotar apagado */
-    transform: none !important;          /* Elimina cualquier animación o escala */
+.btn-ctrl.disabled,
+.btn-ctrl:disabled i,
+.btn-ctrl:disabled img {
+    color: #94a3b8 !important;         
+    background-color: #f8fafc !important; 
+    cursor: not-allowed !important;     
+    opacity: 0.45 !important;           
+    filter: grayscale(1) contrast(0.8) !important; /* 🚀 CLAVE: Apaga el color de las imágenes nativas o SVGs a gris mate */
+    transform: none !important;          
     box-shadow: none !important;
-    pointer-events: none !important;     /* Mata cualquier clic accidental */
+    pointer-events: none !important;     
 }
 
 /* ====================================================================
-   FASE 4.2: DISEÑO DE TARJETAS EJECUTIVAS PARA EL PANEL DE RESUMEN (📋)
+   🚀 FASE 4.2: NUEVA VISUAL COMPACTA TIMELINE DE RESUMEN (📋)
    ==================================================================== */
 #panel-resumen, 
 .resumen-viaje-contenedor {
@@ -610,8 +621,6 @@ textarea {
     clear: both !important;
     display: block;
 }
-
-/* Cabecera del Resumen */
 #panel-resumen h3, 
 .resumen-viaje-contenedor h2 {
     font-size: 18px !important;
@@ -624,8 +633,6 @@ textarea {
     align-items: center !important;
     gap: 10px !important;
 }
-
-/* Botón de cierre interno del resumen */
 #panel-resumen button,
 .resumen-viaje-contenedor .btn-close-inline {
     background: #d93025 !important;
@@ -639,13 +646,10 @@ textarea {
     transition: all 0.2s ease !important;
     text-transform: uppercase !important;
 }
-
 #panel-resumen button:hover {
     background: #b22216 !important;
     box-shadow: 0 4px 12px rgba(217, 48, 37, 0.2) !important;
 }
-
-/* Bloque de Auditoría Inicial */
 .auditoria-inicio-text {
     background: #fffbeb !important;
     color: #b45309 !important;
@@ -660,43 +664,83 @@ textarea {
     gap: 8px !important;
 }
 
-/* Rejilla de Hitos en Tarjetas Modernas */
+/* Rejilla de Hitos Alineados Verticalmente Tipo Ruta Fina */
 .resumen-lista-puntos {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
-    gap: 14px !important;
+    display: flex !important;
+    flex-direction: column !important; /* 🚀 Ajuste a flujo de ruta vertical continuo */
+    gap: 0 !important; 
     margin-top: 15px !important;
-    padding: 0 !important;
+    padding-left: 30px !important; /* Deja espacio para el hilo central */
     list-style: none !important;
+    position: relative !important;
 }
 
+/* Hilo conductor gris de fondo */
+.resumen-lista-puntos::before {
+    content: '';
+    position: absolute;
+    left: 42px;
+    top: 20px;
+    bottom: 20px;
+    width: 3px;
+    background: #cbd5e1;
+    z-index: 1;
+}
+
+/* Cada tarjeta del Timeline */
 .resumen-lista-puntos li {
-    background: #f8fafc !important;
+    background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    padding: 14px !important;
+    padding: 12px 16px !important;
     border-radius: 10px !important;
     font-size: 13px !important;
     color: #334155 !important;
     font-weight: 500 !important;
-    line-height: 1.6 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 5px !important;
+    margin-bottom: 12px !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 2;
     transition: all 0.2s ease !important;
 }
-
 .resumen-lista-puntos li:hover {
-    background: #ffffff !important;
-    border-color: #cbd5e1 !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+    border-color: #94a3b8 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* Estilos para los Iconos de Estado Inyectados */
-.resumen-icon-status {
-    font-size: 16px !important;
-    margin-right: 8px !important;
-    vertical-align: middle !important;
+/* 🚀 LOS NUEVOS NODOS ELEGANTES COMPACTOS (SOLUCIONA CÍRCULOS GIGANTES) */
+.resumen-lista-puntos li::before {
+    content: '';
+    position: absolute;
+    left: -24px; /* Centrado en el hilo conductor */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #1e8e3e; /* Por defecto Verde (Completado) */
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 0 2px #1e8e3e;
+    z-index: 3;
 }
-.resumen-icon-success { color: #1e8e3e !important; } /* Verde para Completados */
-.resumen-icon-pending { color: #64748b !important; } /* Gris para Pendientes */
-.resumen-icon-warning { color: #d97706 !important; } /* Naranja para Desviaciones */
+
+/* 🚀 ICONO PRIMER ELEMENTO (INICIO_MANUAL / COCHERA) */
+.resumen-lista-puntos li:first-child::before {
+    background: #d93025 !important; /* Rojo Alerta o Inicio */
+    box-shadow: 0 0 0 2px #d93025 !important;
+}
+
+/* 🚀 ICONO ÚLTIMO ELEMENTO (FINAL DE RUTA) */
+.resumen-lista-puntos li:last-child::before {
+    background: #004b93 !important; /* Azul Navisaf Corporativo */
+    box-shadow: 0 0 0 2px #004b93 !important;
+}
+
+/* Modificadores de color manuales si tu JS inyecta clases */
+.resumen-lista-puntos li.hito-pendiente::before {
+    background: #94a3b8 !important;
+    box-shadow: 0 0 0 2px #94a3b8 !important;
+}
+.resumen-lista-puntos li.hito-alerta::before {
+    background: #d97706 !important;
+    box-shadow: 0 0 0 2px #d97706 !important;
+}
