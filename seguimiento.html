@@ -292,12 +292,7 @@
             }
         }
     };
-function determinarIconoHito(punto, index, total) {
-        if (index === 0) return "fa-warehouse"; // Cochera / Origen
-        if (index === total - 1) return "fa-flag-checkered"; // Destino Final
-        if (punto.includes("INICIO_MANUAL")) return "fa-play-circle"; 
-        return "fa-map-marker-alt"; 
-    }
+    
     // 4. LÓGICA DEL PANEL LATERAL (RESUMEN)
     function abrirResumen(data, placa, logAuditoria) {
         // ====================================================================
