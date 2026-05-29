@@ -600,14 +600,14 @@ textarea {
     background-color: #f8fafc !important; 
     cursor: not-allowed !important;     
     opacity: 0.45 !important;           
-    filter: grayscale(1) contrast(0.8) !important; /* 🚀 CLAVE: Apaga el color de las imágenes nativas o SVGs a gris mate */
+    filter: grayscale(1) contrast(0.8) !important; /* 🚀 Forzado gris mate */
     transform: none !important;          
     box-shadow: none !important;
     pointer-events: none !important;     
 }
 
 /* ====================================================================
-   🚀 FASE 4.2: NUEVA VISUAL COMPACTA TIMELINE DE RESUMEN (📋)
+   🚀 FASE 4.2: NUEVA VISUAL TIMELINE VERTICAL COMPACTA (📋)
    ==================================================================== */
 #panel-resumen, 
 .resumen-viaje-contenedor {
@@ -621,6 +621,7 @@ textarea {
     clear: both !important;
     display: block;
 }
+
 #panel-resumen h3, 
 .resumen-viaje-contenedor h2 {
     font-size: 18px !important;
@@ -628,54 +629,22 @@ textarea {
     color: #0f172a !important;
     text-transform: uppercase !important;
     margin-bottom: 18px !important;
-    letter-spacing: -0.3px !important;
     display: flex !important;
     align-items: center !important;
     gap: 10px !important;
 }
-#panel-resumen button,
-.resumen-viaje-contenedor .btn-close-inline {
-    background: #d93025 !important;
-    color: #ffffff !important;
-    border: none !important;
-    padding: 8px 16px !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    border-radius: 6px !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    text-transform: uppercase !important;
-}
-#panel-resumen button:hover {
-    background: #b22216 !important;
-    box-shadow: 0 4px 12px rgba(217, 48, 37, 0.2) !important;
-}
-.auditoria-inicio-text {
-    background: #fffbeb !important;
-    color: #b45309 !important;
-    padding: 12px 16px !important;
-    border-radius: 8px !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    margin-bottom: 20px !important;
-    border-left: 5px solid #f59e0b !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-}
 
-/* Rejilla de Hitos Alineados Verticalmente Tipo Ruta Fina */
 .resumen-lista-puntos {
     display: flex !important;
-    flex-direction: column !important; /* 🚀 Ajuste a flujo de ruta vertical continuo */
+    flex-direction: column !important; 
     gap: 0 !important; 
     margin-top: 15px !important;
-    padding-left: 30px !important; /* Deja espacio para el hilo central */
+    padding-left: 30px !important; 
     list-style: none !important;
     position: relative !important;
 }
 
-/* Hilo conductor gris de fondo */
+/* Hilo gris de la ruta */
 .resumen-lista-puntos::before {
     content: '';
     position: absolute;
@@ -687,7 +656,7 @@ textarea {
     z-index: 1;
 }
 
-/* Cada tarjeta del Timeline */
+/* Tarjetas del Resumen */
 .resumen-lista-puntos li {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
@@ -695,52 +664,40 @@ textarea {
     border-radius: 10px !important;
     font-size: 13px !important;
     color: #334155 !important;
-    font-weight: 500 !important;
     margin-bottom: 12px !important;
     display: block !important;
     position: relative !important;
     z-index: 2;
-    transition: all 0.2s ease !important;
-}
-.resumen-lista-puntos li:hover {
-    border-color: #94a3b8 !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* 🚀 LOS NUEVOS NODOS ELEGANTES COMPACTOS (SOLUCIONA CÍRCULOS GIGANTES) */
+/* Micro-nodos estilizados */
 .resumen-lista-puntos li::before {
     content: '';
     position: absolute;
-    left: -24px; /* Centrado en el hilo conductor */
+    left: -24px; 
     top: 50%;
     transform: translateY(-50%);
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    background: #1e8e3e; /* Por defecto Verde (Completado) */
+    background: #1e8e3e; /* Verde por defecto */
     border: 3px solid #ffffff;
     box-shadow: 0 0 0 2px #1e8e3e;
     z-index: 3;
 }
 
-/* 🚀 ICONO PRIMER ELEMENTO (INICIO_MANUAL / COCHERA) */
+/* Diferenciador de colores Inicio/Fin */
 .resumen-lista-puntos li:first-child::before {
-    background: #d93025 !important; /* Rojo Alerta o Inicio */
+    background: #d93025 !important; /* Rojo origen */
     box-shadow: 0 0 0 2px #d93025 !important;
 }
 
-/* 🚀 ICONO ÚLTIMO ELEMENTO (FINAL DE RUTA) */
 .resumen-lista-puntos li:last-child::before {
-    background: #004b93 !important; /* Azul Navisaf Corporativo */
+    background: #004b93 !important; /* Azul destino */
     box-shadow: 0 0 0 2px #004b93 !important;
 }
 
-/* Modificadores de color manuales si tu JS inyecta clases */
 .resumen-lista-puntos li.hito-pendiente::before {
     background: #94a3b8 !important;
     box-shadow: 0 0 0 2px #94a3b8 !important;
-}
-.resumen-lista-puntos li.hito-alerta::before {
-    background: #d97706 !important;
-    box-shadow: 0 0 0 2px #d97706 !important;
 }
