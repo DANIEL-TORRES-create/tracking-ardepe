@@ -433,25 +433,23 @@ textarea {
     background: rgba(15, 23, 42, 0.75) !important; 
     backdrop-filter: blur(8px) !important; 
     -webkit-backdrop-filter: blur(8px) !important;
+    
+    /* 🚀 LA CORRECCIÓN: Quitamos el flex permanente para que el display:none del HTML mande al inicio */
     display: none; 
-    /* 🚀 RÍGIDO: Alineación arriba a la derecha para que los márgenes respondan al milímetro */
-    display: flex !important;
+    
     justify-content: flex-end !important; 
     align-items: flex-start !important; 
     z-index: 999999 !important; 
     box-sizing: border-box !important;
 }
 
-/* EL CUADRO BLANCO INTERNO (TAMAÑO ORIGINAL - SÓLO DESPLAZADO ABAJO) */
+/* EL CUADRO BLANCO INTERNO (TU DISEÑO ORIGINAL INTACTO Y BAJADO) */
 .mega-modal-content {
     background: #ffffff !important; 
-    width: calc(100% - 320px) !important; /* 🚀 Separación de seguridad del menú principal izquierdo */
-    height: 86vh !important;               /* 🚀 RÍGIDO: Tu altura original intacta */
-    
-    /* 🚀 CONTROL DE DESPLAZAMIENTO: */
-    margin-top: 11vh !important;           /* 🚀 BAJADO EXTRALIMPIO: Empuja el bloque completo más abajo */
-    margin-right: 25px !important;         /* 🚀 Mantiene la distancia estética con el borde derecho */
-    
+    width: calc(100% - 320px) !important; 
+    height: 86vh !important;               
+    margin-top: 11vh !important;           /* Baja el bloque completo de forma limpia */
+    margin-right: 25px !important;         
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
     padding: 24px !important; 
