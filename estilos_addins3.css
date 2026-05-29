@@ -436,17 +436,16 @@ textarea {
     display: none; 
     justify-content: flex-end !important; 
     align-items: flex-start !important; 
-    padding-top: 5vh !important; /* 🚀 FORZADO: Empuja todo el cuadro hacia abajo de la pantalla */
+    padding-top: 5vh !important; /* 🚀 FORZADO: Empuja todo el bloque blanco hacia abajo */
     z-index: 999999 !important; 
     box-sizing: border-box !important;
 }
 
-/* EL CUADRO BLANCO INTERNO */
 .mega-modal-content {
     background: #ffffff !important; 
-    width: calc(100% - 310px) !important; /* Separación sutil del menú izquierdo de Geotab */
-    height: 88vh !important; 
-    margin-right: 35px !important; /* Separación balanceada del borde derecho */
+    width: calc(100% - 310px) !important; /* 🚀 Alineación a la izquierda calibrada respecto al menú */
+    height: 90vh !important; /* Mantiene exactamente la misma altura que querías */
+    margin-right: 30px !important; /* 🚀 Centrado simétrico derecho */
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
     padding: 24px !important; 
