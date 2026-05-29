@@ -1,573 +1,562 @@
 /* =========================================
-   VARIABLES Y ESTILOS BASE
-   ========================================= */
+   VARIABLES Y ESTILOS BASE
+   ========================================= */
 :root {
-    --primary: #004b93;      /* Azul Navisaf */
-    --navisaf-light: #e6f1fa; /* Fondo celeste suave */
-    --danger: #d93025;       /* Rojo alertas/cancelar */
-    --success: #1e8e3e;      /* Verde progreso/confirmar */
-    --text-dark: #333333;
-    --border-color: #dddddd;
+    --primary: #004b93;      /* Azul Navisaf */
+    --navisaf-light: #e6f1fa; /* Fondo celeste suave */
+    --danger: #d93025;       /* Rojo alertas/cancelar */
+    --success: #1e8e3e;      /* Verde progreso/confirmar */
+    --text-dark: #333333;
+    --border-color: #dddddd;
 }
 
 body {
-    font-family: 'Lexend', sans-serif;
-    background-color: #f8f9fa;
-    margin: 0;
-    padding: 0;
-    color: var(--text-dark);
+    font-family: 'Lexend', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+    color: var(--text-dark);
 }
 
 /* =========================================
-   ENCABEZADO (NAV BAR)
-   ========================================= */
+   ENCABEZADO (NAV BAR)
+   ========================================= */
 .header-container {
-    background-color: var(--navisaf-light);
-    padding: 20px 35px;
-    border-bottom: 4px solid var(--primary);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    z-index: 100;
+    background-color: var(--navisaf-light);
+    padding: 20px 35px;
+    border-bottom: 4px solid var(--primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 100;
 }
 
 .neon-title {
-    margin: 0;
-    color: var(--primary);
-    font-size: 24px;
-    font-weight: 800;
-    position: relative;
+    margin: 0;
+    color: var(--primary);
+    font-size: 24px;
+    font-weight: 800;
+    position: relative;
 }
 
 /* El subrayado blanco grueso bajo el título */
 .neon-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: -6px;
-    width: 100%;
-    height: 4px;
-    background: #ffffff;
-    box-shadow: 0 0 8px rgba(255,255,255,0.8);
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 100%;
+    height: 4px;
+    background: #ffffff;
+    box-shadow: 0 0 8px rgba(255,255,255,0.8);
 }
 
 .nav-shortcuts {
-    display: flex;
-    gap: 12px;
+    display: flex;
+    gap: 12px;
 }
 
 .btn-nav {
-    background-color: var(--primary);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .btn-nav:hover {
-    background-color: #003366;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background-color: #003366;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 /* =========================================
-   CONTENEDOR Y TABLA MONITOR
-   ========================================= */
+   CONTENEDOR Y TABLA MONITOR
+   ========================================= */
 .dashboard {
-    padding: 20px;
+    padding: 20px;
 }
 
 .monitor-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
 .monitor-table thead {
-    background: #e1e4e8;
+    background: #e1e4e8;
 }
 
 .monitor-table th {
-    padding: 15px;
-    text-align: left;
-    font-size: 11px;
-    color: #444;
-    text-transform: uppercase;
-    border-bottom: 2px solid #ccc;
+    padding: 15px;
+    text-align: left;
+    font-size: 11px;
+    color: #444;
+    text-transform: uppercase;
+    border-bottom: 2px solid #ccc;
 }
 
 .monitor-table td {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
-    font-size: 13px;
-    vertical-align: middle;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    vertical-align: middle;
 }
 
 /* Columnas con diseño específico */
 .control-cell {
-    border-right: 2px solid #ddd !important;
-    text-align: center;
-    background: #fafafa;
+    border-right: 2px solid #ddd !important;
+    text-align: center;
+    background: #fafafa;
 }
 
 .vistas-cell {
-    text-align: center;
+    text-align: center;
 }
 
 /* Botones dentro de la tabla */
 .btn-ctrl, .btn-vista {
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 20px;
-    padding: 5px 12px;
-    transition: 0.2s;
-    color: #444;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 5px 12px;
+    transition: 0.2s;
+    color: #444;
 }
 
 .btn-ctrl.disabled {
-    color: #bdbdbd !important;
-    cursor: not-allowed;
+    color: #bdbdbd !important;
+    cursor: not-allowed;
 }
 
 .btn-ctrl:hover:not(.disabled), .btn-vista:hover {
-    transform: scale(1.2);
-    color: var(--primary);
+    transform: scale(1.2);
+    color: var(--primary);
 }
 
 /* =========================================
-   BARRA DE PROGRESO SEGMENTADA
-   ========================================= */
+   BARRA DE PROGRESO SEGMENTADA
+   ========================================= */
 .segment-bar {
-    display: flex;
-    gap: 3px;
-    height: 10px;
-    width: 110px;
-    background: #eee;
-    border-radius: 5px;
-    margin-bottom: 4px;
+    display: flex;
+    gap: 3px;
+    height: 10px;
+    width: 110px;
+    background: #eee;
+    border-radius: 5px;
+    margin-bottom: 4px;
 }
 
 .segment {
-    flex: 1;
-    background: #eee;
+    flex: 1;
+    background: #eee;
 }
 
 .segment.active {
-    background: var(--success);
+    background: var(--success);
 }
 
 /* =========================================
-   MODALES (ACCIONES MANUALES)
-   ========================================= */
+   MODALES (ACCIONES MANUALES)
+   ========================================= */
 .modal-full-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
 }
 
 .modal-content {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    width: 400px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 400px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
 textarea {
-    width: 100%;
-    height: 100px;
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-    font-family: inherit;
-    resize: none;
+    width: 100%;
+    height: 100px;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    font-family: inherit;
+    resize: none;
 }
 
 .btn-primario {
-    background: var(--danger);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 .btn-primario:disabled {
-    background: #fabfb7;
-    cursor: not-allowed;
+    background: #fabfb7;
+    cursor: not-allowed;
 }
 
 .btn-secundario {
-    background: #eee;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 10px;
+    background: #eee;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
 }
 
 /* =========================================
-   TIMELINE LATERAL (SIDE PANEL)
-   ========================================= */
+   TIMELINE LATERAL (SIDE PANEL)
+   ========================================= */
 #side-panel {
-    position: fixed;
-    right: -460px; /* Oculto por defecto */
-    top: 55px;     /* BAJAMOS EL PANEL para que no lo tape la franja azul de Geotab */
-    width: 430px !important;
-    height: calc(100% - 55px); /* Ajustamos el alto para que no se salga de la pantalla abajo */
-    background: #f4f6f9 !important; 
-    transition: 0.4s ease-in-out;
-    z-index: 999;  /* Ajustado para no sobreponerse a los menús globales */
-    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column; 
-    padding: 0 !important; 
+    position: fixed;
+    right: -460px; /* Oculto por defecto */
+    top: 55px;     /* BAJAMOS EL PANEL para que no lo tape la franja azul de Geotab */
+    width: 430px !important;
+    height: calc(100% - 55px); /* Ajustamos el alto para que no se salga de la pantalla abajo */
+    background: #f4f6f9 !important; 
+    transition: 0.4s ease-in-out;
+    z-index: 999;  /* Ajustado para no sobreponerse a los menús globales */
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column; 
+    padding: 0 !important; 
 }
 
 #side-panel.open {
-    right: 0;
+    right: 0;
 }
 
 /* Cabecera interna fija del panel */
 .side-panel-header {
-    background: #ffffff;
-    padding: 15px 20px;
-    display: grid;
-    /* Cambiamos a 140px a los extremos para asegurar una simetría perfecta con el título al centro */
-    grid-template-columns: 140px 1fr 140px; 
-    align-items: center;
-    border-bottom: 3px solid var(--primary);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    z-index: 20;
-    flex-shrink: 0;
+    background: #ffffff;
+    padding: 15px 20px;
+    display: grid;
+    /* Cambiamos a 140px a los extremos para asegurar una simetría perfecta con el título al centro */
+    grid-template-columns: 140px 1fr 140px; 
+    align-items: center;
+    border-bottom: 3px solid var(--primary);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    z-index: 20;
+    flex-shrink: 0;
 }
 
 /* Alineaciones específicas e inamovibles */
 .header-left-box {
-    display: flex;
-    flex-direction: column; /* Apila el texto "PLACA" arriba y el código abajo */
-    justify-content: center;
-    align-items: flex-start; /* Alinea ambos textos al extremo izquierdo de su caja */
-    overflow: hidden; 
-    text-align: left;
-    
-    /* Aplicamos el estilo del label directamente aquí para el texto del HTML */
-    font-size: 11px;
-    font-weight: bold;
-    color: #555;
-    text-transform: uppercase;
-    line-height: 1.2;
+    display: flex;
+    flex-direction: column; /* Apila el texto "PLACA" arriba y el código abajo */
+    justify-content: center;
+    align-items: flex-start; /* Alinea ambos textos al extremo izquierdo de su caja */
+    overflow: hidden; 
+    text-align: left;
+    
+    /* Aplicamos el estilo del label directamente aquí para el texto del HTML */
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    text-transform: uppercase;
+    line-height: 1.2;
 }
 
 /* Ajuste directo al texto de la placa (Segunda fila) */
 #side-placa {
-    color: #444; 
-    font-weight: bold; 
-    font-size: 14px; /* Se mantiene imponente */
-    text-transform: uppercase;
-    white-space: nowrap; /* PROHIBIDO romper línea. Mantener texto horizontal */
-    margin-top: 2px; /* Separación sutil con la palabra de arriba */
-    display: block;
+    color: #444; 
+    font-weight: bold; 
+    font-size: 14px; /* Se mantiene imponente */
+    text-transform: uppercase;
+    white-space: nowrap; /* PROHIBIDO romper línea. Mantener texto horizontal */
+    margin-top: 2px; /* Separación sutil con la palabra de arriba */
+    display: block;
 }
 
 .header-center-box {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
 .header-right-box {
-    display: flex;
-    justify-content: flex-end; /* Empuja el botón circular de la X a la esquina derecha */
-    align-items: center;
+    display: flex;
+    justify-content: flex-end; /* Empuja el botón circular de la X a la esquina derecha */
+    align-items: center;
 }
 
 /* Botón de la X Circular Ajustado */
 .btn-close-panel {
-    border: none;
-    background: #f1f3f5;
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-    color: #555;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.2s;
+    border: none;
+    background: #f1f3f5;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #555;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
 }
 
 .btn-close-panel:hover {
-    background: #e63946;
-    color: white;
-    transform: rotate(90deg);
+    background: #e63946;
+    color: white;
+    transform: rotate(90deg);
 }
 
 /* Contenedor del Timeline con Scroll */
 .timeline-v-container {
-    flex: 1;
-    overflow-y: auto; 
-    padding: 20px;
-    box-sizing: border-box;
+    flex: 1;
+    overflow-y: auto; 
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 /* Caja de Auditoría Superior (Color e間to de alerta preventivo) */
 .auditoria-panel-box {
-    background: #fff3cd;
-    border-left: 4px solid #ffc107;
-    padding: 12px 15px;
-    margin-bottom: 20px;
-    border-radius: 6px;
-    font-size: 11.5px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    color: #664d03;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    color: #664d03;
 }
 
 /* Estructura envolvente de cada hito */
 .timeline-card-wrapper {
-    display: flex;
-    position: relative;
-    margin-bottom: 20px;
-    align-items: center;
+    display: flex;
+    position: relative;
+    margin-bottom: 20px;
+    align-items: center;
 }
 
 /* Conector Circular con su Icono de Estado */
 .timeline-node {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 3px solid #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    color: #888;
-    z-index: 10;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #888;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 /* Línea Conectora Vertical Dinámica */
 .timeline-connector-line {
-    position: absolute;
-    left: 17px;
-    top: 36px;
-    width: 3px;
-    height: calc(100% + 20px - 36px);
-    z-index: 5;
+    position: absolute;
+    left: 17px;
+    top: 36px;
+    width: 3px;
+    height: calc(100% + 20px - 36px);
+    z-index: 5;
 }
 .timeline-connector-line.line-pending {
-    background: #dcdcdc;
-    border-left: 2px dashed #b5b5b5; /* Línea punteada para tramos pendientes */
+    background: #dcdcdc;
+    border-left: 2px dashed #b5b5b5; /* Línea punteada para tramos pendientes */
 }
 .timeline-connector-line.line-done {
-    background: var(--success); /* Línea sólida continua para tramos completados */
+    background: var(--success); /* Línea sólida continua para tramos completados */
 }
 
 /* Variaciones de color en nodos según su tipo de detección */
 .timeline-card-wrapper.done .timeline-node {
-    border-color: var(--success);
-    color: white;
-    background: var(--success);
+    border-color: var(--success);
+    color: white;
+    background: var(--success);
 }
 .timeline-card-wrapper.forced .timeline-node {
-    border-color: var(--danger);
-    color: white;
-    background: var(--danger);
+    border-color: var(--danger);
+    color: white;
+    background: var(--danger);
 }
 
 /* ====================================================================
-   DISEÑO DE TARJETAS (CARDS VISUALES)
-   ==================================================================== */
+   DISEÑO DE TARJETAS (CARDS VISUALES)
+   ==================================================================== */
 .timeline-card {
-    background: #ffffff;
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-left: 20px;
-    flex: 1;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
-    border: 1px solid #eef0f4;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-left: 20px;
+    flex: 1;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+    border: 1px solid #eef0f4;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .timeline-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 12px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.12);
 }
 
 .card-header-point {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 6px;
 }
 
 .card-body-times {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: #666;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #666;
 }
 
 .card-body-times span {
-    font-weight: 600;
-    color: #333;
+    font-weight: 600;
+    color: #333;
 }
 
 .card-body-times .time-real span {
-    color: #111;
-    font-weight: 700;
+    color: #111;
+    font-weight: 700;
 }
 
 /* Bordes laterales dinámicos de las tarjetas */
 .timeline-card-wrapper.done .timeline-card {
-    border-left: 4px solid var(--success);
+    border-left: 4px solid var(--success);
 }
 .timeline-card-wrapper.forced .timeline-card {
-    border-left: 4px solid var(--danger);
+    border-left: 4px solid var(--danger);
 }
 
 /* ====================================================================
-   UTILIDADES MODALES (COLORES DE CONFIRMACIÓN POR INTERVENCION)
-   ==================================================================== */
+   UTILIDADES MODALES (COLORES DE CONFIRMACIÓN POR INTERVENCION)
+   ==================================================================== */
 .bg-iniciar { background-color: var(--success) !important; }
 .bg-finalizar { background-color: var(--primary) !important; }
 .bg-cancelar { background-color: var(--danger) !important; }
 
 .monitor-table tbody tr.fila-activa td {
-    background-color: #f9e6e6 !important; /* Fondo sutil rojizo para la fila */
-    border-top: 2px solid #990000 !important;
-    border-bottom: 2px solid #990000 !important;
-    transition: background-color 0.2s ease;
+    background-color: #f9e6e6 !important; /* Fondo sutil rojizo para la fila */
+    border-top: 2px solid #990000 !important;
+    border-bottom: 2px solid #990000 !important;
+    transition: background-color 0.2s ease;
 }
 
 /* Forzamos que la primera y última celda cierren el recuadro rojo oscuro */
 .monitor-table tbody tr.fila-activa td:first-child {
-    border-left: 4px solid #990000 !important;
+    border-left: 4px solid #990000 !important;
 }
 
 .btn-vista-detalle {
-    border: none; background: none; cursor: pointer; font-size: 18px;
-    padding: 5px 8px; transition: 0.2s; color: #555;
+    border: none; background: none; cursor: pointer; font-size: 18px;
+    padding: 5px 8px; transition: 0.2s; color: #555;
 }
 .btn-vista-detalle:hover { transform: scale(1.2); color: #0284c7; }
 
 /* Contenedor principal con efecto esmerilado / Blur de fondo */
 #mega-modal-detalle {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(15, 23, 42, 0.75) !important;
-    backdrop-filter: blur(8px); 
-    -webkit-backdrop-filter: blur(8px);
-    display: flex !important;
-    justify-content: center !important; /* Centra el modal en el espacio útil de Geotab */
-    align-items: center !important;    /* Centra verticalmente */
-    z-index: 5000 !important;
-    box-sizing: border-box !important;
-    padding: 25px !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(8px); 
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: flex-end; /* 🚀 Alinea el contenido al borde derecho útil */
+    align-items: center;
+    z-index: 2500; /* Asegura que se monte sobre el menú si es necesario */
+    box-sizing: border-box;
 }
 
+/* El cuadro blanco que debe encuadrar en tu marca roja */
 .mega-modal-content {
-    background: #ffffff !important; 
-    width: 100% !important;
-    max-width: 1420px !important; /* Evita que se estire al infinito en pantallas ultrapanorámicas */
-    height: 92vh !important; 
-    border-radius: 14px !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
-    padding: 20px !important; 
-    box-sizing: border-box !important; 
-    display: flex !important; 
-    flex-direction: column !important;
-    overflow: hidden !important; 
+    background: #ffffff; 
+    width: calc(100% - 260px) !important; /* 🚀 CORRECCIÓN CRÍTICA: Resta exactamente el ancho del menú izquierdo de Geotab */
+    height: 94vh; 
+    border-radius: 14px 0 0 14px; /* Redondeado elegante solo en el borde interno */
+    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.3);
+    padding: 20px; 
+    box-sizing: border-box; 
+    display: flex; 
+    flex-direction: column;
+    margin-right: 0; /* Pegado al extremo derecho de la pantalla */
+    overflow: hidden;
 }
 
-/* Cabecera Flexible por Filas Naturales */
+/* Rediseño de la cabecera para que sea flexible y no empuje el contenido */
 .mega-cabecera-satelital {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
-    margin-bottom: 12px !important; 
-    flex-shrink: 0 !important;
-    width: 100% !important;
+    display: flex;
+    flex-direction: column; /* 🚀 Cambiamos de Grid a Flex vertical para controlar el espacio */
+    gap: 12px;
+    margin-bottom: 15px; 
+    flex-shrink: 0;
+    width: 100%;
 }
 
+/* Fila superior de la cabecera (Identidad y botón cerrar) */
 .mega-cabecera-top {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    width: 100% !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
 
-.mega-bloque-identidad h2 {
-    font-size: 19px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; letter-spacing: -0.5px;
+/* Reubicación del bloque del mapa para que use el ancho exacto disponible */
+.mega-bloque-mapa { 
+    background: #e2e8f0; 
+    border-radius: 10px; 
+    border: 1px solid #cbd5e1; 
+    overflow: hidden; 
+    height: 240px !important; /* Altura rectangular fija ideal */
+    width: 100% !important;
+    box-sizing: border-box;
 }
-
-.mega-subtitulos { display: flex; gap: 10px; }
-.badge-sat-placa, .badge-sat-ruta {
-    background: #f1f5f9; padding: 5px 12px; border-radius: 5px; font-size: 12px;
-    color: #475569; border-left: 4px solid #004b93; white-space: nowrap;
-}
-.badge-sat-placa strong, .badge-sat-ruta strong { color: #0f172a; }
-
-/* Búnker del Minimapa Expandido Horizontalmente */
-.mega-bloque-mapa { 
-    background: #e2e8f0; 
-    border-radius: 10px; 
-    border: 1px solid #cbd5e1; 
-    overflow: hidden; 
-    height: 230px !important; 
-    width: 100% !important;
-    box-sizing: border-box !important;
-}
-
-#sat-map-container { 
-    width: 100% !important; 
-    height: 100% !important; 
-    z-index: 10 !important; 
+#sat-map-container { 
+    width: 100% !important; 
+    height: 100% !important; 
+    z-index: 10; /* Evita que flote por encima de menús o capas del modal */
 }
 
 /* Bloque Control Derecho vertical */
-.mega-bloque-controles { display: flex; align-items: center; gap: 20px; }
+.mega-bloque-controles { display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-start; gap: 15px; }
 .btn-close-mega {
-    border: none; background: #f1f3f5; font-size: 22px; cursor: pointer; color: #555;
-    width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s;
+    border: none; background: #f1f3f5; font-size: 22px; cursor: pointer; color: #555;
+    width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s;
 }
 .btn-close-mega:hover { background: #e63946; color: white; transform: rotate(90deg); }
-.mega-termometro-inputs { display: flex; flex-direction: row; align-items: center; gap: 15px; }
+.mega-termometro-inputs { width: 100%; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
 
 /* Etiquetas de Estado con Ping vivo */
-.sat-badge-estado { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; font-weight: 700; font-size: 11px; }
+.sat-badge-estado { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 11px; }
 .sat-ping { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .sat-status-en-curso { background: #dcfce7; color: #15803d; }
 .sat-status-en-curso .sat-ping { background: #16a34a; animation: satPingAnim 1.2s cubic-bezier(0, 0, 0.2, 1) infinite; }
@@ -578,7 +567,7 @@ textarea {
 @keyframes satPingAnim { 75%, 100% { transform: scale(2); opacity: 0; } }
 
 /* Barra de progreso global lineal */
-.sat-progreso-wrapper { width: 100%; min-width: 180px; }
+.sat-progreso-wrapper { width: 100%; max-width: 240px; }
 .sat-progreso-texto { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 3px; }
 .sat-barra-bg { width: 100%; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
 .sat-barra-fill { height: 100%; background: linear-gradient(90deg, #004b93, #1e8e3e); transition: width 0.4s ease; }
@@ -586,72 +575,90 @@ textarea {
 /* Micro-Filtros sobre la Tabla */
 .mega-barra-filtros { display: flex; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
 .sat-btn-f {
-    background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px;
-    font-size: 12px; font-weight: 500; color: #475569; cursor: pointer; transition: 0.2s;
+    background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; color: #475569; cursor: pointer; transition: 0.2s;
 }
 .sat-btn-f:hover { background: #f1f5f9; }
 .sat-btn-f.activo { background: #0f172a; border-color: #0f172a; color: #ffffff; font-weight: 600; }
 
-/* El Búnker Rígido de la Tabla: Scroll Infinito Controlado Interno */
+/* El Búnker Rígido de la Tabla: Scroll Infinito Controlado */
 .mega-bunker-tabla {
-    flex: 1 !important; 
-    border: 1px solid #e2e8f0 !important; 
-    border-radius: 10px !important;
-    overflow-x: auto !important; /* Mantiene el scroll horizontal protegido dentro del cuadro blanco */
-    overflow-y: auto !important; 
-    background: #ffffff !important;
-    margin-top: 5px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
+    flex: 1; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 10px;
+    overflow-x: hidden; /* 🚀 Bloquea por completo el scroll horizontal externo */
+    overflow-y: auto; 
+    background: #ffffff;
+    margin-top: 5px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
 }
 
-.mega-tabla-datos { 
-    width: 100% !important; 
-    border-collapse: collapse !important; 
-    font-size: 11px !important; 
-    text-align: center !important; /* Centra todo el contenido de validación */
-    min-width: 1460px !important;  /* Evita el aplastamiento y quiebre vertical de palabras */
+.mega-tabla-datos { 
+    width: 100% !important; 
+    max-width: 100% !important;
+    border-collapse: collapse; 
+    font-size: 10px; /* 🚀 Fuente ultra-compacta para que entren todos los datos */
+    text-align: center;
+    table-layout: fixed; /* 🚀 Fuerza a las columnas a respetar el ancho disponible del recuadro */
 }
+
+/* Distribución quirúrgica de anchos de columna para que sumen exactamente 100% */
+.mega-tabla-datos th:nth-child(1), .mega-tabla-datos td:nth-child(1) { width: 3%; }   /* ST */
+.mega-tabla-datos th:nth-child(2), .mega-tabla-datos td:nth-child(2) { width: 13%; text-align: left; padding-left: 6px; } /* PUNTO (Izquierda) */
+.mega-tabla-datos th:nth-child(3), .mega-tabla-datos td:nth-child(3) { width: 7%; }   /* TIPO */
+.mega-tabla-datos th:nth-child(4), .mega-tabla-datos td:nth-child(4) { width: 9%; }   /* PLAN LLEGADA */
+.mega-tabla-datos th:nth-child(5), .mega-tabla-datos td:nth-child(5) { width: 9%; }   /* REAL LLEGADA */
+.mega-tabla-datos th:nth-child(6), .mega-tabla-datos td:nth-child(6) { width: 7%; }   /* DESVIACIÓN TIEMPO */
+.mega-tabla-datos th:nth-child(7), .mega-tabla-datos td:nth-child(7) { width: 6%; }   /* TIEMPO VIAJE PLAN */
+.mega-tabla-datos th:nth-child(8), .mega-tabla-datos td:nth-child(8) { width: 6%; }   /* TIEMPO VIAJE REAL */
+.mega-tabla-datos th:nth-child(9), .mega-tabla-datos td:nth-child(9) { width: 6%; }   /* DIST PLAN */
+.mega-tabla-datos th:nth-child(10), .mega-tabla-datos td:nth-child(10) { width: 6%; } /* DIST REAL */
+.mega-tabla-datos th:nth-child(11), .mega-tabla-datos td:nth-child(11) { width: 5%; } /* DIF KM */
+.mega-tabla-datos th:nth-child(12), .mega-tabla-datos td:nth-child(12) { width: 7%; } /* PERNOCTE PLAN */
+.mega-tabla-datos th:nth-child(13), .mega-tabla-datos td:nth-child(13) { width: 7%; } /* PERNOCTE REAL */
+.mega-tabla-datos th:nth-child(14), .mega-tabla-datos td:nth-child(14) { width: 9%; } /* REAL SALIDA */
 
 .mega-tabla-datos th {
-    position: sticky !important; 
-    top: 0 !important; 
-    background: #f8fafc !important; 
-    color: #475569 !important;
-    font-weight: 700 !important; 
-    padding: 10px 8px !important; 
-    border-bottom: 2px solid #cbd5e1 !important; 
-    z-index: 50 !important;
-    text-align: center !important;
-    white-space: nowrap !important;
+    position: sticky; 
+    top: 0; 
+    background: #f8fafc; 
+    color: #475569;
+    font-weight: 700; 
+    padding: 6px 2px; 
+    border-bottom: 2px solid #cbd5e1; 
+    z-index: 50;
+    text-align: center;
+    white-space: normal; /* 🚀 Permite que títulos largos pasen a 2 líneas en vez de empujar la tabla */
+    line-height: 1.1;
+    word-wrap: break-word;
 }
 
-.mega-tabla-datos td { 
-    padding: 8px 8px !important; 
-    border-bottom: 1px solid #f1f5f9 !important; 
-    color: #334155 !important; 
-    vertical-align: middle !important;
-    white-space: nowrap !important; /* Fuerza las fechas en un solo renglón */
+.mega-tabla-datos td { 
+    padding: 6px 2px; 
+    border-bottom: 1px solid #f1f5f9; 
+    color: #334155; 
+    vertical-align: middle; 
+    white-space: normal; /* Permite quiebre interno si la fecha es muy larga */
+    word-break: break-all;
 }
 
-/* Columna del nombre del hito alineada a la izquierda */
-.mega-tabla-datos td:nth-child(2), 
-.mega-tabla-datos th:nth-child(2) {
-    text-align: left !important;
-    padding-left: 15px !important;
+.mega-tabla-datos tbody tr:hover { 
+    background: #f8fafc; 
 }
 
 /* Desviación Semáforo: Puntos Clínicos sólidos */
-.sat-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
-.sat-dot-verde { background: #16a34a; box-shadow: 0 0 5px #22c55e; }
-.sat-dot-mostaza { background: #d97706; box-shadow: 0 0 5px #f59e0b; }
-.sat-dot-rojo { background: #dc2626; box-shadow: 0 0 5px #ef4444; }
+.sat-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 3px; vertical-align: middle; }
+.sat-dot-verde { background: #16a34a; box-shadow: 0 0 4px #22c55e; }
+.sat-dot-mostaza { background: #d97706; box-shadow: 0 0 4px #f59e0b; }
+.sat-dot-rojo { background: #dc2626; box-shadow: 0 0 4px #ef4444; }
 
 /* Resaltado completo de tramos de descanso (Pernoctes) en Oro Suave */
 .sat-row-pernocte { background: #fffbeb !important; }
 .sat-row-pernocte td { border-bottom: 1px solid #fde68a !important; color: #b45309 !important; }
 
 /* Scrollbars Ejecutivos Delgados */
-.mega-bunker-tabla::-webkit-scrollbar { width: 6px; height: 6px; }
+.mega-bunker-tabla::-webkit-scrollbar { width: 5px; height: 5px; }
 .mega-bunker-tabla::-webkit-scrollbar-track { background: #f8fafc; }
 .mega-bunker-tabla::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
