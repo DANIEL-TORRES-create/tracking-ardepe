@@ -444,12 +444,14 @@ textarea {
 /* EL CUADRO BLANCO INTERNO (CENTRADITO Y BAJADO) */
 .mega-modal-content {
     background: #ffffff !important; 
-    width: calc(100% - 310px) !important; /* Mantiene su misma proporción original */
-    height: 86vh !important;               /* Mantiene su misma proporción original */
+    width: calc(100% - 310px) !important; 
     
-    /* 🚀 LAS CLAVES DEL MOVIMIENTO: */
-    margin-top: 7vh !important;    /* Empuja todo el bloque hacia abajo para quitar lo pegado al techo */
-    margin-right: calc((310px - 250px) / 2) !important; /* Distribuye el aire de forma matemática en la derecha */
+    /* 🚀 CAMBIO TÁCTICO: Subimos de 86vh a 92vh para estirar la tabla hacia abajo */
+    height: 92vh !important;               
+    
+    /* 🚀 BALANCE HORIZONTAL Y VERTICAL */
+    margin-top: 4vh !important;    /* Deja un aire fino y elegante arriba */
+    margin-right: calc((310px - 250px) / 2) !important; 
     
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
