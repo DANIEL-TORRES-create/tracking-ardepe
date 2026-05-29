@@ -1,5 +1,5 @@
 /* =========================================
-   VARIABLES Y ESTILOS BASE
+   VARIABLES Y ESTILOS BASE (BLINDADOS)
    ========================================= */
 :root {
     --primary: #004b93;      /* Azul Navisaf */
@@ -78,11 +78,12 @@ body {
 }
 
 /* =========================================
-   🚀 RESCATE Y BLINDAJE DE TABLA MONITOR PRINCIPAL
+   🚀 MONITOR PRINCIPAL (DISEÑO CORPORATIVO BLINDADO)
    ========================================= */
 .dashboard {
     padding: 20px !important;
     box-sizing: border-box !important;
+    width: 100% !important;
 }
 
 .monitor-table {
@@ -93,6 +94,7 @@ body {
     overflow: hidden !important;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
     font-family: 'Lexend', sans-serif !important;
+    margin-bottom: 25px !important;
 }
 
 .monitor-table thead {
@@ -115,8 +117,10 @@ body {
     font-size: 13px !important;
     vertical-align: middle !important;
     color: #333333 !important;
+    background: #ffffff !important;
 }
 
+/* Columnas con diseño específico */
 .control-cell {
     border-right: 2px solid #dddddd !important;
     text-align: center !important;
@@ -127,6 +131,7 @@ body {
     text-align: center !important;
 }
 
+/* Botones dentro de la tabla monitor */
 .btn-ctrl, .btn-vista {
     border: none !important;
     background: none !important;
@@ -444,7 +449,7 @@ textarea {
     border-left: 4px solid var(--danger) !important;
 }
 
-/* UTILIDADES EXCLUSIVAS DE CONTROL */
+/* UTILIDADES MODALES GENERALES */
 .bg-iniciar { background-color: var(--success) !important; }
 .bg-finalizar { background-color: var(--primary) !important; }
 .bg-cancelar { background-color: var(--danger) !important; }
@@ -648,7 +653,7 @@ textarea {
 .mega-bunker-tabla::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
 /* ====================================================================
-   📦 💎 ELEMENTO EXTRA: NUEVO MOTOR DE ESTILOS PARA EL RESUMEN (📋)
+   📦 DISPARADOR DE ESTILOS EJECUTIVOS PARA EL PANEL DE RESUMEN (📋)
    ==================================================================== */
 #panel-resumen, 
 .resumen-viaje-contenedor {
@@ -656,10 +661,11 @@ textarea {
     border: 1px solid #cbd5e1 !important;
     border-radius: 10px !important;
     padding: 22px !important;
-    margin-top: 25px !important;
+    margin: 25px 20px !important;
     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03) !important;
     font-family: 'Lexend', sans-serif !important;
     clear: both !important;
+    display: block;
 }
 
 #panel-resumen h3, 
@@ -719,4 +725,5 @@ textarea {
     font-size: 12px !important;
     color: #334155 !important;
     font-weight: 500 !important;
+    line-height: 1.5 !important;
 }
