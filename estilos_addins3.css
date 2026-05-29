@@ -640,6 +640,12 @@ textarea {
     fill: #94a3b8 !important; /* Apaga el color del icono interno a gris mate */
 }
 
+.btn-ctrl svg {
+    width: 20px !important;
+    height: 20px !important;
+    transition: transform 0.2s ease-in-out !important;
+}
+
 /* ====================================================================
    🚀 FASE 4.2: NUEVA VISUAL TIMELINE VERTICAL COMPACTA (📋)
    ==================================================================== */
