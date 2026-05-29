@@ -103,8 +103,8 @@ body {
     border-right: 2px solid #ddd !important;
     text-align: center !important;
     background: #fafafa !important;
-    vertical-align: middle !important; /* 🚀 Asegura que los círculos queden centrados verticalmente */
-    white-space: nowrap !important;     /* 🚀 Evita que los botones se salten de fila */
+    vertical-align: middle !important; /* 🚀 Centra los botones verticalmente en la fila */
+    white-space: nowrap !important;     /* 🚀 Evita que los botones se amontonen o salten de línea */
 }
 .vistas-cell {
     text-align: center;
@@ -637,7 +637,7 @@ textarea {
 }
 .btn-ctrl:disabled svg,
 .btn-ctrl.disabled svg {
-    fill: #94a3b8 !important; /* El vector interno se apaga por completo */
+    fill: #94a3b8 !important; /* Apaga el color del icono interno a gris mate */
 }
 
 /* ====================================================================
