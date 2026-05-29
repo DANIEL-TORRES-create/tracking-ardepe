@@ -563,19 +563,39 @@ textarea {
     flex: 1; 
     border: 1px solid #e2e8f0; 
     border-radius: 10px;
-    overflow-x: auto; 
+    overflow-x: hidden; /* 🚀 Bloquea por completo el scroll horizontal externo */
     overflow-y: auto; 
     background: #ffffff;
     margin-top: 5px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
 }
 
 .mega-tabla-datos { 
-    width: 100%; 
+    width: 100% !important; 
+    max-width: 100% !important;
     border-collapse: collapse; 
-    font-size: 11px; 
-    text-align: center; /* Centra horizontalmente todo el contenido de validación */
-    min-width: 1380px;  /* 🚀 EL BALANCE PERFECTO: Evita que se amontone y crea un scroll horizontal suave */
+    font-size: 10px; /* 🚀 Fuente ultra-compacta para que entren todos los datos */
+    text-align: center;
+    table-layout: fixed; /* 🚀 Fuerza a las columnas a respetar el ancho disponible del recuadro */
 }
+
+/* Distribución quirúrgica de anchos de columna para que sumen exactamente 100% */
+.mega-tabla-datos th:nth-child(1), .mega-tabla-datos td:nth-child(1) { width: 3%; }   /* ST */
+.mega-tabla-datos th:nth-child(2), .mega-tabla-datos td:nth-child(2) { width: 13%; text-align: left; padding-left: 6px; } /* PUNTO (Izquierda) */
+.mega-tabla-datos th:nth-child(3), .mega-tabla-datos td:nth-child(3) { width: 7%; }   /* TIPO */
+.mega-tabla-datos th:nth-child(4), .mega-tabla-datos td:nth-child(4) { width: 9%; }   /* PLAN LLEGADA */
+.mega-tabla-datos th:nth-child(5), .mega-tabla-datos td:nth-child(5) { width: 9%; }   /* REAL LLEGADA */
+.mega-tabla-datos th:nth-child(6), .mega-tabla-datos td:nth-child(6) { width: 7%; }   /* DESVIACIÓN TIEMPO */
+.mega-tabla-datos th:nth-child(7), .mega-tabla-datos td:nth-child(7) { width: 6%; }   /* TIEMPO VIAJE PLAN */
+.mega-tabla-datos th:nth-child(8), .mega-tabla-datos td:nth-child(8) { width: 6%; }   /* TIEMPO VIAJE REAL */
+.mega-tabla-datos th:nth-child(9), .mega-tabla-datos td:nth-child(9) { width: 6%; }   /* DIST PLAN */
+.mega-tabla-datos th:nth-child(10), .mega-tabla-datos td:nth-child(10) { width: 6%; } /* DIST REAL */
+.mega-tabla-datos th:nth-child(11), .mega-tabla-datos td:nth-child(11) { width: 5%; } /* DIF KM */
+.mega-tabla-datos th:nth-child(12), .mega-tabla-datos td:nth-child(12) { width: 7%; } /* PERNOCTE PLAN */
+.mega-tabla-datos th:nth-child(13), .mega-tabla-datos td:nth-child(13) { width: 7%; } /* PERNOCTE REAL */
+.mega-tabla-datos th:nth-child(14), .mega-tabla-datos td:nth-child(14) { width: 9%; } /* REAL SALIDA */
 
 .mega-tabla-datos th {
     position: sticky; 
@@ -583,43 +603,39 @@ textarea {
     background: #f8fafc; 
     color: #475569;
     font-weight: 700; 
-    padding: 10px 4px; /* Compactamos el espaciado interno */
+    padding: 6px 2px; 
     border-bottom: 2px solid #cbd5e1; 
     z-index: 50;
-    text-align: center; /* Centra los títulos de todas las columnas */
-    white-space: nowrap; /* Evita que los títulos se rompan en dos líneas feas */
+    text-align: center;
+    white-space: normal; /* 🚀 Permite que títulos largos pasen a 2 líneas en vez de empujar la tabla */
+    line-height: 1.1;
+    word-wrap: break-word;
 }
 
 .mega-tabla-datos td { 
-    padding: 8px 4px; 
+    padding: 6px 2px; 
     border-bottom: 1px solid #f1f5f9; 
     color: #334155; 
-    vertical-align: middle;
-    white-space: nowrap; /* Mantiene las fechas y horas en un solo renglón limpio */
+    vertical-align: middle; 
+    white-space: normal; /* Permite quiebre interno si la fecha es muy larga */
+    word-break: break-all;
 }
 
 .mega-tabla-datos tbody tr:hover { 
     background: #f8fafc; 
 }
 
-/* Alineación específica para la columna del nombre del Hito (para que no pierda lectura) */
-.mega-tabla-datos td:nth-child(2), 
-.mega-tabla-datos th:nth-child(2) {
-    text-align: left; /* Mantiene el nombre del punto alineado a la izquierda */
-    padding-left: 12px;
-}
-
 /* Desviación Semáforo: Puntos Clínicos sólidos */
-.sat-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
-.sat-dot-verde { background: #16a34a; box-shadow: 0 0 5px #22c55e; }
-.sat-dot-mostaza { background: #d97706; box-shadow: 0 0 5px #f59e0b; }
-.sat-dot-rojo { background: #dc2626; box-shadow: 0 0 5px #ef4444; }
+.sat-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 3px; vertical-align: middle; }
+.sat-dot-verde { background: #16a34a; box-shadow: 0 0 4px #22c55e; }
+.sat-dot-mostaza { background: #d97706; box-shadow: 0 0 4px #f59e0b; }
+.sat-dot-rojo { background: #dc2626; box-shadow: 0 0 4px #ef4444; }
 
 /* Resaltado completo de tramos de descanso (Pernoctes) en Oro Suave */
 .sat-row-pernocte { background: #fffbeb !important; }
 .sat-row-pernocte td { border-bottom: 1px solid #fde68a !important; color: #b45309 !important; }
 
 /* Scrollbars Ejecutivos Delgados */
-.mega-bunker-tabla::-webkit-scrollbar { width: 6px; height: 6px; }
+.mega-bunker-tabla::-webkit-scrollbar { width: 5px; height: 5px; }
 .mega-bunker-tabla::-webkit-scrollbar-track { background: #f8fafc; }
 .mega-bunker-tabla::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
