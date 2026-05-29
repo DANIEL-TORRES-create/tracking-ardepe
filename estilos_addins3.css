@@ -430,23 +430,24 @@ textarea {
     left: 0 !important;
     width: 100vw !important; 
     height: 100vh !important; 
-    background: rgba(15, 23, 42, 0.82) !important; 
-    backdrop-filter: blur(10px) !important; 
-    -webkit-backdrop-filter: blur(10px) !important;
-    display: none; /* Controlado por JS (flex/none) */
-    justify-content: center !important; /* 🚀 CAMBIO: Centra el cuadro blanco horizontalmente en la pantalla */
-    align-items: center !important;    /* 🚀 CAMBIO: Lo baja verticalmente para que no quede pegado arriba */
+    background: rgba(15, 23, 42, 0.75) !important; 
+    backdrop-filter: blur(8px) !important; 
+    -webkit-backdrop-filter: blur(8px) !important;
+    display: none; /* Controlado dinámicamente por JavaScript */
+    justify-content: flex-end !important; /* 🚀 CAMBIO TÁCTICO: Alinea a la derecha útil de la pantalla */
+    align-items: center !important;    /* Lo mantiene centrado de arriba a abajo */
     z-index: 999999 !important; 
     box-sizing: border-box !important;
 }
-/* EL CUADRO BLANCO INTERNO (EXPANDIDO PARA MÁXIMA VISIBILIDAD) */
+
+/* EL CUADRO BLANCO INTERNO (ENCUADRADO Y CENTRADO EN EL ÁREA ÚTIL DE GEOTAB) */
 .mega-modal-content {
     background: #ffffff !important; 
-    width: calc(100% - 300px) !important; /* 🚀 Ajuste perfecto: Máximo ancho útil respetando el menú de Geotab */
-    max-width: 1550px !important;
-    height: 88vh !important; /* 🚀 Reducido sutilmente el alto para que respire por arriba y abajo uniformemente */
+    width: calc(100% - 290px) !important; /* 🚀 LA CLAVE: Resta el espacio exacto del menú gris para que el cuadro blanco no lo pise */
+    height: 92vh !important; /* Mantiene una altura cómoda y equilibrada en vertical */
+    margin-right: 25px !important; /* 🚀 Separa sutilmente el cuadro del extremo derecho de la pantalla */
     border-radius: 14px !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
     padding: 24px !important; 
     box-sizing: border-box !important; 
     display: flex !important; 
