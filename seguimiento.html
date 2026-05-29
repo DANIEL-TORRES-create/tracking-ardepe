@@ -303,10 +303,8 @@ function determinarIconoHito(punto, index, total) {
         // ====================================================================
         // EFECTO VISUAL: MARCAR FILA ACTIVA EN LA TABLA PRINCIPAL (LÍNEA ROJA)
         // ====================================================================
-        // 1. Quitamos la marca roja a cualquier otra fila previamente seleccionada
         document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
         
-        // 2. Detectamos el botón presionado y encuadramos su fila (TR) en rojo oscuro
         if (typeof event !== 'undefined' && event.currentTarget) {
             const botonActivo = event.currentTarget;
             if (botonActivo.closest('tr')) {
@@ -320,15 +318,12 @@ function determinarIconoHito(punto, index, total) {
         let puntos = JSON.parse(decodeURIComponent(data));
         const rawLog = decodeURIComponent(logAuditoria);
         
-        // Inyectamos el número de unidad en la cabecera (La alineación se controla por CSS)
         document.getElementById('side-placa').innerText = "Placa: " + placa;
         
         const timeline = document.getElementById('timeline-v');
         timeline.innerHTML = "";
         
-        // ====================================================================
-        // 1. RENDERIZADO DE COMENTARIOS DE AUDITORÍA SUPERIOR (CAJA AMARILLA)
-        // ====================================================================
+        // Renderizado de auditoría superior
         if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
             let logsHtml = `<div class="auditoria-panel-box">`;
             let partesLog = rawLog.split(" / ");
@@ -347,21 +342,16 @@ function determinarIconoHito(punto, index, total) {
             timeline.innerHTML += logsHtml;
         }
 
-        // ====================================================================
-        // 2. REUBICACIÓN LÓGICA E INTELIGENTE DEL INICIO_MANUAL
-        // ====================================================================
+        // Reubicación de INICIO_MANUAL
         let indiceInicioManual = puntos.findIndex(p => p.punto === "INICIO_MANUAL");
         if (indiceInicioManual > -1) {
             let [inicioManualNode] = puntos.splice(indiceInicioManual, 1); 
-            // Lo insertamos en la segunda posición, justo debajo del origen (Cochera)
             puntos.splice(1, 0, inicioManualNode);
         }
 
         // ====================================================================
-        // 3. GENERACIÓN DINÁMICA DE TARJETAS (CARDS VISUALES ORIGINALES)
+        // 🚀 CORRECCIÓN: ELIMINADO DOBLE CONTAINERHTML E ICONOS INYECTADOS NATIVOS
         // ====================================================================
-        let containerHtml = `<ul class="resumen-lista-puntos">`;
-        
         let containerHtml = `<ul class="resumen-lista-puntos">`;
         
         puntos.forEach((p, index) => {
@@ -369,7 +359,7 @@ function determinarIconoHito(punto, index, total) {
             if (p.deteccion === "SI") claseEstado = "hito-completado";
             if (p.deteccion === "FORZADO" || p.punto === "INICIO_MANUAL") claseEstado = "hito-alerta";
 
-            // Inyección limpia de etiquetas de texto/icono para asegurar que carguen siempre
+            // Inyección limpia de etiquetas visuales nativas (Asegura compatibilidad)
             let marcaVisual = "";
             if (index === 0) {
                 marcaVisual = `<span style="color:#d93025; font-weight:bold; margin-right:6px;">🏠 [ORIGEN]</span> `;
@@ -399,7 +389,6 @@ function determinarIconoHito(punto, index, total) {
         containerHtml += `</ul>`;
         timeline.innerHTML += containerHtml;
         
-        // Abrimos el panel lateral deslizándolo en pantalla
         document.getElementById('side-panel').classList.add('open');
     }
 
