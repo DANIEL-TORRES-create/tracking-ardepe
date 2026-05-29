@@ -435,17 +435,16 @@ textarea {
     -webkit-backdrop-filter: blur(8px) !important;
     display: none; 
     justify-content: flex-end !important; 
-    align-items: flex-start !important; 
+    align-items: center !important; /* 🚀 CAMBIO: Centra verticalmente el modal para que baje de forma natural */
     z-index: 999999 !important; 
     box-sizing: border-box !important;
 }
 
-/* EL CUADRO BLANCO INTERNO (BAJADO Y CENTRADO EN EL ESPACIO ÚTIL) */
 .mega-modal-content {
     background: #ffffff !important; 
     width: calc(100% - 290px) !important; 
-    height: 88vh !important; /* Ajustado para que respire por abajo */
-    margin-top: 6vh !important; /* 🚀 CORRECCIÓN: Baja el cuadro completo de forma simétrica */
+    height: 90vh !important; /* Mantiene la misma altura original */
+    margin-top: 0 !important; /* 🚀 CAMBIO: Deja que cambie al centro simétrico sin empujar al techo */
     margin-right: 25px !important; 
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
