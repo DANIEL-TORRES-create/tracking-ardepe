@@ -215,13 +215,13 @@
                 </td>
                 <td class="control-cell">
     <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" ${estaEnCurso ? 'disabled="true"' : ''} title="Iniciar Viaje" onclick="prepararAccion('${v.idViaje}', 'INICIAR')">
-        <i class="fas fa-play" style="color: #1e8e3e;"></i>
+        <span style="color: #1e8e3e; font-weight: bold; font-size: 14px;">▶ INICIAR</span>
     </button>
     <button class="btn-ctrl" title="Finalizar Viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')">
-        <i class="fas fa-check-circle" style="color: #004b93;"></i>
+        <span style="color: #004b93; font-weight: bold; font-size: 14px;">✓ FIN</span>
     </button>
     <button class="btn-ctrl" title="Cancelar Viaje" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')">
-        <i class="fas fa-ban" style="color: #d93025;"></i>
+        <span style="color: #d93025; font-weight: bold; font-size: 14px;">✕ CANCELAR</span>
     </button>
 </td>
                 <td class="vistas-cell" style="display: flex; gap: 8px; justify-content: center;">
