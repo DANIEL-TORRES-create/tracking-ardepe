@@ -641,8 +641,10 @@ textarea {
 }
 
 .btn-ctrl svg {
-    width: 20px !important;
-    height: 20px !important;
+    width: 22px !important;  /* 🚀 Subimos a 22px para notar el cambio real */
+    height: 22px !important; /* 🚀 Subimos a 22px para notar el cambio real */
+    display: block !important; /* 🚀 Rompe el comportamiento flexible restrictivo */
+    flex-shrink: 0 !important; /* 🚀 Evita que el contenedor obligue al icono a achicarse */
     transition: transform 0.2s ease-in-out !important;
 }
 
