@@ -447,8 +447,8 @@ textarea {
 .mega-modal-content {
     background: #ffffff !important; 
     width: calc(100% - 320px) !important; 
-    height: 86vh !important;               
-    margin-top: 11vh !important;           /* Baja el bloque completo de forma limpia */
+    height: 89vh !important;               /* 🚀 AJUSTE: Crecemos 3 unidades para ganar espacio abajo */
+    margin-top: 8vh !important;            /* 🚀 AJUSTE: Subimos sutilmente de 11vh a 8vh para ganar aire arriba */
     margin-right: 25px !important;         
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
@@ -459,7 +459,6 @@ textarea {
     overflow: hidden !important; 
     z-index: 1000000 !important;
 }
-
 /* CABECERA EN FILAS NATURALES */
 .mega-cabecera-satelital {
     display: flex !important;
@@ -504,7 +503,7 @@ textarea {
     border-radius: 12px !important; 
     border: 1px solid #cbd5e1 !important; 
     overflow: hidden !important; 
-    height: 250px !important; 
+    height: 320px !important;              /* 🚀 CORRECCIÓN: Cambiado de 250px a 320px para expandir el mapa */
     width: 100% !important;
     box-sizing: border-box !important;
 }
