@@ -70,36 +70,41 @@
     <div class="mega-modal-content">
         
         <div class="mega-cabecera-satelital">
-            <div class="mega-bloque-identidad">
-                <h2>DETALLE DE VIAJE</h2>
-                <div class="mega-subtitulos">
-                    <span class="badge-sat-placa">PLACA: <strong id="lbl-sat-placa">---</strong></span>
-                    <span class="badge-sat-ruta">RUTA: <strong id="lbl-sat-ruta">---</strong></span>
+            <div class="mega-cabecera-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                
+                <div class="mega-bloque-identidad">
+                    <h2>DETALLE DE VIAJE</h2>
+                    <div class="mega-subtitulos">
+                        <span class="badge-sat-placa">PLACA: <strong id="lbl-sat-placa">---</strong></span>
+                        <span class="badge-sat-ruta">RUTA: <strong id="lbl-sat-ruta">---</strong></span>
+                    </div>
                 </div>
+                
+                <div class="mega-bloque-controles" style="display: flex; align-items: center; gap: 20px;">
+                    <div class="mega-termometro-inputs" style="display: flex; flex-direction: row; align-items: center; gap: 15px;">
+                        <div id="lbl-sat-estado-badge" class="sat-badge-estado">
+                            <span class="sat-ping"></span>
+                            <span id="lbl-sat-estado-texto">---</span>
+                        </div>
+                        <div class="sat-progreso-wrapper" style="min-width: 180px;">
+                            <div class="sat-progreso-texto">
+                                <span>PROGRESO GLOBAL</span>
+                                <strong id="lbl-sat-porcentaje">0%</strong>
+                            </div>
+                            <div class="sat-barra-bg">
+                                <div id="lbl-sat-barra-fill" class="sat-barra-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="cerrarMegaDetalle()" class="btn-close-mega" title="Cerrar Ventana">&times;</button>
+                </div>
+
             </div>
             
-            <div class="mega-bloque-mapa">
+            <div class="mega-bloque-mapa" style="width: 100% !important; margin-top: 10px;">
                 <div id="sat-map-container"></div>
             </div>
             
-            <div class="mega-bloque-controles">
-                <button onclick="cerrarMegaDetalle()" class="btn-close-mega" title="Cerrar Ventana">&times;</button>
-                <div class="mega-termometro-inputs">
-                    <div id="lbl-sat-estado-badge" class="sat-badge-estado">
-                        <span class="sat-ping"></span>
-                        <span id="lbl-sat-estado-texto">---</span>
-                    </div>
-                    <div class="sat-progreso-wrapper">
-                        <div class="sat-progreso-texto">
-                            <span>PROGRESO GLOBAL</span>
-                            <strong id="lbl-sat-porcentaje">0%</strong>
-                        </div>
-                        <div class="sat-barra-bg">
-                            <div id="lbl-sat-barra-fill" class="sat-barra-fill" style="width: 0%;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="mega-barra-filtros">
