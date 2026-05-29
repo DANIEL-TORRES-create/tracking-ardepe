@@ -434,24 +434,24 @@ textarea {
     backdrop-filter: blur(8px) !important; 
     -webkit-backdrop-filter: blur(8px) !important;
     display: none; 
-    /* 🚀 CORRECCIÓN: Alineación limpia para controlar la caída del cuadro */
+    
+    /* 🚀 LA SOLUCIÓN EXCELENTE: Flexbox controla la caída exacta sin empujar */
+    display: flex !important;
     justify-content: flex-end !important; 
-    align-items: flex-start !important; 
+    align-items: flex-end !important; /* Forces the box to align beautifully toward the bottom half */
+    padding-bottom: 2.5vh !important; /* Sutil aire limpio para que no choque contra la barra de tareas */
+    
     z-index: 999999 !important; 
     box-sizing: border-box !important;
 }
 
-/* EL CUADRO BLANCO INTERNO (CENTRADITO Y BAJADO) */
+/* EL CUADRO BLANCO INTERNO */
 .mega-modal-content {
     background: #ffffff !important; 
     width: calc(100% - 310px) !important; 
-    
-    /* 🚀 CAMBIO TÁCTICO: Subimos de 86vh a 92vh para estirar la tabla hacia abajo */
-    height: 92vh !important;               
-    
-    /* 🚀 BALANCE HORIZONTAL Y VERTICAL */
-    margin-top: 4vh !important;    /* Deja un aire fino y elegante arriba */
-    margin-right: calc((310px - 250px) / 2) !important; 
+    height: 92vh !important; /* Conserva su altura estirada para aprovechar la tabla */
+    margin-right: 30px !important; /* Centrado simétrico respecto al menú de Geotab */
+    margin-top: 0 !important; /* Eliminamos márgenes que lo empujan al techo */
     
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
