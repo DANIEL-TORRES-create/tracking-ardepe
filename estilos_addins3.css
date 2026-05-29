@@ -101,8 +101,10 @@ body {
 /* Columnas con diseño específico */
 .control-cell {
     border-right: 2px solid #ddd !important;
-    text-align: center;
-    background: #fafafa;
+    text-align: center !important;
+    background: #fafafa !important;
+    vertical-align: middle !important; /* 🚀 Asegura que los círculos queden centrados verticalmente */
+    white-space: nowrap !important;     /* 🚀 Evita que los botones se salten de fila */
 }
 .vistas-cell {
     text-align: center;
@@ -594,20 +596,48 @@ textarea {
    🚀 FASE 4.1: ESTILO PRO DE CONTROL DE VIAJE (COMO BOTONES DE VISTA)
    ==================================================================== */
 .btn-ctrl {
-    border: none !important;
-    background: none !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #f8fafc !important;
     cursor: pointer !important;
-    transition: 0.2s !important;
-    display: inline-block !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease-in-out !important;
+    margin: 0 4px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
 }
+
+/* Iluminación de color al pasar el cursor sobre la acción */
 .btn-ctrl:hover:not(:disabled):not(.disabled) {
-    transform: scale(1.2) !important;
+    background: #ffffff !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
+.btn-ctrl:hover:not(:disabled):not(.disabled) svg { 
+    transform: scale(1.1) !important; 
+}
+.btn-ctrl[title*="Iniciar"]:hover:not(:disabled):not(.disabled) { border-color: #1e8e3e !important; background: #f0fdf4 !important; }
+.btn-ctrl[title*="Finalizar"]:hover:not(:disabled):not(.disabled) { border-color: #004b93 !important; background: #f0f7ff !important; }
+.btn-ctrl[title*="Cancelar"]:hover:not(:disabled):not(.disabled) { border-color: #d93025 !important; background: #fff5f5 !important; }
+
+/* Apagado gris mate automático si el viaje ya está en curso */
 .btn-ctrl:disabled,
-.btn-ctrl.disabled {
+.btn-ctrl.disabled,
+.btn-ctrl[disabled] {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
     cursor: not-allowed !important;     
-    opacity: 0.3 !important;           
-    filter: grayscale(1) !important;
+    opacity: 0.35 !important;           
+    box-shadow: none !important;
+    transform: none !important;
+    pointer-events: none !important;     
+}
+.btn-ctrl:disabled svg,
+.btn-ctrl.disabled svg {
+    fill: #94a3b8 !important; /* El vector interno se apaga por completo */
 }
 
 /* ====================================================================
