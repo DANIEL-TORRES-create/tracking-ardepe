@@ -1,508 +1,495 @@
 /* =========================================
-   VARIABLES Y ESTILOS BASE
-   ========================================= */
+   VARIABLES Y ESTILOS BASE
+   ========================================= */
 :root {
-    --primary: #004b93;      /* Azul Navisaf */
-    --navisaf-light: #e6f1fa; /* Fondo celeste suave */
-    --danger: #d93025;       /* Rojo alertas/cancelar */
-    --success: #1e8e3e;      /* Verde progreso/confirmar */
-    --text-dark: #333333;
-    --border-color: #dddddd;
+    --primary: #004b93;      /* Azul Navisaf */
+    --navisaf-light: #e6f1fa; /* Fondo celeste suave */
+    --danger: #d93025;       /* Rojo alertas/cancelar */
+    --success: #1e8e3e;      /* Verde progreso/confirmar */
+    --text-dark: #333333;
+    --border-color: #dddddd;
 }
 
 body {
-    font-family: 'Lexend', sans-serif;
-    background-color: #f8f9fa;
-    margin: 0;
-    padding: 0;
-    color: var(--text-dark);
+    font-family: 'Lexend', sans-serif !important;
+    background-color: #f8f9fa !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: var(--text-dark) !important;
 }
 
 /* =========================================
-   ENCABEZADO (NAV BAR)
-   ========================================= */
+   ENCABEZADO (NAV BAR)
+   ========================================= */
 .header-container {
-    background-color: var(--navisaf-light);
-    padding: 20px 35px;
-    border-bottom: 4px solid var(--primary);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    z-index: 100;
+    background-color: var(--navisaf-light) !important;
+    padding: 20px 35px !important;
+    border-bottom: 4px solid var(--primary) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    position: relative !important;
+    z-index: 100 !important;
 }
 
 .neon-title {
-    margin: 0;
-    color: var(--primary);
-    font-size: 24px;
-    font-weight: 800;
-    position: relative;
+    margin: 0 !important;
+    color: var(--primary) !important;
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    position: relative !important;
 }
 
-/* El subrayado blanco grueso bajo el título */
 .neon-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: -6px;
-    width: 100%;
-    height: 4px;
-    background: #ffffff;
-    box-shadow: 0 0 8px rgba(255,255,255,0.8);
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important;
+    bottom: -6px !important;
+    width: 100% !important;
+    height: 4px !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 8px rgba(255,255,255,0.8) !important;
 }
 
 .nav-shortcuts {
-    display: flex;
-    gap: 12px;
+    display: flex !important;
+    gap: 12px !important;
 }
 
 .btn-nav {
-    background-color: var(--primary);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    background-color: var(--primary) !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 20px !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    transition: 0.3s !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
 }
 
 .btn-nav:hover {
-    background-color: #003366;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background-color: #003366 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
 }
 
 /* =========================================
-   CONTENEDOR Y TABLA MONITOR
-   ========================================= */
+   🚀 RESCATE Y BLINDAJE DE TABLA MONITOR PRINCIPAL
+   ========================================= */
 .dashboard {
-    padding: 20px;
+    padding: 20px !important;
+    box-sizing: border-box !important;
 }
 
 .monitor-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background: white !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+    font-family: 'Lexend', sans-serif !important;
 }
 
 .monitor-table thead {
-    background: #e1e4e8;
+    background: #e1e4e8 !important;
 }
 
 .monitor-table th {
-    padding: 15px;
-    text-align: left;
-    font-size: 11px;
-    color: #444;
-    text-transform: uppercase;
-    border-bottom: 2px solid #ccc;
+    padding: 15px !important;
+    text-align: left !important;
+    font-size: 11px !important;
+    color: #444444 !important;
+    text-transform: uppercase !important;
+    border-bottom: 2px solid #cccccc !important;
+    font-weight: 700 !important;
 }
 
 .monitor-table td {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
-    font-size: 13px;
-    vertical-align: middle;
+    padding: 15px !important;
+    border-bottom: 1px solid #eeeeee !important;
+    font-size: 13px !important;
+    vertical-align: middle !important;
+    color: #333333 !important;
 }
 
-/* Columnas con diseño específico */
 .control-cell {
-    border-right: 2px solid #ddd !important;
-    text-align: center;
-    background: #fafafa;
+    border-right: 2px solid #dddddd !important;
+    text-align: center !important;
+    background: #fafafa !important;
 }
 
 .vistas-cell {
-    text-align: center;
+    text-align: center !important;
 }
 
-/* Botones dentro de la tabla */
 .btn-ctrl, .btn-vista {
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 20px;
-    padding: 5px 12px;
-    transition: 0.2s;
-    color: #444;
+    border: none !important;
+    background: none !important;
+    cursor: pointer !important;
+    font-size: 20px !important;
+    padding: 5px 12px !important;
+    transition: 0.2s !important;
+    color: #444444 !important;
+    display: inline-block !important;
 }
 
 .btn-ctrl.disabled {
-    color: #bdbdbd !important;
-    cursor: not-allowed;
+    color: #bdbdbd !important;
+    cursor: not-allowed !important;
 }
 
 .btn-ctrl:hover:not(.disabled), .btn-vista:hover {
-    transform: scale(1.2);
-    color: var(--primary);
+    transform: scale(1.2) !important;
+    color: var(--primary) !important;
 }
 
 /* =========================================
-   BARRA DE PROGRESO SEGMENTADA
-   ========================================= */
+   BARRA DE PROGRESO SEGMENTADA
+   ========================================= */
 .segment-bar {
-    display: flex;
-    gap: 3px;
-    height: 10px;
-    width: 110px;
-    background: #eee;
-    border-radius: 5px;
-    margin-bottom: 4px;
+    display: flex !important;
+    gap: 3px !important;
+    height: 10px !important;
+    width: 110px !important;
+    background: #eee !important;
+    border-radius: 5px !important;
+    margin-bottom: 4px !important;
 }
 
 .segment {
-    flex: 1;
-    background: #eee;
+    flex: 1 !important;
+    background: #eee !important;
 }
 
 .segment.active {
-    background: var(--success);
+    background: var(--success) !important;
 }
 
 /* =========================================
-   MODALES (ACCIONES MANUALES)
-   ========================================= */
+   MODALES (ACCIONES MANUALES)
+   ========================================= */
 .modal-full-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0,0,0,0.6) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    z-index: 2000 !important;
 }
 
 .modal-content {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    width: 400px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    background: white !important;
+    padding: 30px !important;
+    border-radius: 10px !important;
+    width: 400px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
 }
 
 textarea {
-    width: 100%;
-    height: 100px;
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-    font-family: inherit;
-    resize: none;
+    width: 100% !important;
+    height: 100px !important;
+    margin-top: 10px !important;
+    padding: 10px !important;
+    border-radius: 4px !important;
+    border: 1px solid #ccc !important;
+    box-sizing: border-box !important;
+    font-family: inherit !important;
+    resize: none !important;
 }
 
 .btn-primario {
-    background: var(--danger);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
+    background: var(--danger) !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
 }
 
 .btn-primario:disabled {
-    background: #fabfb7;
-    cursor: not-allowed;
+    background: #fabfb7 !important;
+    cursor: not-allowed !important;
 }
 
 .btn-secundario {
-    background: #eee;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 10px;
+    background: #eee !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    margin-right: 10px !important;
 }
 
 /* =========================================
-   TIMELINE LATERAL (SIDE PANEL)
-   ========================================= */
+   TIMELINE LATERAL (SIDE PANEL)
+   ========================================= */
 #side-panel {
-    position: fixed;
-    right: -460px; /* Oculto por defecto */
-    top: 55px;     /* BAJAMOS EL PANEL para que no lo tape la franja azul de Geotab */
-    width: 430px !important;
-    height: calc(100% - 55px); /* Ajustamos el alto para que no se salga de la pantalla abajo */
-    background: #f4f6f9 !important; 
-    transition: 0.4s ease-in-out;
-    z-index: 999;  /* Ajustado para no sobreponerse a los menús globales */
-    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column; 
-    padding: 0 !important; 
+    position: fixed !important;
+    right: -460px !important;
+    top: 55px !important;     
+    width: 430px !important;
+    height: calc(100% - 55px) !important;
+    background: #f4f6f9 !important; 
+    transition: 0.4s ease-in-out !important;
+    z-index: 999 !important;  
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1) !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important; 
+    padding: 0 !important; 
 }
 
 #side-panel.open {
-    right: 0;
+    right: 0 !important;
 }
 
-/* Cabecera interna fija del panel */
 .side-panel-header {
-    background: #ffffff;
-    padding: 15px 20px;
-    display: grid;
-    /* Cambiamos a 140px a los extremos para asegurar una simetría perfecta con el título al centro */
-    grid-template-columns: 140px 1fr 140px; 
-    align-items: center;
-    border-bottom: 3px solid var(--primary);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    z-index: 20;
-    flex-shrink: 0;
+    background: #ffffff !important;
+    padding: 15px 20px !important;
+    display: grid !important;
+    grid-template-columns: 140px 1fr 140px !important; 
+    align-items: center !important;
+    border-bottom: 3px solid var(--primary) !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
+    z-index: 20 !important;
+    flex-shrink: 0 !important;
 }
 
-/* Alineaciones específicas e inamovibles */
 .header-left-box {
-    display: flex;
-    flex-direction: column; /* Apila el texto "PLACA" arriba y el código abajo */
-    justify-content: center;
-    align-items: flex-start; /* Alinea ambos textos al extremo izquierdo de su caja */
-    overflow: hidden; 
-    text-align: left;
-    
-    /* Aplicamos el estilo del label directamente aquí para el texto del HTML */
-    font-size: 11px;
-    font-weight: bold;
-    color: #555;
-    text-transform: uppercase;
-    line-height: 1.2;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    overflow: hidden !important; 
+    text-align: left !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    color: #555 !important;
+    text-transform: uppercase !important;
+    line-height: 1.2 !important;
 }
 
-/* Ajuste directo al texto de la placa (Segunda fila) */
 #side-placa {
-    color: #444; 
-    font-weight: bold; 
-    font-size: 14px; /* Se mantiene imponente */
-    text-transform: uppercase;
-    white-space: nowrap; /* PROHIBIDO romper línea. Mantener texto horizontal */
-    margin-top: 2px; /* Separación sutil con la palabra de arriba */
-    display: block;
+    color: #444 !important; 
+    font-weight: bold !important; 
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    margin-top: 2px !important;
+    display: block !important;
 }
 
 .header-center-box {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
 }
 
 .header-right-box {
-    display: flex;
-    justify-content: flex-end; /* Empuja el botón circular de la X a la esquina derecha */
-    align-items: center;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
 }
 
-/* Botón de la X Circular Ajustado */
 .btn-close-panel {
-    border: none;
-    background: #f1f3f5;
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-    color: #555;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.2s;
+    border: none !important;
+    background: #f1f3f5 !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    color: #555 !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: 0.2s !important;
 }
 
 .btn-close-panel:hover {
-    background: #e63946;
-    color: white;
-    transform: rotate(90deg);
+    background: #e63946 !important;
+    color: white !important;
+    transform: rotate(90deg) !important;
 }
 
-/* Contenedor del Timeline con Scroll */
 .timeline-v-container {
-    flex: 1;
-    overflow-y: auto; 
-    padding: 20px;
-    box-sizing: border-box;
+    flex: 1 !important;
+    overflow-y: auto !important; 
+    padding: 20px !important;
+    box-sizing: border-box !important;
 }
 
-/* Caja de Auditoría Superior (Color e間to de alerta preventivo) */
 .auditoria-panel-box {
-    background: #fff3cd;
-    border-left: 4px solid #ffc107;
-    padding: 12px 15px;
-    margin-bottom: 20px;
-    border-radius: 6px;
-    font-size: 11.5px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    color: #664d03;
+    background: #fff3cd !important;
+    border-left: 4px solid #ffc107 !important;
+    padding: 12px 15px !important;
+    margin-bottom: 20px !important;
+    border-radius: 6px !important;
+    font-size: 11.5px !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+    color: #664d03 !important;
 }
 
-/* Estructura envolvente de cada hito */
 .timeline-card-wrapper {
-    display: flex;
-    position: relative;
-    margin-bottom: 20px;
-    align-items: center;
+    display: flex !important;
+    position: relative !important;
+    margin-bottom: 20px !important;
+    align-items: center !important;
 }
 
-/* Conector Circular con su Icono de Estado */
 .timeline-node {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 3px solid #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    color: #888;
-    z-index: 10;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    flex-shrink: 0;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    border: 3px solid #ccc !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    color: #888 !important;
+    z-index: 10 !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+    transition: all 0.3s ease !important;
+    flex-shrink: 0 !important;
 }
 
-/* Línea Conectora Vertical Dinámica */
 .timeline-connector-line {
-    position: absolute;
-    left: 17px;
-    top: 36px;
-    width: 3px;
-    height: calc(100% + 20px - 36px);
-    z-index: 5;
+    position: absolute !important;
+    left: 17px !important;
+    top: 36px !important;
+    width: 3px !important;
+    height: calc(100% + 20px - 36px) !important;
+    z-index: 5 !important;
 }
+
 .timeline-connector-line.line-pending {
-    background: #dcdcdc;
-    border-left: 2px dashed #b5b5b5; /* Línea punteada para tramos pendientes */
+    background: #dcdcdc !important;
+    border-left: 2px dashed #b5b5b5 !important;
 }
+
 .timeline-connector-line.line-done {
-    background: var(--success); /* Línea sólida continua para tramos completados */
+    background: var(--success) !important;
 }
 
-/* Variaciones de color en nodos según su tipo de detección */
 .timeline-card-wrapper.done .timeline-node {
-    border-color: var(--success);
-    color: white;
-    background: var(--success);
-}
-.timeline-card-wrapper.forced .timeline-node {
-    border-color: var(--danger);
-    color: white;
-    background: var(--danger);
+    border-color: var(--success) !important;
+    color: white !important;
+    background: var(--success) !important;
 }
 
-/* ====================================================================
-   DISEÑO DE TARJETAS (CARDS VISUALES)
-   ==================================================================== */
+.timeline-card-wrapper.forced .timeline-node {
+    border-color: var(--danger) !important;
+    color: white !important;
+    background: var(--danger) !important;
+}
+
 .timeline-card {
-    background: #ffffff;
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-left: 20px;
-    flex: 1;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
-    border: 1px solid #eef0f4;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    padding: 12px 16px !important;
+    margin-left: 20px !important;
+    flex: 1 !important;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06) !important;
+    border: 1px solid #eef0f4 !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 .timeline-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 12px rgba(0,0,0,0.12);
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 12px rgba(0,0,0,0.12) !important;
 }
 
 .card-header-point {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 6px;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: var(--primary) !important;
+    margin-bottom: 6px !important;
 }
 
 .card-body-times {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: #666;
+    display: flex !important;
+    justify-content: space-between !important;
+    font-size: 11px !important;
+    color: #666 !important;
 }
 
 .card-body-times span {
-    font-weight: 600;
-    color: #333;
+    font-weight: 600 !important;
+    color: #333 !important;
 }
 
 .card-body-times .time-real span {
-    color: #111;
-    font-weight: 700;
+    color: #111 !important;
+    font-weight: 700 !important;
 }
 
-/* Bordes laterales dinámicos de las tarjetas */
 .timeline-card-wrapper.done .timeline-card {
-    border-left: 4px solid var(--success);
-}
-.timeline-card-wrapper.forced .timeline-card {
-    border-left: 4px solid var(--danger);
+    border-left: 4px solid var(--success) !important;
 }
 
-/* ====================================================================
-   UTILIDADES MODALES (COLORES DE CONFIRMACIÓN POR INTERVENCION)
-   ==================================================================== */
+.timeline-card-wrapper.forced .timeline-card {
+    border-left: 4px solid var(--danger) !important;
+}
+
+/* UTILIDADES EXCLUSIVAS DE CONTROL */
 .bg-iniciar { background-color: var(--success) !important; }
 .bg-finalizar { background-color: var(--primary) !important; }
 .bg-cancelar { background-color: var(--danger) !important; }
 
 .monitor-table tbody tr.fila-activa td {
-    background-color: #f9e6e6 !important; /* Fondo sutil rojizo para la fila */
-    border-top: 2px solid #990000 !important;
-    border-bottom: 2px solid #990000 !important;
-    transition: background-color 0.2s ease;
+    background-color: #f9e6e6 !important;
+    border-top: 2px solid #990000 !important;
+    border-bottom: 2px solid #990000 !important;
+    transition: background-color 0.2s ease !important;
 }
 
-/* Forzamos que la primera y última celda cierren el recuadro rojo oscuro */
 .monitor-table tbody tr.fila-activa td:first-child {
-    border-left: 4px solid #990000 !important;
+    border-left: 4px solid #990000 !important;
 }
 
 .btn-vista-detalle {
-    border: none; background: none; cursor: pointer; font-size: 18px;
-    padding: 5px 8px; transition: 0.2s; color: #555;
+    border: none !important; background: none !important; cursor: pointer !important; font-size: 18px !important;
+    padding: 5px 8px !important; transition: 0.2s !important; color: #555 !important;
 }
-.btn-vista-detalle:hover { transform: scale(1.2); color: #0284c7; }
+.btn-vista-detalle:hover { transform: scale(1.2) !important; color: #0284c7 !important; }
 
-/* Contenedor principal con efecto esmerilado / Blur de fondo */
+/* ====================================================================
+   💎 SECCIÓN DEL MODAL DE DETALLE SATELITAL (PRODUCCIÓN PERFECTA)
+   ==================================================================== */
 #mega-modal-detalle {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    width: 100vw !important; /* 🚀 CORRECCIÓN: Asegura cobertura total de la ventana */
-    height: 100vh !important; /* 🚀 CORRECCIÓN: Asegura cobertura total de la ventana */
-    background: rgba(15, 23, 42, 0.82) !important; /* Un toque más oscuro para un aislamiento perfecto */
+    width: 100vw !important; 
+    height: 100vh !important; 
+    background: rgba(15, 23, 42, 0.82) !important; 
     backdrop-filter: blur(10px) !important; 
     -webkit-backdrop-filter: blur(10px) !important;
-    display: none; /* Controlado dinámicamente por JavaScript (flex/none) */
-    justify-content: flex-end !important; /* Alínea el cuadro blanco al área útil derecha */
+    display: none; 
+    justify-content: flex-end !important; 
     align-items: center !important;
-    z-index: 999999 !important; /* 🚀 CORRECCIÓN: Pasa por encima de absolutamente cualquier menú de Geotab */
+    z-index: 999999 !important; 
     box-sizing: border-box !important;
 }
 
-/* EL CUADRO BLANCO INTERNO (ENCUADRADO PERFECTAMENTE EN TU CUADRO ROJO) */
 .mega-modal-content {
     background: #ffffff !important; 
-    width: calc(100% - 280px) !important; /* Resta de forma exacta el menú izquierdo de Geotab */
+    width: calc(100% - 280px) !important; 
     height: 94vh !important; 
-    margin-right: 20px !important; /* Despegado elegante del borde derecho */
+    margin-right: 20px !important; 
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
     padding: 24px !important; 
@@ -513,9 +500,6 @@ textarea {
     z-index: 1000000 !important;
 }
 
-/* ====================================================================
-   CABECERA EN FILAS NATURALES (EVITA EL AMONTONAMIENTO DE TEXTOS)
-   ==================================================================== */
 .mega-cabecera-satelital {
     display: flex !important;
     flex-direction: column !important;
@@ -543,7 +527,7 @@ textarea {
 .mega-subtitulos { 
     display: flex !important; 
     gap: 10px !important; 
-    flex-wrap: wrap !important; /* 🚀 CORRECCIÓN: Permite que la ruta baje si la pantalla es pequeña y evita que se empalme */
+    flex-wrap: wrap !important; 
 }
 
 .badge-sat-placa, .badge-sat-ruta {
@@ -557,7 +541,6 @@ textarea {
 }
 .badge-sat-placa strong, .badge-sat-ruta strong { color: #0f172a !important; }
 
-/* BÚNKER DEL MAPA (CON MEDIDAS FIJAS PARA QUE DEJE DE VERSE GRIS) */
 .mega-bloque-mapa { 
     background: #e2e8f0 !important; 
     border-radius: 12px !important; 
@@ -574,7 +557,6 @@ textarea {
     z-index: 10 !important; 
 }
 
-/* CONTROLES DERECHOS */
 .mega-bloque-controles { display: flex !important; align-items: center !important; gap: 20px !important; }
 .btn-close-mega {
     border: none !important; background: #f1f5f9 !important; font-size: 22px !important; cursor: pointer !important; color: #475569 !important;
@@ -583,7 +565,6 @@ textarea {
 .btn-close-mega:hover { background: #e63946 !important; color: white !important; transform: rotate(90deg) !important; }
 .mega-termometro-inputs { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 15px !important; }
 
-/* BADGES DE TELEMETRÍA */
 .sat-badge-estado { display: inline-flex !important; align-items: center !important; gap: 6px !important; padding: 5px 14px !important; border-radius: 20px !important; font-weight: 700 !important; font-size: 11px !important; }
 .sat-ping { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .sat-status-en-curso { background: #dcfce7 !important; color: #15803d !important; }
@@ -599,7 +580,6 @@ textarea {
 .sat-barra-bg { width: 100% !important; height: 8px !important; background: #e2e8f0 !important; border-radius: 4px !important; overflow: hidden !important; }
 .sat-barra-fill { height: 100% !important; background: linear-gradient(90deg, #004b93, #1e8e3e) !important; transition: width 0.4s ease !important; }
 
-/* BARRA DE FILTROS */
 .mega-barra-filtros { display: flex !important; gap: 8px !important; margin-bottom: 12px !important; flex-shrink: 0 !important; }
 .sat-btn-f {
     background: #f8fafc !important; border: 1px solid #e2e8f0 !important; padding: 6px 14px !important; border-radius: 6px !important;
@@ -608,9 +588,6 @@ textarea {
 .sat-btn-f:hover { background: #f1f5f9 !important; }
 .sat-btn-f.activo { background: #0f172a !important; border-color: #0f172a !important; color: #ffffff !important; font-weight: 600 !important; }
 
-/* ====================================================================
-   EL BÚNKER DE LA TABLA (CON SCROLL INTERNO BLINDADO)
-   ==================================================================== */
 .mega-bunker-tabla {
     flex: 1 !important; 
     border: 1px solid #e2e8f0 !important; 
@@ -658,7 +635,6 @@ textarea {
     padding-left: 15px !important;
 }
 
-/* SEMÁFOROS */
 .sat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
 .sat-dot-verde { background: #16a34a !important; box-shadow: 0 0 5px #22c55e !important; }
 .sat-dot-mostaza { background: #d97706 !important; box-shadow: 0 0 5px #f59e0b !important; }
@@ -670,3 +646,77 @@ textarea {
 .mega-bunker-tabla::-webkit-scrollbar { width: 6px; height: 6px; }
 .mega-bunker-tabla::-webkit-scrollbar-track { background: #f8fafc; }
 .mega-bunker-tabla::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* ====================================================================
+   📦 💎 ELEMENTO EXTRA: NUEVO MOTOR DE ESTILOS PARA EL RESUMEN (📋)
+   ==================================================================== */
+#panel-resumen, 
+.resumen-viaje-contenedor {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    padding: 22px !important;
+    margin-top: 25px !important;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03) !important;
+    font-family: 'Lexend', sans-serif !important;
+    clear: both !important;
+}
+
+#panel-resumen h3, 
+.resumen-viaje-contenedor h2 {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    text-transform: uppercase !important;
+    margin-bottom: 15px !important;
+    letter-spacing: -0.3px !important;
+}
+
+#panel-resumen button,
+.resumen-viaje-contenedor .btn-close-inline {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 6px 14px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: 0.2s !important;
+    text-transform: uppercase !important;
+}
+
+#panel-resumen button:hover {
+    background: #dc2626 !important;
+    transform: scale(1.03) !important;
+}
+
+.auditoria-inicio-text {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    padding: 10px 15px !important;
+    border-radius: 6px !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    margin-bottom: 18px !important;
+    border-left: 5px solid #f59e0b !important;
+}
+
+.resumen-lista-puntos {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 12px !important;
+    margin-top: 15px !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+.resumen-lista-puntos li {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    color: #334155 !important;
+    font-weight: 500 !important;
+}
