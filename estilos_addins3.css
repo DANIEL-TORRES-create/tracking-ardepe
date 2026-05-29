@@ -435,17 +435,18 @@ textarea {
     -webkit-backdrop-filter: blur(8px) !important;
     display: none; 
     justify-content: flex-end !important; 
-    align-items: center !important; /* 🚀 CAMBIO: Centra verticalmente el modal para que baje de forma natural */
+    align-items: flex-start !important; 
+    padding-top: 5vh !important; /* 🚀 FORZADO: Empuja todo el cuadro hacia abajo de la pantalla */
     z-index: 999999 !important; 
     box-sizing: border-box !important;
 }
 
+/* EL CUADRO BLANCO INTERNO */
 .mega-modal-content {
     background: #ffffff !important; 
-    width: calc(100% - 290px) !important; 
-    height: 90vh !important; /* Mantiene la misma altura original */
-    margin-top: 0 !important; /* 🚀 CAMBIO: Deja que cambie al centro simétrico sin empujar al techo */
-    margin-right: 25px !important; 
+    width: calc(100% - 310px) !important; /* Separación sutil del menú izquierdo de Geotab */
+    height: 88vh !important; 
+    margin-right: 35px !important; /* Separación balanceada del borde derecho */
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
     padding: 24px !important; 
@@ -588,20 +589,23 @@ textarea {
 }
 
 /* ====================================================================
-   🚀 FASE 4.1: BLINDAJE ULTRA-GRIS PARA BOTONES DE CONTROL DE VIAJE
+   🚀 FASE 4.1: ESTILO PRO DE CONTROL DE VIAJE (COMO BOTONES DE VISTA)
    ==================================================================== */
+.btn-ctrl {
+    border: none !important;
+    background: none !important;
+    cursor: pointer !important;
+    transition: 0.2s !important;
+    display: inline-block !important;
+}
+.btn-ctrl:hover:not(:disabled):not(.disabled) {
+    transform: scale(1.2) !important;
+}
 .btn-ctrl:disabled,
-.btn-ctrl[disabled],
 .btn-ctrl.disabled {
     cursor: not-allowed !important;     
-    opacity: 0.45 !important;           
-    filter: grayscale(1) contrast(0.8) !important; 
-    pointer-events: none !important;     
-}
-.btn-ctrl:disabled span,
-.btn-ctrl[disabled] span,
-.btn-ctrl.disabled span {
-    color: #94a3b8 !important; /* 🚀 CORRECCIÓN: Apaga el color del texto inyectado por JS a gris mate */
+    opacity: 0.3 !important;           
+    filter: grayscale(1) !important;
 }
 
 /* ====================================================================
@@ -642,11 +646,10 @@ textarea {
     position: relative !important;
 }
 
-/* 🚀 CORRECCIÓN: Hilo gris perfectamente centrado con los círculos laterales */
 .resumen-lista-puntos::before {
     content: '' !important;
     position: absolute !important;
-    left: 17px !important; /* Alineado exacto con el nodo -24px de los li */
+    left: 17px !important; 
     top: 15px !important;
     bottom: 25px !important;
     width: 3px !important;
@@ -654,7 +657,6 @@ textarea {
     z-index: 1 !important;
 }
 
-/* Tarjetas del Resumen */
 .resumen-lista-puntos li {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
@@ -668,30 +670,28 @@ textarea {
     z-index: 2 !important;
 }
 
-/* Micro-nodos estilizados */
 .resumen-lista-puntos li::before {
     content: '' !important;
     position: absolute !important;
-    left: -20px !important; /* Ajuste posicional del anillo */
+    left: -20px !important; 
     top: 50% !important;
     transform: translateY(-50%) !important;
     width: 12px !important;
     height: 12px !important;
     border-radius: 50% !important;
-    background: #1e8e3e !important; /* Verde por defecto */
+    background: #1e8e3e !important; 
     border: 3px solid #ffffff !important;
     box-shadow: 0 0 0 2px #1e8e3e !important;
     z-index: 3 !important;
 }
 
-/* Diferenciador de colores Inicio/Fin */
 .resumen-lista-puntos li:first-child::before {
-    background: #d93025 !important; /* Rojo origen */
+    background: #d93025 !important; 
     box-shadow: 0 0 0 2px #d93025 !important;
 }
 
 .resumen-lista-puntos li:last-child::before {
-    background: #004b93 !important; /* Azul destino */
+    background: #004b93 !important; 
     box-shadow: 0 0 0 2px #004b93 !important;
 }
 
