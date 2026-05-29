@@ -482,81 +482,92 @@ textarea {
 
 /* Contenedor principal con efecto esmerilado / Blur de fondo */
 #mega-modal-detalle {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     background: rgba(15, 23, 42, 0.75) !important;
     backdrop-filter: blur(8px); 
     -webkit-backdrop-filter: blur(8px);
-    display: flex;
-    justify-content: flex-end; /* 🚀 Alinea el contenido al borde derecho útil */
-    align-items: center;
-    z-index: 2500; /* Asegura que se monte sobre el menú si es necesario */
-    box-sizing: border-box;
+    display: flex !important;
+    justify-content: center !important; /* Centra el modal en el espacio útil de Geotab */
+    align-items: center !important;    /* Centra verticalmente */
+    z-index: 5000 !important;
+    box-sizing: border-box !important;
+    padding: 25px !important;
 }
 
-/* El cuadro blanco que debe encuadrar en tu marca roja */
 .mega-modal-content {
-    background: #ffffff; 
-    width: calc(100% - 260px) !important; /* 🚀 CORRECCIÓN CRÍTICA: Resta exactamente el ancho del menú izquierdo de Geotab */
-    height: 94vh; 
-    border-radius: 14px 0 0 14px; /* Redondeado elegante solo en el borde interno */
-    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.3);
-    padding: 20px; 
-    box-sizing: border-box; 
-    display: flex; 
-    flex-direction: column;
-    margin-right: 0; /* Pegado al extremo derecho de la pantalla */
-    overflow: hidden;
+    background: #ffffff !important; 
+    width: 100% !important;
+    max-width: 1420px !important; /* Evita que se estire al infinito en pantallas ultrapanorámicas */
+    height: 92vh !important; 
+    border-radius: 14px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+    padding: 20px !important; 
+    box-sizing: border-box !important; 
+    display: flex !important; 
+    flex-direction: column !important;
+    overflow: hidden !important; 
 }
 
-/* Rediseño de la cabecera para que sea flexible y no empuje el contenido */
+/* Cabecera Flexible por Filas Naturales */
 .mega-cabecera-satelital {
-    display: flex;
-    flex-direction: column; /* 🚀 Cambiamos de Grid a Flex vertical para controlar el espacio */
-    gap: 12px;
-    margin-bottom: 15px; 
-    flex-shrink: 0;
-    width: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-bottom: 12px !important; 
+    flex-shrink: 0 !important;
+    width: 100% !important;
 }
 
-/* Fila superior de la cabecera (Identidad y botón cerrar) */
 .mega-cabecera-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
 }
 
-/* Reubicación del bloque del mapa para que use el ancho exacto disponible */
+.mega-bloque-identidad h2 {
+    font-size: 19px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; letter-spacing: -0.5px;
+}
+
+.mega-subtitulos { display: flex; gap: 10px; }
+.badge-sat-placa, .badge-sat-ruta {
+    background: #f1f5f9; padding: 5px 12px; border-radius: 5px; font-size: 12px;
+    color: #475569; border-left: 4px solid #004b93; white-space: nowrap;
+}
+.badge-sat-placa strong, .badge-sat-ruta strong { color: #0f172a; }
+
+/* Búnker del Minimapa Expandido Horizontalmente */
 .mega-bloque-mapa { 
     background: #e2e8f0; 
     border-radius: 10px; 
     border: 1px solid #cbd5e1; 
     overflow: hidden; 
-    height: 240px !important; /* Altura rectangular fija ideal */
+    height: 230px !important; 
     width: 100% !important;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
 }
+
 #sat-map-container { 
     width: 100% !important; 
     height: 100% !important; 
-    z-index: 10; /* Evita que flote por encima de menús o capas del modal */
+    z-index: 10 !important; 
 }
 
 /* Bloque Control Derecho vertical */
-.mega-bloque-controles { display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-start; gap: 15px; }
+.mega-bloque-controles { display: flex; align-items: center; gap: 20px; }
 .btn-close-mega {
     border: none; background: #f1f3f5; font-size: 22px; cursor: pointer; color: #555;
     width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s;
 }
 .btn-close-mega:hover { background: #e63946; color: white; transform: rotate(90deg); }
-.mega-termometro-inputs { width: 100%; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+.mega-termometro-inputs { display: flex; flex-direction: row; align-items: center; gap: 15px; }
 
 /* Etiquetas de Estado con Ping vivo */
-.sat-badge-estado { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 11px; }
+.sat-badge-estado { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; font-weight: 700; font-size: 11px; }
 .sat-ping { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .sat-status-en-curso { background: #dcfce7; color: #15803d; }
 .sat-status-en-curso .sat-ping { background: #16a34a; animation: satPingAnim 1.2s cubic-bezier(0, 0, 0.2, 1) infinite; }
@@ -567,7 +578,7 @@ textarea {
 @keyframes satPingAnim { 75%, 100% { transform: scale(2); opacity: 0; } }
 
 /* Barra de progreso global lineal */
-.sat-progreso-wrapper { width: 100%; max-width: 240px; }
+.sat-progreso-wrapper { width: 100%; min-width: 180px; }
 .sat-progreso-texto { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 3px; }
 .sat-barra-bg { width: 100%; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
 .sat-barra-fill { height: 100%; background: linear-gradient(90deg, #004b93, #1e8e3e); transition: width 0.4s ease; }
@@ -581,84 +592,66 @@ textarea {
 .sat-btn-f:hover { background: #f1f5f9; }
 .sat-btn-f.activo { background: #0f172a; border-color: #0f172a; color: #ffffff; font-weight: 600; }
 
-/* El Búnker Rígido de la Tabla: Scroll Infinito Controlado */
+/* El Búnker Rígido de la Tabla: Scroll Infinito Controlado Interno */
 .mega-bunker-tabla {
-    flex: 1; 
-    border: 1px solid #e2e8f0; 
-    border-radius: 10px;
-    overflow-x: hidden; /* 🚀 Bloquea por completo el scroll horizontal externo */
-    overflow-y: auto; 
-    background: #ffffff;
-    margin-top: 5px;
+    flex: 1 !important; 
+    border: 1px solid #e2e8f0 !important; 
+    border-radius: 10px !important;
+    overflow-x: auto !important; /* Mantiene el scroll horizontal protegido dentro del cuadro blanco */
+    overflow-y: auto !important; 
+    background: #ffffff !important;
+    margin-top: 5px !important;
     width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
 }
 
 .mega-tabla-datos { 
     width: 100% !important; 
-    max-width: 100% !important;
-    border-collapse: collapse; 
-    font-size: 10px; /* 🚀 Fuente ultra-compacta para que entren todos los datos */
-    text-align: center;
-    table-layout: fixed; /* 🚀 Fuerza a las columnas a respetar el ancho disponible del recuadro */
+    border-collapse: collapse !important; 
+    font-size: 11px !important; 
+    text-align: center !important; /* Centra todo el contenido de validación */
+    min-width: 1460px !important;  /* Evita el aplastamiento y quiebre vertical de palabras */
 }
 
-/* Distribución quirúrgica de anchos de columna para que sumen exactamente 100% */
-.mega-tabla-datos th:nth-child(1), .mega-tabla-datos td:nth-child(1) { width: 3%; }   /* ST */
-.mega-tabla-datos th:nth-child(2), .mega-tabla-datos td:nth-child(2) { width: 13%; text-align: left; padding-left: 6px; } /* PUNTO (Izquierda) */
-.mega-tabla-datos th:nth-child(3), .mega-tabla-datos td:nth-child(3) { width: 7%; }   /* TIPO */
-.mega-tabla-datos th:nth-child(4), .mega-tabla-datos td:nth-child(4) { width: 9%; }   /* PLAN LLEGADA */
-.mega-tabla-datos th:nth-child(5), .mega-tabla-datos td:nth-child(5) { width: 9%; }   /* REAL LLEGADA */
-.mega-tabla-datos th:nth-child(6), .mega-tabla-datos td:nth-child(6) { width: 7%; }   /* DESVIACIÓN TIEMPO */
-.mega-tabla-datos th:nth-child(7), .mega-tabla-datos td:nth-child(7) { width: 6%; }   /* TIEMPO VIAJE PLAN */
-.mega-tabla-datos th:nth-child(8), .mega-tabla-datos td:nth-child(8) { width: 6%; }   /* TIEMPO VIAJE REAL */
-.mega-tabla-datos th:nth-child(9), .mega-tabla-datos td:nth-child(9) { width: 6%; }   /* DIST PLAN */
-.mega-tabla-datos th:nth-child(10), .mega-tabla-datos td:nth-child(10) { width: 6%; } /* DIST REAL */
-.mega-tabla-datos th:nth-child(11), .mega-tabla-datos td:nth-child(11) { width: 5%; } /* DIF KM */
-.mega-tabla-datos th:nth-child(12), .mega-tabla-datos td:nth-child(12) { width: 7%; } /* PERNOCTE PLAN */
-.mega-tabla-datos th:nth-child(13), .mega-tabla-datos td:nth-child(13) { width: 7%; } /* PERNOCTE REAL */
-.mega-tabla-datos th:nth-child(14), .mega-tabla-datos td:nth-child(14) { width: 9%; } /* REAL SALIDA */
-
 .mega-tabla-datos th {
-    position: sticky; 
-    top: 0; 
-    background: #f8fafc; 
-    color: #475569;
-    font-weight: 700; 
-    padding: 6px 2px; 
-    border-bottom: 2px solid #cbd5e1; 
-    z-index: 50;
-    text-align: center;
-    white-space: normal; /* 🚀 Permite que títulos largos pasen a 2 líneas en vez de empujar la tabla */
-    line-height: 1.1;
-    word-wrap: break-word;
+    position: sticky !important; 
+    top: 0 !important; 
+    background: #f8fafc !important; 
+    color: #475569 !important;
+    font-weight: 700 !important; 
+    padding: 10px 8px !important; 
+    border-bottom: 2px solid #cbd5e1 !important; 
+    z-index: 50 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
 }
 
 .mega-tabla-datos td { 
-    padding: 6px 2px; 
-    border-bottom: 1px solid #f1f5f9; 
-    color: #334155; 
-    vertical-align: middle; 
-    white-space: normal; /* Permite quiebre interno si la fecha es muy larga */
-    word-break: break-all;
+    padding: 8px 8px !important; 
+    border-bottom: 1px solid #f1f5f9 !important; 
+    color: #334155 !important; 
+    vertical-align: middle !important;
+    white-space: nowrap !important; /* Fuerza las fechas en un solo renglón */
 }
 
-.mega-tabla-datos tbody tr:hover { 
-    background: #f8fafc; 
+/* Columna del nombre del hito alineada a la izquierda */
+.mega-tabla-datos td:nth-child(2), 
+.mega-tabla-datos th:nth-child(2) {
+    text-align: left !important;
+    padding-left: 15px !important;
 }
 
 /* Desviación Semáforo: Puntos Clínicos sólidos */
-.sat-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 3px; vertical-align: middle; }
-.sat-dot-verde { background: #16a34a; box-shadow: 0 0 4px #22c55e; }
-.sat-dot-mostaza { background: #d97706; box-shadow: 0 0 4px #f59e0b; }
-.sat-dot-rojo { background: #dc2626; box-shadow: 0 0 4px #ef4444; }
+.sat-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+.sat-dot-verde { background: #16a34a; box-shadow: 0 0 5px #22c55e; }
+.sat-dot-mostaza { background: #d97706; box-shadow: 0 0 5px #f59e0b; }
+.sat-dot-rojo { background: #dc2626; box-shadow: 0 0 5px #ef4444; }
 
 /* Resaltado completo de tramos de descanso (Pernoctes) en Oro Suave */
 .sat-row-pernocte { background: #fffbeb !important; }
 .sat-row-pernocte td { border-bottom: 1px solid #fde68a !important; color: #b45309 !important; }
 
 /* Scrollbars Ejecutivos Delgados */
-.mega-bunker-tabla::-webkit-scrollbar { width: 5px; height: 5px; }
+.mega-bunker-tabla::-webkit-scrollbar { width: 6px; height: 6px; }
 .mega-bunker-tabla::-webkit-scrollbar-track { background: #f8fafc; }
 .mega-bunker-tabla::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
