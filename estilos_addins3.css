@@ -434,18 +434,23 @@ textarea {
     backdrop-filter: blur(8px) !important; 
     -webkit-backdrop-filter: blur(8px) !important;
     display: none; 
+    /* 🚀 CORRECCIÓN: Alineación limpia para controlar la caída del cuadro */
     justify-content: flex-end !important; 
     align-items: flex-start !important; 
-    padding-top: 5vh !important; /* 🚀 FORZADO: Empuja todo el bloque blanco hacia abajo */
     z-index: 999999 !important; 
     box-sizing: border-box !important;
 }
 
+/* EL CUADRO BLANCO INTERNO (CENTRADITO Y BAJADO) */
 .mega-modal-content {
     background: #ffffff !important; 
-    width: calc(100% - 310px) !important; /* 🚀 Alineación a la izquierda calibrada respecto al menú */
-    height: 90vh !important; /* Mantiene exactamente la misma altura que querías */
-    margin-right: 30px !important; /* 🚀 Centrado simétrico derecho */
+    width: calc(100% - 310px) !important; /* Mantiene su misma proporción original */
+    height: 86vh !important;               /* Mantiene su misma proporción original */
+    
+    /* 🚀 LAS CLAVES DEL MOVIMIENTO: */
+    margin-top: 7vh !important;    /* Empuja todo el bloque hacia abajo para quitar lo pegado al techo */
+    margin-right: calc((310px - 250px) / 2) !important; /* Distribuye el aire de forma matemática en la derecha */
+    
     border-radius: 14px !important;
     box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
     padding: 24px !important; 
