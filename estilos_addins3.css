@@ -482,40 +482,63 @@ textarea {
 
 /* Contenedor principal con efecto esmerilado / Blur de fondo */
 #mega-modal-detalle {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(15, 23, 42, 0.75) !important;
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-}
-.mega-modal-content {
-    background: #ffffff; width: 96vw; height: 94vh; border-radius: 14px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-    padding: 18px; box-sizing: border-box; display: flex; flex-direction: column;
+    backdrop-filter: blur(8px); 
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: flex-end; /* 🚀 Alinea el contenido al borde derecho útil */
+    align-items: center;
+    z-index: 2500; /* Asegura que se monte sobre el menú si es necesario */
+    box-sizing: border-box;
 }
 
-/* Cabecera Simétrica en 3 Bloques */
+/* El cuadro blanco que debe encuadrar en tu marca roja */
+.mega-modal-content {
+    background: #ffffff; 
+    width: calc(100% - 260px) !important; /* 🚀 CORRECCIÓN CRÍTICA: Resta exactamente el ancho del menú izquierdo de Geotab */
+    height: 94vh; 
+    border-radius: 14px 0 0 14px; /* Redondeado elegante solo en el borde interno */
+    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.3);
+    padding: 20px; 
+    box-sizing: border-box; 
+    display: flex; 
+    flex-direction: column;
+    margin-right: 0; /* Pegado al extremo derecho de la pantalla */
+    overflow: hidden;
+}
+
+/* Rediseño de la cabecera para que sea flexible y no empuje el contenido */
 .mega-cabecera-satelital {
-    display: grid; 
-    grid-template-columns: 280px 1fr 280px; 
-    gap: 15px;
+    display: flex;
+    flex-direction: column; /* 🚀 Cambiamos de Grid a Flex vertical para controlar el espacio */
+    gap: 12px;
     margin-bottom: 15px; 
     flex-shrink: 0;
+    width: 100%;
 }
-.mega-bloque-identidad h2 {
-    font-size: 19px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0; letter-spacing: -0.5px;
-}
-.mega-subtitulos { display: flex; flex-direction: column; gap: 6px; }
-.badge-sat-placa, .badge-sat-ruta {
-    background: #f1f5f9; padding: 5px 10px; border-radius: 5px; font-size: 12px;
-    color: #475569; border-left: 4px solid #004b93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.badge-sat-placa strong, .badge-sat-ruta strong { color: #0f172a; }
 
-/* Búnker del Minimapa - CON FINES DE FLUJO NATURAL */
+/* Fila superior de la cabecera (Identidad y botón cerrar) */
+.mega-cabecera-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+/* Reubicación del bloque del mapa para que use el ancho exacto disponible */
 .mega-bloque-mapa { 
     background: #e2e8f0; 
     border-radius: 10px; 
     border: 1px solid #cbd5e1; 
     overflow: hidden; 
-    height: 220px !important; /* Altura óptima para que no sature la pantalla vertical */
+    height: 240px !important; /* Altura rectangular fija ideal */
+    width: 100% !important;
+    box-sizing: border-box;
 }
 #sat-map-container { 
     width: 100% !important; 
