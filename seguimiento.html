@@ -213,15 +213,18 @@
                     </div>
                     <small style="font-size:10px; font-weight:bold; color:var(--primary)">${v.progreso}% completado</small>
                 </td>
-                <td class="control-cell">
-    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" ${estaEnCurso ? 'disabled="true"' : ''} title="Iniciar Viaje" onclick="prepararAccion('${v.idViaje}', 'INICIAR')">
-        <span style="color: #1e8e3e; font-weight: bold; font-size: 14px;">▶ INICIAR</span>
+                <td class="control-cell" style="text-align: center; vertical-align: middle; white-space: nowrap;">
+    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" ${estaEnCurso ? 'disabled="true"' : ''} title="Iniciar Viaje" onclick="prepararAccion('${v.idViaje}', 'INICIAR')" style="background: none; border: none; cursor: pointer; padding: 4px 8px; margin: 0 4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#1e8e3e" style="vertical-align: middle;"><path d="M8 5v14l11-7z"/></svg>
+        <span style="color: #1e8e3e; font-weight: 600; font-size: 12px; margin-left: 2px;">INICIAR</span>
     </button>
-    <button class="btn-ctrl" title="Finalizar Viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')">
-        <span style="color: #004b93; font-weight: bold; font-size: 14px;">✓ FIN</span>
+    <button class="btn-ctrl" title="Finalizar Viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')" style="background: none; border: none; cursor: pointer; padding: 4px 8px; margin: 0 4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#004b93" style="vertical-align: middle;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <span style="color: #004b93; font-weight: 600; font-size: 12px; margin-left: 2px;">FIN</span>
     </button>
-    <button class="btn-ctrl" title="Cancelar Viaje" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')">
-        <span style="color: #d93025; font-weight: bold; font-size: 14px;">✕ CANCELAR</span>
+    <button class="btn-ctrl" title="Cancelar Viaje" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')" style="background: none; border: none; cursor: pointer; padding: 4px 8px; margin: 0 4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#d93025" style="vertical-align: middle;"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
+        <span style="color: #d93025; font-weight: 600; font-size: 12px; margin-left: 2px;">CANCELAR</span>
     </button>
 </td>
                 <td class="vistas-cell" style="display: flex; gap: 8px; justify-content: center;">
@@ -358,25 +361,30 @@
         let containerHtml = `<ul class="resumen-lista-puntos">`;
         
         puntos.forEach((p, index) => {
-            // Clases de estado ejecutivas para los micro-nodos del CSS
             let claseEstado = "hito-pendiente";
             if (p.deteccion === "SI") claseEstado = "hito-completado";
             if (p.deteccion === "FORZADO" || p.punto === "INICIO_MANUAL") claseEstado = "hito-alerta";
 
-            // Asignación inteligente de iconos temáticos operativos de FontAwesome
-            let iconoHito = "fa-map-marker-alt"; 
-            if (index === 0) iconoHito = "fa-warehouse"; // Cochera / Origen
-            if (index === puntos.length - 1) iconoHito = "fa-flag-checkered"; // Destino Final
-            if (p.punto === "INICIO_MANUAL") iconoHito = "fa-play-circle"; // Inicio manual
+            // Forzado de Iconos solo para el primer y el último hito de la lista
+            let iconoEspecial = "";
+            if (index === 0) {
+                iconoEspecial = `<i class="fas fa-warehouse" style="color: #d93025; margin-right: 6px;"></i>`; // Origen
+            } else if (index === puntos.length - 1) {
+                iconoEspecial = `<i class="fas fa-flag-checkered" style="color: #004b93; margin-right: 6px;"></i>`; // Destino
+            } else if (p.punto === "INICIO_MANUAL") {
+                iconoEspecial = `<i class="fas fa-play-circle" style="color: #d97706; margin-right: 6px;"></i>`;
+            } else {
+                iconoEspecial = `<i class="fas fa-map-marker-alt" style="color: #94a3b8; margin-right: 6px;"></i>`;
+            }
 
             containerHtml += `
                 <li class="${claseEstado}">
                     <div>
-                        <strong style="color: var(--primary); font-size: 14px;">
-                            <i class="fas ${iconoHito} resumen-icon-status"></i> ${p.punto}
+                        <strong style="color: #0f172a; font-size: 13.5px;">
+                            ${iconoEspecial}${p.punto}
                         </strong>
                     </div>
-                    <div style="font-size: 11.5px; color: #555; margin-top: 4px;">
+                    <div style="font-size: 11.5px; color: #64748b; margin-top: 4px; font-family: sans-serif;">
                         <span><i class="far fa-clock"></i> Plan: <b>${p.planHora}</b></span> | 
                         <span><i class="fas fa-satellite-dish"></i> Real: <b>${p.realHora || '---'}</b></span>
                     </div>
