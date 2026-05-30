@@ -751,17 +751,34 @@ textarea {
 }
 
 .sat-label-fija-hito {
-    background: rgba(15, 23, 42, 0.9) !important; /* Fondo gris oscuro pizarra */
-    color: #ffffff !important;                     /* Letras blancas limpias */
+    background: rgba(15, 23, 42, 0.9) !important;
+    color: #ffffff !important;
     border: 1px solid #475569 !important;
-    border-radius: 5px !important;
-    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    padding: 2px 7px !important;
     font-size: 11px !important;
     font-family: 'Lexend', sans-serif, system-ui;
     font-weight: bold;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
 }
-/* Flecha inferior del tooltip */
 .sat-label-fija-hito::before {
     border-top-color: rgba(15, 23, 42, 0.9) !important;
+}
+
+/* Alerta de Auditoría: Etiquetas rojas para los hitos que el camión se saltó */
+.sat-label-omitida-hito {
+    background: rgba(217, 48, 37, 0.95) !important; /* Rojo Alerta Carmín */
+    color: #ffffff !important;
+    border: 1px solid #b91c1c !important;
+    border-radius: 4px !important;
+    padding: 2px 7px !important;
+    font-size: 11px !important;
+    font-family: 'Lexend', sans-serif, system-ui;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    box-shadow: 0 4px 8px rgba(185, 28, 28, 0.3);
+    animation: pulseRed 2s infinite;
+}
+.sat-label-omitida-hito::before {
+    border-top-color: rgba(217, 48, 37, 0.95) !important;
 }
