@@ -656,9 +656,9 @@
                 });
 
                 // ====================================================================
-                // 🚀 MOTOR OSRM: ENRUTAMIENTO REAL POR CARRETERAS (DANIEL V5)
+                // 🚀 MOTOR OSRM: ENRUTAMIENTO REAL CON DESFASE GEMELO GEMELO "ll"
                 // ====================================================================
-                function obtenerTrazadoCarretera(puntosRuta, opcionesEstilo, esRegreso, callbackAsignarLayer) {
+                function obtenerTrazadoCarretera(puntosRuta, opcionesEstilo, ladoDesfase, callbackAsignarLayer) {
                     if (puntosRuta.length < 2) return;
 
                     let stringCoordsInput = puntosRuta.map(p => `${p[1]},${p[0]}`).join(';');
@@ -670,12 +670,11 @@
                             if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                 let caminoCarreteraGps = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                 
-                                // 🚀 REGLA DE PARALELAS: Si es tramo de retorno, aplica un desfase geométrico para que no se encimen
-                                if (esRegreso) {
-                                    caminoCarreteraGps = caminoCarreteraGps.map(coord => {
-                                        return [coord[0] + 0.00005, coord[1] + 0.00005];
-                                    });
-                                }
+                                // 🚀 EFECTO DANIEL "ll": Aplica desfase paralelo a los lados opuestos para que nunca se tapen
+                                caminoCarreteraGps = caminoCarreteraGps.map(coord => {
+                                    let offsetNum = (ladoDesfase === 'izquierda') ? -0.00004 : 0.00004;
+                                    return [coord[0] + offsetNum, coord[1] + offsetNum];
+                                });
 
                                 let capaPolilinea = L.polyline(caminoCarreteraGps, opcionesEstilo).addTo(_satMapa);
                                 callbackAsignarLayer(capaPolilinea);
@@ -690,14 +689,14 @@
                         });
                 }
 
-                // 1. Trazado curvo real para tramos ya superados (Línea Azul Continua)
+                // 1. Trazado curvo real para tramos ya superados (Línea Azul Continua - Desfase Izquierda)
                 if (coordenadasRecorridas.length >= 2) {
-                    obtenerTrazadoCarretera(coordenadasRecorridas, { color: '#004b93', weight: 5 }, false, function(linea) {
+                    obtenerTrazadoCarretera(coordenadasRecorridas, { color: '#004b93', weight: 5 }, 'izquierda', function(linea) {
                         _satLineasRecorridas = linea;
                     });
                 }
 
-                // 2. Trazado curvo real restante (🚀 ASPECTO EXCLUSIVO: ANARANJADO NEÓN CON PUNTOS REDONDOS ESPACIADOS)
+                // 2. Trazado curvo real restante (🚀 ANARANJADO NEÓN CON PUNTOS REDONDOS ESPACIADOS - Desfase Derecha)
                 if (coordenadasPendientes.length > 0) {
                     // El trazo de planeación sale estrictamente desde el hito anterior de la ruta, no del camión
                     if (coordenadasRecorridas.length > 0) {
@@ -705,15 +704,12 @@
                     }
 
                     if (coordenadasPendientes.length >= 2) {
-                        let contieneRetorno = (ultimoIndiceCompletado >= (itinerarioPlan.length / 2));
-                        
-                        // dashArray: '2, 14' con weight: 6 genera la línea punteada neón ideal que no se confunde con calles
                         obtenerTrazadoCarretera(coordenadasPendientes, { 
                             color: '#ff6b00', 
                             weight: 6, 
                             dashArray: '2, 14',
                             lineCap: 'round'
-                        }, contieneRetorno, function(linea) {
+                        }, 'derecha', function(linea) {
                             _satLineasPendientes = linea;
                         });
                     }
