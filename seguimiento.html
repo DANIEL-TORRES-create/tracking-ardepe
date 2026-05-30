@@ -489,12 +489,12 @@
         window[nombreCallbackTemporal] = function(datosSeguimiento) {
             _satCacheDatosRows = [];
             let coordenadasRecorridas = [];
+            let coordenadasPendientes = [];
             let camionCoordenadaVivo = null;
 
             // 🚀 RECONEXIÓN GEOTAB: Buscamos el ID del vehículo por su placa actual para pedir sus coordenadas en vivo
             let placaActual = document.getElementById('lbl-sat-placa').innerText;
             
-            // Usamos el apiGlobal de Geotab que ya tienes inicializado abajo
             apiGlobal.call("Get", {
                 typeName: "Device",
                 search: { name: placaActual }
@@ -502,7 +502,6 @@
                 if (devices && devices.length > 0) {
                     let deviceId = devices[0].id;
                     
-                    // Con el ID del camión, consultamos su última ubicación conocida en el mapa (DeviceStatusInfo)
                     apiGlobal.call("Get", {
                         typeName: "DeviceStatusInfo",
                         search: { deviceSearch: { id: deviceId } }
@@ -510,19 +509,34 @@
                         if (statusResult && statusResult.length > 0) {
                             let infoGps = statusResult[0];
                             if (infoGps.latitude && infoGps.longitude) {
-                                // 🏠 CAPTURA EN VIVO: Fijamos la posición real actual del camión
                                 camionCoordenadaVivo = [infoGps.latitude, infoGps.longitude];
                             }
                         }
-                        dibujarTodoElModalSatelital();
-                    }, function(err) { dibujarTodoElModalSatelital(); });
+                        // Al terminar de buscar el camión, llamamos a la consulta de las geocercas
+                        consultarCentroidesZonas();
+                    }, function(err) { consultarCentroidesZonas(); });
                 } else {
-                    dibujarTodoElModalSatelital();
+                    consultarCentroidesZonas();
                 }
-            }, function(err) { dibujarTodoElModalSatelital(); });
+            }, function(err) { consultarCentroidesZonas(); });
 
-            // Metemos la lógica de dibujo en una sub-función interna para esperar la respuesta de Geotab
-            function dibujarTodoElModalSatelital() {
+            // 🚀 PROPUESTA DANIEL: Consulta viva de los centroides de las zonas por API usando el ID específico
+            function consultarCentroidesZonas() {
+                apiGlobal.call("Get", {
+                    typeName: "Zone",
+                    search: { zoneTypeIds: ["b4A3"] } // Tu tipo de zona exclusivo
+                }, function(zonasGeotab) {
+                    
+                    dibujarTodoElModalSatelital(zonasGeotab);
+                    
+                }, function(err) {
+                    console.error("Error al traer zonas:", err);
+                    dibujarTodoElModalSatelital([]);
+                });
+            }
+
+            // Pasamos las zonas recuperadas a la función de dibujo
+            function dibujarTodoElModalSatelital(zonasGeotab) {
                 itinerarioPlan.forEach((plan, index) => {
                     let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
@@ -559,40 +573,68 @@
                     }
 
                     _satCacheDatosRows.push({
-                        st: esCompletado ? "✓" : "⏳",
-                        punto: plan.punto,
-                        tipo: tipoRegistro,
-                        planLlegada: plan.planHora || "---",
-                        realLlegada: horaRealLlegada,
-                        desvTiempo: desvTiempoTexto,
-                        semTiempo: semaforoTiempo,
+                        st: esCompletado ? "✓" : "⏳", punto: plan.punto, tipo: tipoRegistro, planLlegada: plan.planHora || "---",
+                        realLlegada: horaRealLlegada, desvTiempo: desvTiempoTexto, semTiempo: semaforoTiempo,
                         themeSemTiempo: semaforoTiempo === "rojo" ? "rojo" : (semaforoTiempo === "mostaza" ? "mostaza" : "verde"),
-                        tiempoPlan: tiempoViajePlan,
-                        tiempoReal: tiempoViajeReal,
-                        distPlan: distPlanKm,
-                        distReal: distRealTramo,
-                        semDist: semaforoDistancia,
-                        themeSemDist: semaforoDistancia === "rojo" ? "rojo" : (semaforoDistancia === "mostaza" ? "mostaza" : "verde"),
-                        difKm: difKm,
-                        pernoctePlan: pernoctePlan,
-                        pernocteReal: pernocteReal,
-                        realSalida: horaRealSalida
+                        tiempoPlan: tiempoViajePlan, tiempoReal: tiempoViajeReal, distPlan: distPlanKm, distReal: distRealTramo,
+                        semDist: semaforoDistancia, themeSemDist: semaforoDistancia === "rojo" ? "rojo" : (semaforoDistancia === "mostaza" ? "mostaza" : "verde"),
+                        difKm: difKm, pernoctePlan: pernoctePlan, pernocteReal: pernocteReal, realSalida: horaRealSalida
                     });
+
+                    // 🔍 EXTRACTOR DE CENTROIDES DINÁMICO POR NOMBRE DE LA GEOCERCA
+                    let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                    let centroideLatLng = null;
+
+                    if (zonaMatch) {
+                        if (zonaMatch.center) centroideLatLng = [zonaMatch.center.y, zonaMatch.center.x];
+                        else if (zonaMatch.y) centroideLatLng = [zonaMatch.y, zonaMatch.x];
+                        else if (zonaMatch.points && zonaMatch.points[0]) centroideLatLng = [zonaMatch.points[0].y, zonaMatch.points[0].x];
+                    }
+
+                    // Si la geocerca existe en Geotab, plasmamos su círculo y clasificamos su tramo vector
+                    if (centroideLatLng) {
+                        let colorHito = esCompletado ? '#16a34a' : '#94a3b8'; // Verde si ya se tocó, Gris si está pendiente
+                        let marcadorHito = L.circleMarker(centroideLatLng, { radius: 6, fillColor: colorHito, color: '#fff', weight: 2, fillOpacity: 1 }).addTo(_satMapa);
+                        marcadorHito.bindPopup(`<b>Punto: ${plan.punto}</b><br>Llegada Real: ${horaRealLlegada}`);
+
+                        if (esCompletado) {
+                            coordenadasRecorridas.push(centroideLatLng);
+                        } else {
+                            coordenadasPendientes.push(centroideLatLng);
+                        }
+                    }
                 });
 
                 // ====================================================================
-                // 🚀 DIBUJO SEGURO EN EL MAPA: APUNTA SOLO A COORDENADAS OPERATIVAS REALES
+                // 🚀 TRAZADO DE VECTORES DUALES (SOLIDO RECORRIDO / GRIS CORTADO PENDIENTE)
                 // ====================================================================
+                
+                // 1. Línea continua azul para los puntos ya marcados por el GPS
+                if (coordenadasRecorridas.length > 0) {
+                    _satLineasRecorridas = L.polyline(coordenadasRecorridas, { color: '#004b93', weight: 4 }).addTo(_satMapa);
+                }
+
+                // 2. Línea gris cortada para los puntos que faltan por completar
+                if (coordenadasPendientes.length > 0) {
+                    // Enganchamos el inicio del trazo pendiente de forma fluida
+                    if (camionCoordenadaVivo) {
+                        coordenadasPendientes.unshift(camionCoordenadaVivo);
+                    } else if (coordenadasRecorridas.length > 0) {
+                        coordenadasPendientes.unshift(coordenadasRecorridas[coordenadasRecorridas.length - 1]);
+                    }
+                    // 🚀 dashArray: '5, 10' fragmenta la línea convirtiéndola en discontinua/cortada
+                    _satLineasPendientes = L.polyline(coordenadasPendientes, { color: '#94a3b8', weight: 3, dashArray: '5, 10' }).addTo(_satMapa);
+                }
+
+                // 3. Renderizado final del Marcador de la Unidad en Vivo
                 if (camionCoordenadaVivo) {
-                    // Pintamos el camión en su latitud y longitud real de Geotab
                     _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
                     _satMarcadorCamion.bindPopup(`<b>Unidad: ${placaActual}</b><br>Estado: En Ruta Real`);
-                    
-                    // Centramos el mapa directamente sobre la ubicación viva del vehículo
-                    _satMapa.setView(camionCoordenadaVivo, 12);
+                    _satMapa.setView(camionCoordenadaVivo, 10);
                     setTimeout(() => { _satMarcadorCamion.openPopup(); }, 500);
+                } else if (coordenadasRecorridas.length > 0) {
+                    _satMapa.fitBounds(_satLineasRecorridas.getBounds(), { padding: [30, 30] });
                 } else {
-                    // Si el camión no reporta GPS temporalmente, centramos en Lima por defecto
                     _satMapa.setView([-12.046374, -77.042793], 7);
                 }
 
