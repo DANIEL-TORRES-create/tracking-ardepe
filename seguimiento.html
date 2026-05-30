@@ -471,7 +471,7 @@
     };
 
     // 3. Procesamiento Matemático de Tramos y Telemetría
-    function procesarYConsultarAuditoriaSatelital(idViaje, itinerarioDecoded) {
+     function procesarYConsultarAuditoriaSatelital(idViaje, itinerarioDecoded) {
         const tbody = document.getElementById('sat-tbody-rows');
         if (tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:30px; color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Cargando tramos y telemetría...</td></tr>';
 
@@ -515,7 +515,7 @@
                         if (statusResult && statusResult.length > 0) {
                             let infoGps = statusResult[0];
                             if (infoGps.latitude && infoGps.longitude) {
-                                // 🏠 CAPTURA EN VIVO: Fijamos la posición real actual del camión
+                                // 🏠 CAPTURA EN VIVO: Fijamos la posición real actual del camión (FLOTANTE E INDEPENDIENTE)
                                 camionCoordenadaVivo = [infoGps.latitude, infoGps.longitude];
                             }
                         }
@@ -544,10 +544,23 @@
 
             // Pasamos las zonas recuperadas a la función de dibujo
             function dibujarTodoElModalSatelital(zonasGeotab) {
+                // 🔍 DETECTOR DE ÚLTIMO HITO ALCANZADO: Para calcular omisiones de forma automática
+                let ultimoIndiceCompletado = -1;
+                itinerarioPlan.forEach((plan, idx) => {
+                    let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
+                    if (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real) {
+                        ultimoIndiceCompletado = idx;
+                    }
+                });
+
                 itinerarioPlan.forEach((plan, index) => {
                     let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
-                    let tipoRegistro = esCompletado ? (plan.punto.includes("MANUAL") ? "MANUAL" : "AUTOMÁTICO") : "---";
+                    
+                    // 🚨 REGLA DE OMISIÓN: Si no se completó pero el camión ya marcó hitos posteriores, se saltó este punto
+                    let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
+                    
+                    let tipoRegistro = esCompletado ? (plan.punto.includes("MANUAL") ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
@@ -580,7 +593,7 @@
                     }
 
                     _satCacheDatosRows.push({
-                        st: esCompletado ? "✓" : "⏳", punto: plan.punto, tipo: tipoRegistro, planLlegada: plan.planHora || "---",
+                        st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), punto: plan.punto, tipo: tipoRegistro, planLlegada: plan.planHora || "---",
                         realLlegada: horaRealLlegada, desvTiempo: desvTiempoTexto, semTiempo: semaforoTiempo,
                         themeSemTiempo: semaforoTiempo === "rojo" ? "rojo" : (semaforoTiempo === "mostaza" ? "mostaza" : "verde"),
                         tiempoPlan: tiempoViajePlan, tiempoReal: tiempoViajeReal, distPlan: distPlanKm, distReal: distRealTramo,
@@ -600,23 +613,41 @@
 
                     // Si la geocerca existe en Geotab, plasmamos su círculo y clasificamos su tramo vector
                     if (centroideLatLng) {
-                        let secuenciaVisual = index + 1; // 1, 2, 3... según el orden de planeación
-                        let colorHito = esCompletado ? '#16a34a' : '#64748b'; // Verde si ya se tocó, gris si falta
-                        
-                        // Dibujamos el círculo en la capa grupal
-                        let marcadorHito = L.circleMarker(centroideLatLng, { radius: 8, fillColor: colorHito, color: '#fff', weight: 2, fillOpacity: 1 }).addTo(window._satMarcadoresHitosGrupo);
-                        
-                        // 🚀 ETIQUETA FIJA: Muestra la secuencia de planeación permanentemente arriba de la geocerca
-                        marcadorHito.bindTooltip(`<b>[${secuenciaVisual}]</b> ${plan.punto}`, {
-                            permanent: true,
-                            direction: 'top',
-                            className: 'sat-label-fija-hito',
-                            offset: [0, -6]
-                        });
-
-                        marcadorHito.bindPopup(`<b>Hito ${secuenciaVisual}: ${plan.punto}</b><br>Llegada Real: ${horaRealLlegada}`);
+                        let secuenciaVisual = index + 1;
+                        let colorHito = '#64748b'; // Gris por defecto (Pendiente)
+                        let labelTexto = `<b>[${secuenciaVisual}]</b> ${plan.punto}`;
 
                         if (esCompletado) {
+                            colorHito = '#16a34a'; // Verde (Completado)
+                        } else if (esOmitido) {
+                            colorHito = '#d93025'; // Rojo Alerta (Omitido)
+                            labelTexto = `<b>[${secuenciaVisual}] OMITIDO</b> - ${plan.punto}`;
+                        }
+                        
+                        // 🏠 REGLA DANIEL: Proyección circunferencial exacta de 10 metros de radio real en el terreno
+                        let geocercaVisual = L.circle(centroideLatLng, { 
+                            radius: 10, 
+                            fillColor: colorHito, 
+                            color: colorHito, 
+                            weight: 2, 
+                            fillOpacity: 0.35 
+                        }).addTo(window._satMarcadoresHitosGrupo);
+                        
+                        // Marcador invisible de soporte para que el Tooltip flote centrado y estable
+                        let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
+
+                        // ETIQUETA FIJA RECTIFICADA POR SECUENCIA CRONOLÓGICA
+                        centroApoyo.bindTooltip(labelTexto, {
+                            permanent: true,
+                            direction: 'top',
+                            className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito',
+                            offset: [0, -4]
+                        });
+
+                        geocercaVisual.bindPopup(`<b>Hito ${secuenciaVisual}: ${plan.punto}</b><br>Estado: ${tipoRegistro}<br>Llegada: ${horaRealLlegada}`);
+
+                        // 🚀 INDEPENDENCIA DE CAPAS: Las líneas se alimentan solo de las geocercas tocadas u omitidas
+                        if (esCompletado || esOmitido) {
                             coordenadasRecorridas.push(centroideLatLng);
                         } else {
                             coordenadasPendientes.push(centroideLatLng);
@@ -625,12 +656,11 @@
                 });
 
                 // ====================================================================
-                // 🚀 MOTOR OSRM: ENRUTAMIENTO REAL POR CARRETERAS (DANIEL V4)
+                // 🚀 MOTOR OSRM: ENRUTAMIENTO REAL POR CARRETERAS (DANIEL V5)
                 // ====================================================================
-                function obtenerTrazadoCarretera(puntosRuta, opcionesEstilo, callbackAsignarLayer) {
+                function obtenerTrazadoCarretera(puntosRuta, opcionesEstilo, esRegreso, callbackAsignarLayer) {
                     if (puntosRuta.length < 2) return;
 
-                    // OSRM lee [longitud, latitud] separado por comas, y los puntos acoplados por punto y coma
                     let stringCoordsInput = puntosRuta.map(p => `${p[1]},${p[0]}`).join(';');
                     let urlOSRM = `https://router.project-osrm.org/route/v1/driving/${stringCoordsInput}?overview=full&geometries=geojson`;
 
@@ -638,59 +668,61 @@
                         .then(r => r.json())
                         .then(jsonRoute => {
                             if (jsonRoute.routes && jsonRoute.routes.length > 0) {
-                                // Volvemos a invertir las coordenadas internas de OSRM para Leaflet [lat, lng]
                                 let caminoCarreteraGps = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                                
+                                // 🚀 REGLA DE PARALELAS: Si es tramo de retorno, aplica un desfase geométrico para que no se encimen
+                                if (esRegreso) {
+                                    caminoCarreteraGps = caminoCarreteraGps.map(coord => {
+                                        return [coord[0] + 0.00005, coord[1] + 0.00005];
+                                    });
+                                }
+
                                 let capaPolilinea = L.polyline(caminoCarreteraGps, opcionesEstilo).addTo(_satMapa);
                                 callbackAsignarLayer(capaPolilinea);
                             } else {
-                                // Respaldo por si el servidor público se satura: tira línea recta para no colgar la visual
                                 let capaRecta = L.polyline(puntosRuta, opcionesEstilo).addTo(_satMapa);
                                 callbackAsignarLayer(capaRecta);
                             }
                         })
                         .catch(err => {
-                            console.error("Error consultando OSRM:", err);
                             let capaRecta = L.polyline(puntosRuta, opcionesEstilo).addTo(_satMapa);
                             callbackAsignarLayer(capaRecta);
                         });
                 }
 
                 // 1. Trazado curvo real para tramos ya superados (Línea Azul Continua)
-                if (coordenadasRecorridas.length > 0) {
-                    // Si el camión está en ruta, el tramo azul debe llegar hasta la posición viva de la unidad
-                    let rutaAzulFinal = [...coordenadasRecorridas];
-                    if (camionCoordenadaVivo) {
-                        rutaAzulFinal.push(camionCoordenadaVivo);
-                    }
-                    
-                    if (rutaAzulFinal.length >= 2) {
-                        obtenerTrazadoCarretera(rutaAzulFinal, { color: '#004b93', weight: 5 }, function(linea) {
-                            _satLineasRecorridas = linea;
-                        });
-                    }
+                if (coordenadasRecorridas.length >= 2) {
+                    obtenerTrazadoCarretera(coordenadasRecorridas, { color: '#004b93', weight: 5 }, false, function(linea) {
+                        _satLineasRecorridas = linea;
+                    });
                 }
 
-                // 2. Trazado curvo real para tramos pendientes (Línea Gris Cortada/Discontinua)
+                // 2. Trazado curvo real restante (🚀 ASPECTO EXCLUSIVO: ANARANJADO NEÓN CON PUNTOS REDONDOS ESPACIADOS)
                 if (coordenadasPendientes.length > 0) {
-                    // La línea gris se engancha exactamente donde se encuentra el camión
-                    if (camionCoordenadaVivo) {
-                        coordenadasPendientes.unshift(camionCoordenadaVivo);
-                    } else if (coordenadasRecorridas.length > 0) {
+                    // El trazo de planeación sale estrictamente desde el hito anterior de la ruta, no del camión
+                    if (coordenadasRecorridas.length > 0) {
                         coordenadasPendientes.unshift(coordenadasRecorridas[coordenadasRecorridas.length - 1]);
                     }
 
                     if (coordenadasPendientes.length >= 2) {
-                        // dashArray: '6, 12' fragmenta la línea para que sea discontinua y estilizada
-                        obtenerTrazadoCarretera(coordenadasPendientes, { color: '#94a3b8', weight: 4, dashArray: '6, 12' }, function(linea) {
+                        let contieneRetorno = (ultimoIndiceCompletado >= (itinerarioPlan.length / 2));
+                        
+                        // dashArray: '2, 14' con weight: 6 genera la línea punteada neón ideal que no se confunde con calles
+                        obtenerTrazadoCarretera(coordenadasPendientes, { 
+                            color: '#ff6b00', 
+                            weight: 6, 
+                            dashArray: '2, 14',
+                            lineCap: 'round'
+                        }, contieneRetorno, function(linea) {
                             _satLineasPendientes = linea;
                         });
                     }
                 }
 
-                // 3. Renderizado final del Marcador de la Unidad en Vivo y Enfoque Dinámico
+                // 3. Renderizado final del Marcador de la Unidad (Informativo y Desvinculado)
                 if (camionCoordenadaVivo) {
                     _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
-                    _satMarcadorCamion.bindPopup(`<b>Unidad: ${placaActual}</b><br>Estado: En Ruta Real`);
+                    _satMarcadorCamion.bindPopup(`<b>Unidad: ${placaActual}</b><br>Ubicación GPS en Vivo`);
                     _satMapa.setView(camionCoordenadaVivo, 10);
                     setTimeout(() => { _satMarcadorCamion.openPopup(); }, 500);
                 } else if (coordenadasRecorridas.length > 0) {
@@ -713,7 +745,7 @@
         script.onerror = function() {
             if (tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:30px; color:#b91c1c; font-weight:bold;">❌ Error de red al consultar el detalle.</td></tr>';
         };
-    }
+}
 
     // 5. El Motor de los 4 Filtros / Segmentadores Rápidos (Oculta/Muestra al clic)
     window.filtrarTablaSatelital = function(tipoFiltro) {
