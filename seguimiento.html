@@ -183,7 +183,12 @@
             const estaEnCurso = (v.estado === "EN CURSO");
             let salidaVisual = (v.salidaReal && v.salidaReal !== "---") ? v.salidaReal : "---";
             
-            window._cacheItinerarios[v.idViaje] = v.itinerarioFull;
+            // 🚀 RECTIFICACIÓN: Almacenamiento seguro en caché tolerante a formatos
+            if (v.itinerarioFull) {
+                window._cacheItinerarios[v.idViaje] = typeof v.itinerarioFull === 'string' ? v.itinerarioFull : JSON.stringify(v.itinerarioFull);
+            } else {
+                window._cacheItinerarios[v.idViaje] = "[]";
+            }
             
             let badgeColor = "";
             if (v.estadoVisual === "RETRASADO") {
