@@ -485,119 +485,121 @@
             itinerarioPlan = JSON.parse(decodeURIComponent(itinerarioDecoded));
         } catch(e) { console.error("Error itinerario satelital:", e); }
 
-        // Creamos la función receptora temporal para capturar la respuesta sin bloqueos de red
         const nombreCallbackTemporal = "cb_satelital_" + Date.now();
         window[nombreCallbackTemporal] = function(datosSeguimiento) {
             _satCacheDatosRows = [];
             let coordenadasRecorridas = [];
-            let coordenadasPendientes = [];
             let camionCoordenadaVivo = null;
 
-            itinerarioPlan.forEach((plan, index) => {
-                let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
-                let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
-                let tipoRegistro = esCompletado ? (plan.punto.includes("MANUAL") ? "MANUAL" : "AUTOMÁTICO") : "---";
-                
-                let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
-                let horaRealSalida = real ? real.hora_real_salida : "---";
-                let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
-                let pernoctePlan = real ? real.hora_pernocte_planificada : (plan.pernocte || "00:30");
-                let pernocteReal = real ? real.hora_pernocte_real : "---";
-                let odometroAcumulado = real ? parseFloat(real.km_acumulado) : 0;
-
-                let tiempoViajePlan = index > 0 ? "02:15" : "---";
-                let tiempoViajeReal = (index > 0 && esCompletado) ? "02:20" : "---";
-                let distPlanKm = index > 0 ? 120 : "---";
-                let distRealTramo = "---";
-                let difKm = "---";
-                let semaforoTiempo = "verde";
-                let semaforoDistancia = "verde";
-
-                if (index > 0 && esCompletado && real) {
-                    let realAnterior = datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === itinerarioPlan[index-1].punto.toString().toUpperCase().trim());
-                    if (realAnterior && parseFloat(realAnterior.km_acumulado) > 0) {
-                        distRealTramo = Math.abs(odometroAcumulado - parseFloat(realAnterior.km_acumulado));
-                        difKm = distRealTramo - distPlanKm;
-                        if (difKm > 5) semaforoDistancia = "rojo";
-                        else if (difKm > 0) semaforoDistancia = "mostaza";
-                    }
-                    if (desvTiempoTexto.indexOf("-") > -1) {
-                        let minsDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[1], 10)) || 0;
-                        if (minsDesv >= 20) semaforoTiempo = "rojo";
-                        else if (minsDesv > 0) semaforoTiempo = "mostaza";
-                    }
+            // 🚀 RECONEXIÓN GEOTAB: Buscamos el ID del vehículo por su placa actual para pedir sus coordenadas en vivo
+            let placaActual = document.getElementById('lbl-sat-placa').innerText;
+            
+            // Usamos el apiGlobal de Geotab que ya tienes inicializado abajo
+            apiGlobal.call("Get", {
+                typeName: "Device",
+                search: { name: placaActual }
+            }, function(devices) {
+                if (devices && devices.length > 0) {
+                    let deviceId = devices[0].id;
+                    
+                    // Con el ID del camión, consultamos su última ubicación conocida en el mapa (DeviceStatusInfo)
+                    apiGlobal.call("Get", {
+                        typeName: "DeviceStatusInfo",
+                        search: { deviceSearch: { id: deviceId } }
+                    }, function(statusResult) {
+                        if (statusResult && statusResult.length > 0) {
+                            let infoGps = statusResult[0];
+                            if (infoGps.latitude && infoGps.longitude) {
+                                // 🏠 CAPTURA EN VIVO: Fijamos la posición real actual del camión
+                                camionCoordenadaVivo = [infoGps.latitude, infoGps.longitude];
+                            }
+                        }
+                        dibujarTodoElModalSatelital();
+                    }, function(err) { dibujarTodoElModalSatelital(); });
+                } else {
+                    dibujarTodoElModalSatelital();
                 }
+            }, function(err) { dibujarTodoElModalSatelital(); });
 
-                _satCacheDatosRows.push({
-                    st: esCompletado ? "✓" : "⏳",
-                    punto: plan.punto,
-                    tipo: tipoRegistro,
-                    planLlegada: plan.planHora || "---",
-                    realLlegada: horaRealLlegada,
-                    desvTiempo: desvTiempoTexto,
-                    semTiempo: semaforoTiempo,
-                    themeSemTiempo: semaforoTiempo === "rojo" ? "rojo" : (semaforoTiempo === "mostaza" ? "mostaza" : "verde"),
-                    tiempoPlan: tiempoViajePlan,
-                    tiempoReal: tiempoViajeReal,
-                    distPlan: distPlanKm,
-                    distReal: distRealTramo,
-                    semDist: semaforoDistancia,
-                    themeSemDist: semaforoDistancia === "rojo" ? "rojo" : (semaforoDistancia === "mostaza" ? "mostaza" : "verde"),
-                    difKm: difKm,
-                    pernoctePlan: pernoctePlan,
-                    pernocteReal: pernocteReal,
-                    realSalida: horaRealSalida
+            // Metemos la lógica de dibujo en una sub-función interna para esperar la respuesta de Geotab
+            function dibujarTodoElModalSatelital() {
+                itinerarioPlan.forEach((plan, index) => {
+                    let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
+                    let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
+                    let tipoRegistro = esCompletado ? (plan.punto.includes("MANUAL") ? "MANUAL" : "AUTOMÁTICO") : "---";
+                    
+                    let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
+                    let horaRealSalida = real ? real.hora_real_salida : "---";
+                    let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
+                    let pernoctePlan = real ? real.hora_pernocte_planificada : (plan.pernocte || "00:30");
+                    let pernocteReal = real ? real.hora_pernocte_real : "---";
+                    let odometroAcumulado = real ? parseFloat(real.km_acumulado) : 0;
+
+                    let tiempoViajePlan = index > 0 ? "02:15" : "---";
+                    let tiempoViajeReal = (index > 0 && esCompletado) ? "02:20" : "---";
+                    let distPlanKm = index > 0 ? 120 : "---";
+                    let distRealTramo = "---";
+                    let difKm = "---";
+                    let semaforoTiempo = "verde";
+                    let semaforoDistancia = "verde";
+
+                    if (index > 0 && esCompletado && real) {
+                        let realAnterior = datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === itinerarioPlan[index-1].punto.toString().toUpperCase().trim());
+                        if (realAnterior && parseFloat(realAnterior.km_acumulado) > 0) {
+                            distRealTramo = Math.abs(odometroAcumulado - parseFloat(realAnterior.km_acumulado));
+                            difKm = distRealTramo - distPlanKm;
+                            if (difKm > 5) semaforoDistancia = "rojo";
+                            else if (difKm > 0) semaforoDistancia = "mostaza";
+                        }
+                        if (desvTiempoTexto.indexOf("-") > -1) {
+                            let minsDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[1], 10)) || 0;
+                            if (minsDesv >= 20) semaforoTiempo = "rojo";
+                            else if (minsDesv > 0) semaforoTiempo = "mostaza";
+                        }
+                    }
+
+                    _satCacheDatosRows.push({
+                        st: esCompletado ? "✓" : "⏳",
+                        punto: plan.punto,
+                        tipo: tipoRegistro,
+                        planLlegada: plan.planHora || "---",
+                        realLlegada: horaRealLlegada,
+                        desvTiempo: desvTiempoTexto,
+                        semTiempo: semaforoTiempo,
+                        themeSemTiempo: semaforoTiempo === "rojo" ? "rojo" : (semaforoTiempo === "mostaza" ? "mostaza" : "verde"),
+                        tiempoPlan: tiempoViajePlan,
+                        tiempoReal: tiempoViajeReal,
+                        distPlan: distPlanKm,
+                        distReal: distRealTramo,
+                        semDist: semaforoDistancia,
+                        themeSemDist: semaforoDistancia === "rojo" ? "rojo" : (semaforoDistancia === "mostaza" ? "mostaza" : "verde"),
+                        difKm: difKm,
+                        pernoctePlan: pernoctePlan,
+                        pernocteReal: pernocteReal,
+                        realSalida: horaRealSalida
+                    });
                 });
 
-                // Generación de coordenadas simuladas de ruta en base al índice
-                let latHito = -12.046374 - (index * 0.15); 
-                let lngHito = -77.042793 - (index * 0.10);
-                let hitoLatLng = [latHito, lngHito];
-                
-                if (esCompletado) {
-                    coordenadasRecorridas.push(hitoLatLng);
-                    camionCoordenadaVivo = hitoLatLng; // El último hito completado es la ubicación actual
-                } else {
-                    coordenadasPendientes.push(hitoLatLng);
-                }
-
-                let colorIcono = esCompletado ? '#16a34a' : '#94a3b8';
-                let marcadorHito = L.circleMarker(hitoLatLng, { radius: 6, fillColor: colorIcono, color: '#fff', weight: 2, fillOpacity: 1 }).addTo(_satMapa);
-                marcadorHito.bindPopup(`<b>Hito: ${plan.punto}</b><br>Real: ${horaRealLlegada}`);
-            }); // <-- AQUÍ TERMINA TU FOREACH DE HITOS SEGURAMENTE
-
-            // ====================================================================
-            // LOGICA DE MARCADOR VIVO Y RECENTRAJE OPTIMIZADO
-            // ====================================================================
-            if (camionCoordenadaVivo) {
-                if (_satMarcadorCamion) _satMapa.removeLayer(_satMarcadorCamion);
-                _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
-                _satMarcadorCamion.bindPopup("<b>Unidad en Ruta</b>");
-            }
-
-            if (coordenadasRecorridas.length > 0) L.polyline(coordenadasRecorridas, { color: '#004b93', weight: 4 }).addTo(_satMapa);
-            if (coordenadasPendientes.length > 0) {
-                if (camionCoordenadaVivo) coordenadasPendientes.unshift(camionCoordenadaVivo);
-                L.polyline(coordenadasPendientes, { color: '#94a3b8', weight: 3, dashArray: '5, 8' }).addTo(_satMapa);
-            }
-
-            // Recentraje asíncrono con delay para esperar el CSS modificado
-            setTimeout(function() {
-                if (_satMapa) {
-                    _satMapa.invalidateSize(true); // Estira el mapa a las nuevas medidas del CSS
+                // ====================================================================
+                // 🚀 DIBUJO SEGURO EN EL MAPA: APUNTA SOLO A COORDENADAS OPERATIVAS REALES
+                // ====================================================================
+                if (camionCoordenadaVivo) {
+                    // Pintamos el camión en su latitud y longitud real de Geotab
+                    _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
+                    _satMarcadorCamion.bindPopup(`<b>Unidad: ${placaActual}</b><br>Estado: En Ruta Real`);
                     
-                    if (camionCoordenadaVivo) {
-                        _satMapa.setView(camionCoordenadaVivo, 9, { animate: true });
-                        _satMarcadorCamion.openPopup();
-                    } else if (coordenadasRecorridas.length > 0) {
-                        var bounds = L.polyline(coordenadasRecorridas).getBounds();
-                        _satMapa.fitBounds(bounds, { padding: [30, 30] });
-                    }
+                    // Centramos el mapa directamente sobre la ubicación viva del vehículo
+                    _satMapa.setView(camionCoordenadaVivo, 12);
+                    setTimeout(() => { _satMarcadorCamion.openPopup(); }, 500);
+                } else {
+                    // Si el camión no reporta GPS temporalmente, centramos en Lima por defecto
+                    _satMapa.setView([-12.046374, -77.042793], 7);
                 }
-            }, 300);
 
-            filtrarTablaSatelital('historial');
-            delete window[nombreCallbackTemporal]; 
+                _satMapa.invalidateSize(true);
+                filtrarTablaSatelital('historial');
+                delete window[nombreCallbackTemporal]; 
+            }
         };
 
         const script = document.createElement('script');
@@ -682,13 +684,11 @@
     geotab.addin.seguimiento = () => {
         return {
             initialize(api, state, callback) {
-                // Obtener usuario real de Geotab
+                apiGlobal = api; // 🚀 ASIGNACIÓN: Guarda la API global para que el mapa consulte el camión
                 api.getSession(s => { _usuarioLogueado = s.userName; });
                 
-                // Carga inicial y auto-refresco cada 1 minuto
                 actualizar();
                 setInterval(actualizar, 60000);
-                
                 callback();
             }
         };
