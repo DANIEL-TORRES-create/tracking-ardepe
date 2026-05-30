@@ -709,47 +709,55 @@
             });
 
             if (registrosFiltrados.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:25px; color:#64748b; font-weight:500;">🚫 Ningún tramo coincide con el filtro.</td></tr>';
-                return;
+            tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:25px; color:#64748b; font-weight:500;">🚫 Ningún tramo de este viaje coincide con el filtro seleccionado.</td></tr>';
+            return;
+        }
+
+        // ====================================================================
+        // 🚀 BLOQUE REEMPLAZADO: MUESTREO DE FILAS CON SEMÁFOROS NATIVOS
+        // ====================================================================
+        registrosFiltrados.forEach((r, index) => {
+            let tr = document.createElement('tr');
+            
+            // Si tiene pernocte real activo, pintar la fila completa en oro suave corporativo
+            if (r.pernocteReal !== "---" && r.pernocteReal !== "" && r.pernocteReal !== "00:00") {
+                tr.className = "sat-row-pernocte";
             }
 
-            registrosFiltrados.forEach((r, idx) => {
-                let tr = document.createElement('tr');
-                if (r.pernocteReal !== "---" && r.pernocteReal !== "" && r.pernocteReal !== "00:00") tr.className = "sat-row-pernocte";
+            // Badges de Estado Corporativos para la primera columna
+            let badgeEst = `<span class="sat-badge-table st-pendiente">⏳ PENDIENTE</span>`;
+            if (r.st === "✓") badgeEst = `<span class="sat-badge-table st-completado">✓ OK</span>`;
+            if (r.st === "🚫") badgeEst = `<span class="sat-badge-table st-omitido">🚫 OMITIDO</span>`;
 
-                // Badges de Estado Limpios (✓, ⏳, 🚫)
-                let badgeEst = `<span class="sat-badge-table st-pendiente">⏳ PENDIENTE</span>`;
-                if (r.st === "✓") badgeEst = `<span class="sat-badge-table st-completado">✓ OK</span>`;
-                if (r.st === "🚫") badgeEst = `<span class="sat-badge-table st-omitido">🚫 OMITIDO</span>`;
+            // Inyección de puntos de color nativos (●) según el semáforo de desviaciones
+            let dotTiempo = `<span class="sat-table-dot dot-${r.semTiempo}">●</span>`;
+            let dotDist = `<span class="sat-table-dot dot-${r.semDist}">●</span>`;
 
-                // 🚀 REQUISITO DANIEL: Inyección de puntos de color nativos (●) según la desviación corregida
-                let dotTiempo = `<span class="sat-table-dot dot-${r.semTiempo}">●</span>`;
-                let dotDist = `<span class="sat-table-dot dot-${r.semDist}">●</span>`;
+            // Tratamiento de guiones automático para el Origen por índice cronológico puro
+            let desvT = (index === 0) ? "---" : (r.desvTiempo !== "---" ? `${dotTiempo} ${r.desvTiempo}` : "---");
+            let tReal = (index === 0) ? "---" : (r.tiempoReal !== "---" ? `${dotTiempo} ${r.tiempoReal}` : "---");
+            let dReal = (index === 0) ? "---" : (r.distReal !== "---" ? `${r.distReal} KM` : "---");
+            let dDif = (index === 0) ? "---" : (r.difKm !== "---" ? `${dotDist} ${r.difKm >= 0 ? "+" + r.difKm : r.difKm} KM` : "---");
 
-                let desvT = r.desvTiempo !== "---" ? `${dotTiempo} ${r.desvTiempo}` : "---";
-                let tReal = r.tiempoReal !== "---" ? `${dotTiempo} ${r.tiempoReal}` : "---";
-                let dReal = r.distReal !== "---" ? `${r.distReal} KM` : "---";
-                let dDif = r.difKm !== "---" ? `${dotDist} ${r.difKm >= 0 ? "+" + r.difKm : r.difKm} KM` : "---";
-
-                tr.innerHTML = `
-                    <td style="text-align:center;">${badgeEst}</td>
-                    <td><strong>${r.punto}</strong></td>
-                    <td><small style="color:#475569; font-weight:bold;">${r.tipo}</small></td>
-                    <td>${r.planLlegada}</td>
-                    <td style="font-weight:700; color:black;">${r.realLlegada}</td>
-                    <td>${desvT}</td>
-                    <td>${r.tiempoPlan}</td>
-                    <td>${tReal}</td>
-                    <td>${r.distPlan} KM</td>
-                    <td>${dReal}</td>
-                    <td style="font-weight:600;">${dDif}</td>
-                    <td>${r.pernoctePlan}</td>
-                    <td>${r.pernocteReal}</td>
-                    <td style="font-weight:600; color:#004b93;">${r.realSalida}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
+            tr.innerHTML = `
+                <td style="text-align:center;">${badgeEst}</td>
+                <td><strong>${r.punto}</strong></td>
+                <td><small style="color:#475569; font-weight:bold;">${r.tipo}</small></td>
+                <td>${r.planLlegada}</td>
+                <td style="font-weight:700; color:black;">${r.realLlegada}</td>
+                <td>${desvT}</td>
+                <td>${r.tiempoPlan}</td>
+                <td>${tReal}</td>
+                <td>${r.distPlan} KM</td>
+                <td>${dReal}</td>
+                <td style="font-weight:600;">${dDif}</td>
+                <td>${r.pernoctePlan}</td>
+                <td>${r.pernocteReal}</td>
+                <td style="font-weight:600; color:#004b93;">${r.realSalida}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
 
     // 6. INTEGRACIÓN CON GEOTAB (API)
     geotab.addin.seguimiento = () => {
