@@ -480,6 +480,12 @@
         if (_satLineasRecorridas) { _satMapa.removeLayer(_satLineasRecorridas); _satLineasRecorridas = null; }
         if (_satLineasPendientes) { _satMapa.removeLayer(_satLineasPendientes); _satLineasPendientes = null; }
 
+        // 🚀 LIMPIEZA ADICIONAL: Limpiar marcadores e iconos de hitos anteriores de la ventana
+        if (window._satMarcadoresHitosGrupo) {
+            _satMapa.removeLayer(window._satMarcadoresHitosGrupo);
+        }
+        window._satMarcadoresHitosGrupo = L.layerGroup().addTo(_satMapa);
+
         let itinerarioPlan = [];
         try {
             itinerarioPlan = JSON.parse(decodeURIComponent(itinerarioDecoded));
@@ -509,6 +515,7 @@
                         if (statusResult && statusResult.length > 0) {
                             let infoGps = statusResult[0];
                             if (infoGps.latitude && infoGps.longitude) {
+                                // 🏠 CAPTURA EN VIVO: Fijamos la posición real actual del camión
                                 camionCoordenadaVivo = [infoGps.latitude, infoGps.longitude];
                             }
                         }
@@ -593,9 +600,21 @@
 
                     // Si la geocerca existe en Geotab, plasmamos su círculo y clasificamos su tramo vector
                     if (centroideLatLng) {
-                        let colorHito = esCompletado ? '#16a34a' : '#94a3b8'; // Verde si ya se tocó, Gris si está pendiente
-                        let marcadorHito = L.circleMarker(centroideLatLng, { radius: 6, fillColor: colorHito, color: '#fff', weight: 2, fillOpacity: 1 }).addTo(_satMapa);
-                        marcadorHito.bindPopup(`<b>Punto: ${plan.punto}</b><br>Llegada Real: ${horaRealLlegada}`);
+                        let secuenciaVisual = index + 1; // 1, 2, 3... según el orden de planeación
+                        let colorHito = esCompletado ? '#16a34a' : '#64748b'; // Verde si ya se tocó, gris si falta
+                        
+                        // Dibujamos el círculo en la capa grupal
+                        let marcadorHito = L.circleMarker(centroideLatLng, { radius: 8, fillColor: colorHito, color: '#fff', weight: 2, fillOpacity: 1 }).addTo(window._satMarcadoresHitosGrupo);
+                        
+                        // 🚀 ETIQUETA FIJA: Muestra la secuencia de planeación permanentemente arriba de la geocerca
+                        marcadorHito.bindTooltip(`<b>[${secuenciaVisual}]</b> ${plan.punto}`, {
+                            permanent: true,
+                            direction: 'top',
+                            className: 'sat-label-fija-hito',
+                            offset: [0, -6]
+                        });
+
+                        marcadorHito.bindPopup(`<b>Hito ${secuenciaVisual}: ${plan.punto}</b><br>Llegada Real: ${horaRealLlegada}`);
 
                         if (esCompletado) {
                             coordenadasRecorridas.push(centroideLatLng);
@@ -606,34 +625,77 @@
                 });
 
                 // ====================================================================
-                // 🚀 TRAZADO DE VECTORES DUALES (SOLIDO RECORRIDO / GRIS CORTADO PENDIENTE)
+                // 🚀 MOTOR OSRM: ENRUTAMIENTO REAL POR CARRETERAS (DANIEL V4)
                 // ====================================================================
-                
-                // 1. Línea continua azul para los puntos ya marcados por el GPS
-                if (coordenadasRecorridas.length > 0) {
-                    _satLineasRecorridas = L.polyline(coordenadasRecorridas, { color: '#004b93', weight: 4 }).addTo(_satMapa);
+                function obtenerTrazadoCarretera(puntosRuta, opcionesEstilo, callbackAsignarLayer) {
+                    if (puntosRuta.length < 2) return;
+
+                    // OSRM lee [longitud, latitud] separado por comas, y los puntos acoplados por punto y coma
+                    let stringCoordsInput = puntosRuta.map(p => `${p[1]},${p[0]}`).join(';');
+                    let urlOSRM = `https://router.project-osrm.org/route/v1/driving/${stringCoordsInput}?overview=full&geometries=geojson`;
+
+                    fetch(urlOSRM)
+                        .then(r => r.json())
+                        .then(jsonRoute => {
+                            if (jsonRoute.routes && jsonRoute.routes.length > 0) {
+                                // Volvemos a invertir las coordenadas internas de OSRM para Leaflet [lat, lng]
+                                let caminoCarreteraGps = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                                let capaPolilinea = L.polyline(caminoCarreteraGps, opcionesEstilo).addTo(_satMapa);
+                                callbackAsignarLayer(capaPolilinea);
+                            } else {
+                                // Respaldo por si el servidor público se satura: tira línea recta para no colgar la visual
+                                let capaRecta = L.polyline(puntosRuta, opcionesEstilo).addTo(_satMapa);
+                                callbackAsignarLayer(capaRecta);
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Error consultando OSRM:", err);
+                            let capaRecta = L.polyline(puntosRuta, opcionesEstilo).addTo(_satMapa);
+                            callbackAsignarLayer(capaRecta);
+                        });
                 }
 
-                // 2. Línea gris cortada para los puntos que faltan por completar
+                // 1. Trazado curvo real para tramos ya superados (Línea Azul Continua)
+                if (coordenadasRecorridas.length > 0) {
+                    // Si el camión está en ruta, el tramo azul debe llegar hasta la posición viva de la unidad
+                    let rutaAzulFinal = [...coordenadasRecorridas];
+                    if (camionCoordenadaVivo) {
+                        rutaAzulFinal.push(camionCoordenadaVivo);
+                    }
+                    
+                    if (rutaAzulFinal.length >= 2) {
+                        obtenerTrazadoCarretera(rutaAzulFinal, { color: '#004b93', weight: 5 }, function(linea) {
+                            _satLineasRecorridas = linea;
+                        });
+                    }
+                }
+
+                // 2. Trazado curvo real para tramos pendientes (Línea Gris Cortada/Discontinua)
                 if (coordenadasPendientes.length > 0) {
-                    // Enganchamos el inicio del trazo pendiente de forma fluida
+                    // La línea gris se engancha exactamente donde se encuentra el camión
                     if (camionCoordenadaVivo) {
                         coordenadasPendientes.unshift(camionCoordenadaVivo);
                     } else if (coordenadasRecorridas.length > 0) {
                         coordenadasPendientes.unshift(coordenadasRecorridas[coordenadasRecorridas.length - 1]);
                     }
-                    // 🚀 dashArray: '5, 10' fragmenta la línea convirtiéndola en discontinua/cortada
-                    _satLineasPendientes = L.polyline(coordenadasPendientes, { color: '#94a3b8', weight: 3, dashArray: '5, 10' }).addTo(_satMapa);
+
+                    if (coordenadasPendientes.length >= 2) {
+                        // dashArray: '6, 12' fragmenta la línea para que sea discontinua y estilizada
+                        obtenerTrazadoCarretera(coordenadasPendientes, { color: '#94a3b8', weight: 4, dashArray: '6, 12' }, function(linea) {
+                            _satLineasPendientes = linea;
+                        });
+                    }
                 }
 
-                // 3. Renderizado final del Marcador de la Unidad en Vivo
+                // 3. Renderizado final del Marcador de la Unidad en Vivo y Enfoque Dinámico
                 if (camionCoordenadaVivo) {
                     _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
                     _satMarcadorCamion.bindPopup(`<b>Unidad: ${placaActual}</b><br>Estado: En Ruta Real`);
                     _satMapa.setView(camionCoordenadaVivo, 10);
                     setTimeout(() => { _satMarcadorCamion.openPopup(); }, 500);
                 } else if (coordenadasRecorridas.length > 0) {
-                    _satMapa.fitBounds(_satLineasRecorridas.getBounds(), { padding: [30, 30] });
+                    let temporalLine = L.polyline(coordenadasRecorridas);
+                    _satMapa.fitBounds(temporalLine.getBounds(), { padding: [40, 40] });
                 } else {
                     _satMapa.setView([-12.046374, -77.042793], 7);
                 }
