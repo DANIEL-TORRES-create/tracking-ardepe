@@ -222,10 +222,10 @@
                     </button>
                 </td>
                 <td class="vistas-cell" style="display: flex; gap: 8px; justify-content: center;">
-                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
+                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
                         📋
                     </button>
-                    <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalleManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.ruta)}', '${v.estadoVisual}', '${v.progreso}')">
+                    <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalle('${v.idViaje}', '${v.placa}', '${v.ruta}', '${v.estadoVisual}', '${v.progreso}', '${encodeURIComponent(v.itinerarioFull)}')">
                         🔍
                     </button>
                 </td>
