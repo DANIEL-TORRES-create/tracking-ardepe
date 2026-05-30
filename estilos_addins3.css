@@ -749,3 +749,19 @@ textarea {
     background: #d97706 !important;
     box-shadow: 0 0 0 2px #d97706 !important;
 }
+
+.sat-label-fija-hito {
+    background: rgba(15, 23, 42, 0.9) !important; /* Fondo gris oscuro pizarra */
+    color: #ffffff !important;                     /* Letras blancas limpias */
+    border: 1px solid #475569 !important;
+    border-radius: 5px !important;
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    font-family: 'Lexend', sans-serif, system-ui;
+    font-weight: bold;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+/* Flecha inferior del tooltip */
+.sat-label-fija-hito::before {
+    border-top-color: rgba(15, 23, 42, 0.9) !important;
+}
