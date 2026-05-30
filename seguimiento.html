@@ -152,6 +152,16 @@
 }
 
     // 2. RENDERIZADO DE LA TABLA
+    function actualizar() {
+        const script = document.createElement('script');
+        script.src = WEB_APP_URL + "?read=viajes&callback=renderizar&nocache=" + new Date().getTime();
+        document.body.appendChild(script);
+        script.onload = function() { script.remove(); };
+    }
+
+    // ====================================================================
+    // 🚀 AQUÍ PEGAS EL NUEVO BLOQUE RENDERIZAR DE FORMA COMPLETA
+    // ====================================================================
     window.renderizar = function(viajes) {
         const tbody = document.getElementById('lista-viajes');
         if (!tbody) return;
@@ -162,9 +172,6 @@
             return;
         }
 
-        // ====================================================================
-        // MEJORA INTERNA BLINDADA: ORDENAR CRONOLÓGICAMENTE DE MENOR A MAYOR
-        // ====================================================================
         viajes.sort((a, b) => {
             let horaA = String(a.salidaReal || "").trim();
             let horaB = String(b.salidaReal || "").trim();
@@ -173,13 +180,14 @@
             return 0;
         });
 
+        window._cacheItinerarios = {};
+
         viajes.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
-            
-            // Si por alguna razón viene vacío desde el Sheet, muestra los guiones estándar
             let salidaVisual = (v.salidaReal && v.salidaReal !== "---") ? v.salidaReal : "---";
             
-            // 🚀 ASIGNACIÓN DINÁMICA DE BADGES SEGÚN EL ESTADO VISUAL DEL SERVIDOR
+            window._cacheItinerarios[v.idViaje] = v.itinerarioFull;
+            
             let badgeColor = "";
             if (v.estadoVisual === "RETRASADO") {
                 badgeColor = '<span style="background-color: #ffcccc; color: #cc0000; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; animation: blinker 1.5s linear infinite;"><i class="fas fa-exclamation-triangle"></i> RETRASADO</span>';
@@ -206,27 +214,37 @@
                     <small style="font-size:10px; font-weight:bold; color:var(--primary)">${v.progreso}% completado</small>
                 </td>
                 <td class="control-cell">
-    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" ${estaEnCurso ? 'disabled="true"' : ''} title="Iniciar Viaje" onclick="prepararAccion('${v.idViaje}', 'INICIAR')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#1e8e3e"><path d="M8 5v14l11-7z"/></svg>
-    </button>
-    <button class="btn-ctrl" title="Finalizar Viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#004b93"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-    </button>
-    <button class="btn-ctrl" title="Cancelar Viaje" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#d93025"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
-    </button>
-</td>
+                    <button class="btn-ctrl ${estaEnCurso ? 'disabled' : ''}" ${estaEnCurso ? 'disabled="true"' : ''} title="Iniciar Viaje" onclick="prepararAccion('${v.idViaje}', 'INICIAR')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#1e8e3e"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <button class="btn-ctrl" title="Finalizar Viaje" onclick="prepararAccion('${v.idViaje}', 'FINALIZAR')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#004b93"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    </button>
+                    <button class="btn-ctrl" title="Cancelar Viaje" onclick="prepararAccion('${v.idViaje}', 'CANCELAR')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#d93025"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
+                    </button>
+                </td>
                 <td class="vistas-cell" style="display: flex; gap: 8px; justify-content: center;">
-                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
+                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
                         📋
                     </button>
-                    <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalle('${v.idViaje}', '${v.placa}', '${v.ruta}', '${v.estadoVisual}', '${v.progreso}', '${encodeURIComponent(v.itinerarioFull)}')">
+                    <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalleManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.ruta)}', '${v.estadoVisual}', '${v.progreso}')">
                         🔍
                     </button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+    };
+
+    window.abrirResumenManualmente = function(idViaje, placa, logAuditoria) {
+        let stringData = window._cacheItinerarios[idViaje] || "[]";
+        abrirResumen(encodeURIComponent(stringData), placa, logAuditoria);
+    };
+
+    window.abrirMegaDetalleManualmente = function(idViaje, placa, rutaEncoded, estado, progreso) {
+        let stringData = window._cacheItinerarios[idViaje] || "[]";
+        abrirMegaDetalle(idViaje, placa, rutaEncoded, estado, progreso, encodeURIComponent(stringData));
     };
 
     // 3. LÓGICA DE MODALES Y ACCIONES
@@ -480,7 +498,17 @@
 
         let itinerarioPlan = [];
         try {
-            itinerarioPlan = JSON.parse(decodeURIComponent(itinerarioDecoded));
+            // 💡 RECTIFICACIÓN COMPATIBLE MULTIPROPIEDAD BLINDADA
+            let datosParseados = JSON.parse(decodeURIComponent(itinerarioDecoded || "[]"));
+            itinerarioPlan = datosParseados.map(p => {
+                return {
+                    punto: p.punto || p.puntos || "---",
+                    planHora: p.planHora || p.eta || "---",
+                    realHora: p.realHora || "---",
+                    deteccion: p.deteccion || "NO",
+                    distanciaPlan: p.distanciaPlan || p.km || 120
+                };
+            });
         } catch(e) { console.error("Error itinerario satelital:", e); }
 
         const nombreCallbackTemporal = "cb_satelital_" + Date.now();
