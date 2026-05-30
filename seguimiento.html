@@ -571,7 +571,7 @@
                     // 🚀 REQUISITO DANIEL: Cálculos automáticos de tiempo de viaje dinámicos (Cero datos estáticos)
                     let tiempoViajePlan = "---";
                     let tiempoViajeReal = "---";
-                    let distPlanKm = plan.distanciaPlan || 120; // Jalar del sheet db_operacion dinámicamente
+                    let distPlanKm = plan.distanciaPlan || plan.km || plan.kilometros || 120; // 🚀 RECTIFICADO: Lectura segura multipropiedad
                     let distRealTramo = "---";
                     let difKm = "---";
                     
