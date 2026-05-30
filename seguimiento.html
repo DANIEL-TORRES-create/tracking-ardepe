@@ -785,12 +785,11 @@
     };
 
     // 6. INTEGRACIÓN CON GEOTAB (API)
-    geotab.addin.seguimiento = () => {
+    geotab.addin.seguimiento = function () {
         return {
             initialize(api, state, callback) {
-                apiGlobal = api; // 🚀 ASIGNACIÓN: Guarda la API global para que el mapa consulte el camión
-                api.getSession(s => { _usuarioLogueado = s.userName; });
-                
+                apiGlobal = api; 
+                api.getSession(function (s) { _usuarioLogueado = s.userName; });
                 actualizar();
                 setInterval(actualizar, 60000);
                 callback();
