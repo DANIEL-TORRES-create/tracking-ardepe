@@ -846,9 +846,9 @@
 
             let desvT = (r.desvTiempo !== "---") ? `${dotTiempo} ${r.desvTiempo}` : "---";
             let tReal = (r.tiempoReal !== "---") ? `${dotTiempo} ${r.tiempoReal}` : "---";
-            let dPlan = (r.distPlan !== "---") ? `${r.distPlan} KM` : "---";
-            let dReal = (r.distReal !== "---") ? `${r.distReal} KM` : "---";
-            let dDif = (r.difKm !== "---") ? `${dotDist} ${r.difKm >= 0 ? "+" + r.difKm : r.difKm} KM` : "---";
+            let dPlan = (r.distPlan !== "---") ? `${parseFloat(r.distPlan).toFixed(2)} KM` : "---";
+            let dReal = (r.distReal !== "---") ? `${parseFloat(r.distReal).toFixed(2)} KM` : "---";
+            let dDif = (r.difKm !== "---") ? `${dotDist} ${r.difKm >= 0 ? "+" : ""}${parseFloat(r.difKm).toFixed(2)} KM` : "---";
 
             tr.innerHTML = `
                 <td style="text-align:center;"><strong>[${r.sec}]</strong> ${badgeEst}</td>
