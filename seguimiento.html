@@ -679,8 +679,8 @@
                         }
 
                         if (odometroAcumulado > 0 && index > 0) {
-                            distRealTramo = Math.round(Math.abs(odometroAcumulado - baseOdometro));
-                            difKm = distPlanKm - distRealTramo;
+                         distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
+                         difKm = distPlanKm - distRealTramo;
 
                             if (difKm >= 0) semaforoDistancia = "verde";
                             else if (difKm >= -5) semaforoDistancia = "mostaza";
