@@ -561,8 +561,8 @@
                         horaSalidaManualOculta = realManual ? realManual.hora_real_salida : nodoManual.realHora;
                         odometroManualOculto = realManual ? parseFloat(realManual.km_acumulado || 0) : 0;
                         // 🚀 AGREGA ESTAS DOS LÍNEAS ABAJO:
-                        latitudManualOculta = realManual ? parseFloat(realManual.latitud_manual) : null;
-                        longitudManualOculta = realManual ? parseFloat(realManual.longitud_manual) : null;
+                        let latitudManualOculta = realManual ? parseFloat(realManual.latitud_manual) : null;
+                        let longitudManualOculta = realManual ? parseFloat(realManual.longitud_manual) : null;
                     }
                 }
 
@@ -652,7 +652,7 @@
 
                         let baseSalidaHora = null;
                         let baseOdometro = 0;
-                        let basePlanHora = null;
+                        let basePlanHoraSalida = null;
 
                         if (tieneHitoManualActivo && index === 2) {
                             baseSalidaHora = horaSalidaManualOculta;
