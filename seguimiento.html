@@ -713,6 +713,15 @@
             } catch(e) { return "---"; }
         }
 
+         const script = document.createElement('script');
+        script.src = `${WEB_APP_URL}?read=auditoria_detalle&idViaje=${idViaje}&callback=${nombreCallbackTemporal}&nocache=${Date.now()}`;
+        document.body.appendChild(script);
+        script.onload = function() { script.remove(); };
+        script.onerror = function() {
+            if (tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:30px; color:#b91c1c; font-weight:bold;">❌ Error de red al consultar el detalle.</td></tr>';
+        };
+    };
+
         // ====================================================================
         // RENDERIZADO CORREGIDO CON LOS SEMÁFOROS NATIVOS CSS (PUNTOS ●)
         // ====================================================================
