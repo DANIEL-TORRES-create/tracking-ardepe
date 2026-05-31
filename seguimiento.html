@@ -670,8 +670,8 @@
                             basePlanHora = anterior.planHora;
                         }
 
-                        if (basePlanHora && plan.planHora && basePlanHora !== "---" && plan.planHora !== "---") {
-                            tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHora, plan.planHora);
+                        if (basePlanHoraSalida && plan.planHora && basePlanHoraSalida !== "---" && plan.planHora !== "---") {
+                            tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                         }
 
                         if (baseSalidaHora && horaRealLlegada && baseSalidaHora !== "---" && horaRealLlegada !== "---") {
