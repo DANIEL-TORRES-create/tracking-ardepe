@@ -545,6 +545,8 @@
             function dibujarTodoElModalSatelital(zonasGeotab) {
                 let ultimoIndiceCompletado = -1;
                 let esOrigenOmitido = false;
+                let latitudManualOculta = null;  // 🚀 LÍNEA CORREGIDA
+                let longitudManualOculta = null; // 🚀 LÍNEA CORREGIDA
                 
                 let indiceManual = itinerarioPlan.findIndex(p => p.punto === "INICIO_MANUAL");
                 let tieneHitoManualActivo = false;
@@ -561,8 +563,8 @@
                         horaSalidaManualOculta = realManual ? realManual.hora_real_salida : nodoManual.realHora;
                         odometroManualOculto = realManual ? parseFloat(realManual.km_acumulado || 0) : 0;
                         // 🚀 AGREGA ESTAS DOS LÍNEAS ABAJO:
-                        let latitudManualOculta = realManual ? parseFloat(realManual.latitud_manual) : null;
-                        let longitudManualOculta = realManual ? parseFloat(realManual.longitud_manual) : null;
+                         latitudManualOculta = realManual ? parseFloat(realManual.latitud_manual) : null;
+                         longitudManualOculta = realManual ? parseFloat(realManual.longitud_manual) : null;
                     }
                 }
 
