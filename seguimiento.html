@@ -141,19 +141,17 @@
     let _usuarioLogueado = "Monitor";
     let _viajeSeleccionado = null;
     let _tipoAccionManual = "";
+    let apiGlobal = null; // 🚀 REQUISITO: API de Geotab para la telemetría en vivo
 
     // 1. FUNCIÓN DE REFRESCO DE DATOS
-    
-   function actualizar() {
+    function actualizar() {
         const script = document.createElement('script');
         script.src = WEB_APP_URL + "?read=viajes&callback=renderizar&nocache=" + new Date().getTime();
         document.body.appendChild(script);
         script.onload = function() { script.remove(); };
     }
 
-    // ====================================================================
-    // 🚀 BLOQUE RECTIFICADO: INICIO DE RENDERIZAR LIMPIO
-    // ====================================================================
+    // 2. RENDERIZADO DE LA TABLA MONITOR PRINCIPAL
     window.renderizar = function(viajes) {
         const tbody = document.getElementById('lista-viajes');
         if (!tbody) return;
@@ -164,6 +162,7 @@
             return;
         }
 
+        // Ordenar cronológicamente de menor a mayor
         viajes.sort((a, b) => {
             let horaA = String(a.salidaReal || "").trim();
             let horaB = String(b.salidaReal || "").trim();
@@ -178,7 +177,7 @@
             const estaEnCurso = (v.estado === "EN CURSO");
             let salidaVisual = (v.salidaReal && v.salidaReal !== "---") ? v.salidaReal : "---";
             
-            // 🚀 RECTIFICACIÓN: Almacenamiento seguro en caché tolerante a formatos
+            // Almacenamiento seguro en caché tolerante a formatos
             if (v.itinerarioFull) {
                 window._cacheItinerarios[v.idViaje] = typeof v.itinerarioFull === 'string' ? v.itinerarioFull : JSON.stringify(v.itinerarioFull);
             } else {
@@ -222,10 +221,10 @@
                     </button>
                 </td>
                 <td class="vistas-cell" style="display: flex; gap: 8px; justify-content: center;">
-                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumen('${encodeURIComponent(v.itinerarioFull)}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
+                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
                         📋
                     </button>
-                    <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalle('${v.idViaje}', '${v.placa}', '${v.ruta}', '${v.estadoVisual}', '${v.progreso}', '${encodeURIComponent(v.itinerarioFull)}')">
+                    <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalleManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.ruta)}', '${v.estadoVisual}', '${v.progreso}')">
                         🔍
                     </button>
                 </td>
@@ -244,12 +243,10 @@
         abrirMegaDetalle(idViaje, placa, rutaEncoded, estado, progreso, encodeURIComponent(stringData));
     };
 
-    // 3. LÓGICA DE MODALES Y ACCIONES
+    // 3. LÓGICA DE MODALES Y ACCIONES MANUALES
     function prepararAccion(id, tipo) {
         _viajeSeleccionado = id;
         _tipoAccionManual = tipo;
-        
-        // Limpia tu cuadro de texto físico que acabas de reinsertar
         document.getElementById('motivo-txt').value = "";
         document.getElementById('btn-confirmar').disabled = true;
         document.getElementById('btn-confirmar').innerHTML = "Confirmar";
@@ -267,15 +264,12 @@
     function ejecutarAccionManual() {
         const btn = document.getElementById('btn-confirmar');
         const motivo = document.getElementById('motivo-txt').value;
-        
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
-        // Cambiamos el orden de las variables en la URL para alinearse con el doGet mapeado
         const script = document.createElement('script');
         script.src = `${WEB_APP_URL}?action=manual&id=${_viajeSeleccionado}&tipo=${_tipoAccionManual}&motivo=${encodeURIComponent(motivo)}&user=${encodeURIComponent(_usuarioLogueado)}&callback=respuestaAccionServidor&nocache=${Date.now()}`;
         document.body.appendChild(script);
-        
         script.onload = function() { script.remove(); };
         script.onerror = function() {
             alert("Error de respuesta de red del servidor. Intente nuevamente.");
@@ -284,12 +278,11 @@
         };
     }
 
-    // Callback limpio que procesa el refresco inmediato
     window.respuestaAccionServidor = function(res) {
         if (res && res.success) {
             cerrarModal();
             alert("Viaje actualizado con éxito.");
-            actualizar(); // Refresca el monitor en vivo
+            actualizar(); 
         } else {
             alert("Error del servidor: " + (res ? res.error : "No se pudo procesar la acción."));
             const btn = document.getElementById('btn-confirmar');
@@ -302,11 +295,7 @@
     
     // 4. LÓGICA DEL PANEL LATERAL (RESUMEN)
     function abrirResumen(data, placa, logAuditoria) {
-        // ====================================================================
-        // EFECTO VISUAL: MARCAR FILA ACTIVA EN LA TABLA PRINCIPAL (LÍNEA ROJA)
-        // ====================================================================
         document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
-        
         if (typeof event !== 'undefined' && event.currentTarget) {
             const botonActivo = event.currentTarget;
             if (botonActivo.closest('tr')) {
@@ -314,18 +303,12 @@
             }
         }
 
-        // ====================================================================
-        // PROCESAMIENTO DE DATOS ENTRANTES
-        // ====================================================================
         let puntos = JSON.parse(decodeURIComponent(data));
         const rawLog = decodeURIComponent(logAuditoria);
-        
         document.getElementById('side-placa').innerText = "Placa: " + placa;
-        
         const timeline = document.getElementById('timeline-v');
         timeline.innerHTML = "";
         
-        // Renderizado de auditoría superior
         if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
             let logsHtml = `<div class="auditoria-panel-box">`;
             let partesLog = rawLog.split(" / ");
@@ -344,24 +327,18 @@
             timeline.innerHTML += logsHtml;
         }
 
-        // Reubicación de INICIO_MANUAL
         let indiceInicioManual = puntos.findIndex(p => p.punto === "INICIO_MANUAL");
         if (indiceInicioManual > -1) {
             let [inicioManualNode] = puntos.splice(indiceInicioManual, 1); 
             puntos.splice(1, 0, inicioManualNode);
         }
 
-        // ====================================================================
-        // 🚀 CORRECCIÓN: ELIMINADO DOBLE CONTAINERHTML E ICONOS INYECTADOS NATIVOS
-        // ====================================================================
         let containerHtml = `<ul class="resumen-lista-puntos">`;
-        
         puntos.forEach((p, index) => {
             let claseEstado = "hito-pendiente";
             if (p.deteccion === "SI") claseEstado = "hito-completado";
             if (p.deteccion === "FORZADO" || p.punto === "INICIO_MANUAL") claseEstado = "hito-alerta";
 
-            // Inyección limpia de etiquetas visuales nativas (Asegura compatibilidad)
             let marcaVisual = "";
             if (index === 0) {
                 marcaVisual = `<span style="color:#d93025; font-weight:bold; margin-right:6px;">🏠 [ORIGEN]</span> `;
@@ -394,19 +371,18 @@
 
         containerHtml += `</ul>`;
         timeline.innerHTML += containerHtml;
-        
         document.getElementById('side-panel').classList.add('open');
     }
 
-    // 5. UTILIDADES
+    // 5. UTILIDADES DE CONTROL INTERNO
     function cerrarModal() { 
         document.getElementById('modal-cancel').style.display = 'none'; 
         document.getElementById('motivo-txt').value = ""; 
         document.getElementById('btn-confirmar').disabled = true;
     }
     
-    function cerrarPanel() { document.getElementById('side-panel').classList.remove('open'); 
-        // Al cerrar el panel, le quitamos la marca roja a la fila de la tabla
+    function cerrarPanel() { 
+        document.getElementById('side-panel').classList.remove('open'); 
         document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
     }
     
@@ -416,23 +392,20 @@
     }
 
     // ====================================================================
-    // BLOQUE 2: JAVASCRIPT FRONTEND - CONTROLADOR MÓDULO MEGA DETALLE
+    // BLOQUE INTERNO: CONTROLADOR DEL MÓDULO MEGA DETALLE SATELITAL
     // ====================================================================
     let _satMapa = null;
     let _satMarcadorCamion = null;
     let _satLineasRecorridas = null;
     let _satLineasPendientes = null;
-    let _satCacheDatosRows = []; // Almacén local de datos tramo por tramo
+    let _satCacheDatosRows = []; 
 
-    // 1. Apertura e Inicialización
     window.abrirMegaDetalle = function(idViaje, placa, ruta, estado, progreso, itinerarioDecoded) {
-        // Cargar datos estáticos inmediatos en la cabecera del modal
         document.getElementById('lbl-sat-placa').innerText = placa;
         document.getElementById('lbl-sat-ruta').innerText = decodeURIComponent(ruta);
         document.getElementById('lbl-sat-porcentaje').innerText = progreso + "%";
         document.getElementById('lbl-sat-barra-fill').style.width = progreso + "%";
         
-        // Configurar el Badge de Estado dinámico
         const badge = document.getElementById('lbl-sat-estado-badge');
         const txtEstado = document.getElementById('lbl-sat-estado-texto');
         txtEstado.innerText = estado;
@@ -443,59 +416,38 @@
             else badge.classList.add("sat-status-no-iniciado");
         }
 
-        // 1. Primero mostramos la ventana en pantalla completa
         document.getElementById('mega-modal-detalle').style.display = 'flex';
 
-        // 2. Esperamos a que el CSS termine de abrir el modal para dibujar el mapa en su tamaño real
         setTimeout(function() {
             if (!_satMapa) {
-                // Inicialización del mapa Leaflet
-                _satMapa = L.map('sat-map-container', {
-                    center: [-12.046374, -77.042793],
-                    zoom: 7,
-                    minZoom: 3
-                });
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap',
-                    noWrap: true
-                }).addTo(_satMapa);
+                _satMapa = L.map('sat-map-container', { center: [-12.046374, -77.042793], zoom: 7, minZoom: 3 });
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', noWrap: true }).addTo(_satMapa);
             } else {
-                // CORRECCIÓN CRÍTICA: Fuerza al mapa a recalcular su tamaño real y dejar de verse cortado
                 _satMapa.invalidateSize(true);
             }
-            
-            // 3. Disparamos la consulta a tu Google Script para traer los tramos
             procesarYConsultarAuditoriaSatelital(idViaje, itinerarioDecoded);
-        }, 400); // 400 milisegundos de espera de seguridad
+        }, 400);
     };
 
-    // 2. Cierre Limpio del Modal
     window.cerrarMegaDetalle = function() {
         document.getElementById('mega-modal-detalle').style.display = 'none';
-        // Resetear segmentadores visuales al estado inicial
         document.querySelectorAll('.sat-btn-f').forEach(b => b.classList.remove('active'));
         document.getElementById('sat-btn-historial').classList.add('active');
     };
 
-    // 3. Procesamiento Matemático de Tramos y Telemetría
-     function procesarYConsultarAuditoriaSatelital(idViaje, itinerarioDecoded) {
+    function procesarYConsultarAuditoriaSatelital(idViaje, itinerarioDecoded) {
         const tbody = document.getElementById('sat-tbody-rows');
         if (tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:30px; color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Cargando tramos y telemetría...</td></tr>';
 
-        // Limpiar capas previas del mapa
         if (_satMarcadorCamion) { _satMapa.removeLayer(_satMarcadorCamion); _satMarcadorCamion = null; }
         if (_satLineasRecorridas) { _satMapa.removeLayer(_satLineasRecorridas); _satLineasRecorridas = null; }
         if (_satLineasPendientes) { _satMapa.removeLayer(_satLineasPendientes); _satLineasPendientes = null; }
 
-        // 🚀 LIMPIEZA ADICIONAL: Limpiar marcadores e iconos de hitos anteriores de la ventana
-        if (window._satMarcadoresHitosGrupo) {
-            _satMapa.removeLayer(window._satMarcadoresHitosGrupo);
-        }
+        if (window._satMarcadoresHitosGrupo) { _satMapa.removeLayer(window._satMarcadoresHitosGrupo); }
         window._satMarcadoresHitosGrupo = L.layerGroup().addTo(_satMapa);
 
         let itinerarioPlan = [];
         try {
-            // 💡 RECTIFICACIÓN COMPATIBLE MULTIPROPIEDAD BLINDADA
             let datosParseados = JSON.parse(decodeURIComponent(itinerarioDecoded || "[]"));
             itinerarioPlan = datosParseados.map(p => {
                 return {
@@ -503,7 +455,7 @@
                     planHora: p.planHora || p.eta || "---",
                     realHora: p.realHora || "---",
                     deteccion: p.deteccion || "NO",
-                    distanciaPlan: p.distanciaPlan || p.km || 120
+                    distanciaPlan: parseFloat(p.distanciaPlan || p.km || p.kilometros || 0)
                 };
             });
         } catch(e) { console.error("Error itinerario satelital:", e); }
@@ -514,8 +466,8 @@
             let coordenadasRecorridas = [];
             let coordenadasPendientes = [];
             let camionCoordenadaVivo = null;
+            let horaArranqueFiltroGps = null;
 
-            // 🚀 RECONEXIÓN GEOTAB: Buscamos el ID del vehículo por su placa actual para pedir sus coordenadas en vivo
             let placaActual = document.getElementById('lbl-sat-placa').innerText;
             
             apiGlobal.call("Get", {
@@ -529,47 +481,92 @@
                         typeName: "DeviceStatusInfo",
                         search: { deviceSearch: { id: deviceId } }
                     }, function(statusResult) {
-                        if (statusResult && statusResult.length > 0) {
-                            let infoGps = statusResult[0];
-                            if (infoGps.latitude && infoGps.longitude) {
-                                // 🏠 CAPTURA EN VIVO: Fijamos la posición real actual del camión (FLOTANTE E INDEPENDIENTE)
-                                camionCoordenadaVivo = [infoGps.latitude, infoGps.longitude];
-                            }
+                        if (statusResult && statusResult.length > 0 && statusResult[0].latitude) {
+                            camionCoordenadaVivo = [statusResult[0].latitude, statusResult[0].longitude];
                         }
-                        // Al terminar de buscar el camión, llamamos a la consulta de las geocercas
-                        consultarCentroidesZonas();
+                        consultarHistorialRecorridoGps(deviceId);
                     }, function(err) { consultarCentroidesZonas(); });
                 } else {
                     consultarCentroidesZonas();
                 }
             }, function(err) { consultarCentroidesZonas(); });
 
-            // 🚀 PROPUESTA DANIEL: Consulta viva de los centroides de las zonas por API usando el ID específico
+            function consultarHistorialRecorridoGps(deviceId) {
+                let primerHitoReal = Array.isArray(datosSeguimiento) ? datosSeguimiento[0] : null;
+                let horaSalidaBase = primerHitoReal ? primerHitoReal.hora_real_salida : null;
+                
+                let hitoManual = itinerarioPlan.find(p => p.punto === "INICIO_MANUAL");
+                if (hitoManual && hitoManual.realHora && hitoManual.realHora !== "---") {
+                    horaSalidaBase = hitoManual.realHora;
+                }
+
+                if (horaSalidaBase && horaSalidaBase !== "---") {
+                    let fechaIso = convertirFechaAFormatGps(horaSalidaBase);
+                    horaArranqueFiltroGps = fechaIso;
+
+                    apiGlobal.call("Get", {
+                        typeName: "LogRecord",
+                        search: {
+                            deviceSearch: { id: deviceId },
+                            fromDate: fechaIso,
+                            toDate: new Date().toISOString()
+                        }
+                    }, function(logsGps) {
+                        if (logsGps && logsGps.length > 0) {
+                            let ultimoMins = -1;
+                            logsGps.forEach(log => {
+                                let fechaLog = new Date(log.dateTime);
+                                let minsActuales = Math.floor(fechaLog.getTime() / (1000 * 60 * 5)); 
+                                if (minsActuales !== ultimoMins) {
+                                    coordenadasRecorridas.push([log.latitude, log.longitude]);
+                                    ultimoMins = minsActuales;
+                                }
+                            });
+                        }
+                        consultarCentroidesZonas();
+                    }, function(err) { consultarCentroidesZonas(); });
+                } else {
+                    consultarCentroidesZonas();
+                }
+            }
+
             function consultarCentroidesZonas() {
                 apiGlobal.call("Get", {
                     typeName: "Zone",
-                    search: { zoneTypeIds: ["b4A3"] } // Tu tipo de zona exclusivo
+                    search: { zoneTypeIds: ["b4A3"] } 
                 }, function(zonasGeotab) {
-                    
                     dibujarTodoElModalSatelital(zonasGeotab);
-                    
                 }, function(err) {
-                    console.error("Error al traer zonas:", err);
                     dibujarTodoElModalSatelital([]);
                 });
             }
 
-            // Pasamos las zonas recuperadas a la función de dibujo
             function dibujarTodoElModalSatelital(zonasGeotab) {
-                // 🔍 DETECTOR DE ÚLTIMO HITO ALCANZADO: Para calcular omisiones de forma automática
                 let ultimoIndiceCompletado = -1;
+                let esOrigenOmitido = false;
                 
-                // 🚀 REQUISITO DANIEL: Mantener estricto orden cronológico. 
-                // Al igual que en el resumen, detectamos e inyectamos el punto manual inmediatamente debajo del origen.
                 let indiceManual = itinerarioPlan.findIndex(p => p.punto === "INICIO_MANUAL");
+                let tieneHitoManualActivo = false;
+                let odometroManualOculto = 0;
+                let horaSalidaManualOculta = "---";
+
                 if (indiceManual > -1) {
                     let [nodoManual] = itinerarioPlan.splice(indiceManual, 1);
                     itinerarioPlan.splice(1, 0, nodoManual);
+                    
+                    let realManual = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre === "INICIO_MANUAL") : null;
+                    if (realManual || (nodoManual.realHora && nodoManual.realHora !== "---")) {
+                        tieneHitoManualActivo = true;
+                        horaSalidaManualOculta = realManual ? realManual.hora_real_salida : nodoManual.realHora;
+                        odometroManualOculto = realManual ? parseFloat(realManual.km_acumulado || 0) : 0;
+                    }
+                }
+
+                if (itinerarioPlan.length > 0 && tieneHitoManualActivo) {
+                    let origenHito = itinerarioPlan[0];
+                    if (origenHito.deteccion !== "SI" && origenHito.deteccion !== "FORZADO") {
+                        esOrigenOmitido = true;
+                    }
                 }
 
                 itinerarioPlan.forEach((plan, idx) => {
@@ -579,76 +576,123 @@
                     }
                 });
 
+                let origenHitoInicial = itinerarioPlan[0];
+                let esOrigenFrioYEspera = (origenHitoInicial && origenHitoInicial.deteccion === "NO" && !tieneHitoManualActivo);
+
+                let ultimoHitoRealValido = null;
+                let ultimoHitoRealValidoPlan = null;
+                let secuenciaCorrelativa = 1;
+
                 itinerarioPlan.forEach((plan, index) => {
                     let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
-                    
-                    let tipoRegistro = esCompletado ? (plan.punto.includes("MANUAL") ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
+                    let esFilaManual = (plan.punto === "INICIO_MANUAL");
+
+                    let numSecuencia = secuenciaCorrelativa;
+                    if (esFilaManual) {
+                        numSecuencia = 1; 
+                    } else if (index === 0 && esOrigenOmitido) {
+                        numSecuencia = 0; 
+                    } else if (esOrigenOmitido && index > 1) {
+                        numSecuencia = index;
+                    } else {
+                        secuenciaCorrelativa++;
+                    }
+
+                    let tipoRegistro = esCompletado ? (esFilaManual ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
                     let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
-                    let pernoctePlan = real ? real.hora_pernocte_planificada : (plan.pernocte || "00:30");
+                    let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
-                    let odometroAcumulado = real ? parseFloat(real.km_acumulado) : 0;
+                    let odometroAcumulado = real ? parseFloat(real.km_acumulado || 0) : 0;
 
-                    // 🚀 REQUISITO DANIEL: Cálculos automáticos de tiempo de viaje dinámicos (Cero datos estáticos)
                     let tiempoViajePlan = "---";
                     let tiempoViajeReal = "---";
-                    let distPlanKm = plan.distanciaPlan || plan.km || plan.kilometros || 120; // 🚀 RECTIFICADO: Lectura segura multipropiedad
+                    let distPlanKm = "---";
                     let distRealTramo = "---";
                     let difKm = "---";
-                    
                     let semaforoTiempo = "verde";
                     let semaforoDistancia = "verde";
 
-                    if (index > 0) {
-                        let planAnterior = itinerarioPlan[index - 1];
-                        let realAnterior = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === planAnterior.punto.toString().toUpperCase().trim()) : null;
-                        
-                        // RECTIFICADO: Calcular Tiempo de Viaje Planificado (ETA Anterior a ETA Actual) sin variables indefinidas
-                        if (planAnterior.planHora && plan.planHora) {
-                            tiempoViajePlan = calcularDiferenciaHorasTexto(planAnterior.planHora, plan.planHora);
+                    if (esFilaManual) {
+                        horaRealLlegada = "---";
+                        horaRealSalida = horaSalidaManualOculta;
+                        desvTiempoTexto = "---";
+                        pernoctePlan = "---";
+                        pernocteReal = "---";
+                    } 
+                    else if (esOrigenFrioYEspera || esOmitido || (!esCompletado && tipoRegistro === "---")) {
+                        horaRealLlegada = "---";
+                        desvTiempoTexto = "---";
+                        tiempoViajePlan = "---";
+                        tiempoViajeReal = "---";
+                        distPlanKm = "---";
+                        distRealTramo = "---";
+                        difKm = "---";
+                        pernoctePlan = "---";
+                        pernocteReal = "---";
+                        horaRealSalida = "---";
+                    } 
+                    else {
+                        if (index === 0) {
+                            distPlanKm = plan.distanciaPlan;
+                        } else if (tieneHitoManualActivo && index === 2) {
+                            distPlanKm = plan.distanciaPlan;
+                        } else {
+                            let nodoBasePlan = ultimoHitoRealValidoPlan || itinerarioPlan[index - 1];
+                            distPlanKm = Math.max(0, plan.distanciaPlan - (nodoBasePlan.distanciaPlan || 0));
                         }
-                        
-                        if (esCompletado && real && realAnterior) {
-                            // Calcular Tiempo de Viaje Real (Salida Real Hito Anterior a Llegada Real Actual)
-                            if (realAnterior.hora_real_salida && real.hora_real_llegada) {
-                                tiempoViajeReal = calcularDiferenciaHorasTexto(realAnterior.hora_real_salida, real.hora_real_llegada);
-                            }
 
-                            // Distancia Real Tramo
-                            if (parseFloat(realAnterior.km_acumulado) > 0 && odometroAcumulado > 0) {
-                                distRealTramo = Math.round(Math.abs(odometroAcumulado - parseFloat(realAnterior.km_acumulado)));
-                                
-                                // 🚀 REQUISITO DANIEL: Inversión de fórmula -> Diferencia = Planificado - Real
-                                difKm = distPlanKm - distRealTramo;
+                        let baseSalidaHora = null;
+                        let baseOdometro = 0;
+                        let basePlanHora = null;
 
-                                // 🚀 REQUISITO DANIEL: Semáforo de Kilómetros en exceso negativo
-                                if (difKm >= 0) semaforoDistancia = "verde";
-                                else if (difKm >= -5) semaforoDistancia = "mostaza";
-                                else semaforoDistancia = "rojo";
-                            }
+                        if (tieneHitoManualActivo && index === 2) {
+                            baseSalidaHora = horaSalidaManualOculta;
+                            baseOdometro = odometroManualOculto;
+                            basePlanHora = itinerarioPlan[0].planHora; 
+                        } else if (ultimoHitoRealValido) {
+                            baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
+                            baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
+                            basePlanHora = ultimoHitoRealValidoPlan ? ultimoHitoRealValidoPlan.planHora : itinerarioPlan[index - 1].planHora;
+                        } else if (index > 0) {
+                            let anterior = itinerarioPlan[index - 1];
+                            baseSalidaHora = anterior.realHora;
+                            basePlanHora = anterior.planHora;
+                        }
+
+                        if (basePlanHora && plan.planHora && basePlanHora !== "---" && plan.planHora !== "---") {
+                            tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHora, plan.planHora);
+                        }
+
+                        if (baseSalidaHora && horaRealLlegada && baseSalidaHora !== "---" && horaRealLlegada !== "---") {
+                            tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
+                        }
+
+                        if (odometroAcumulado > 0 && index > 0) {
+                            distRealTramo = Math.round(Math.abs(odometroAcumulado - baseOdometro));
+                            difKm = distPlanKm - distRealTramo;
+
+                            if (difKm >= 0) semaforoDistancia = "verde";
+                            else if (difKm >= -5) semaforoDistancia = "mostaza";
+                            else semaforoDistancia = "rojo";
                         }
                     }
 
-                    // 🚀 REQUISITO DANIEL: Semáforo de Tiempos en negativo (Retrasos)
-                    if (desvTiempoTexto !== "---") {
-                        if (desvTiempoTexto.indexOf("-") > -1) {
-                            let minsDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[1], 10)) || 0;
-                            let horasDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[0], 10)) || 0;
-                            let totalMins = (horasDesv * 60) + minsDesv;
-                            
-                            if (totalMins > 20) semaforoTiempo = "rojo";
-                            else if (totalMins > 0) semaforoTiempo = "mostaza";
-                        } else {
-                            semaforoTiempo = "verde";
-                        }
+                    if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
+                        let minsDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[1], 10)) || 0;
+                        let horasDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[0], 10)) || 0;
+                        let totalMins = (horasDesv * 60) + minsDesv;
+                        if (totalMins > 20) semaforoTiempo = "rojo";
+                        else if (totalMins > 0) semaforoTiempo = "mostaza";
                     }
 
                     _satCacheDatosRows.push({
                         st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
+                        sec: numSecuencia,
                         punto: plan.punto, 
                         tipo: tipoRegistro, 
                         planLlegada: plan.planHora || "---",
@@ -666,7 +710,11 @@
                         realSalida: horaRealSalida
                     });
 
-                    // 🔍 Extracción de centroides y dibujo del mapa (Mantiene las lógicas de 50m y rieles paralelos "ll")
+                    if (esCompletado && !esFilaManual) {
+                        ultimoHitoRealValido = real || { hora_real_salida: plan.realHora, km_acumulado: odometroAcumulado };
+                        ultimoHitoRealValidoPlan = plan;
+                    }
+
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     let centroideLatLng = null;
                     if (zonaMatch) {
@@ -675,106 +723,129 @@
                         else if (zonaMatch.points && zonaMatch.points[0]) centroideLatLng = [zonaMatch.points[0].y, zonaMatch.points[0].x];
                     }
 
+                    if (esFilaManual && tieneHitoManualActivo && real && real.latitud_manual) {
+                        centroideLatLng = [parseFloat(real.latitud_manual), parseFloat(real.longitud_manual)];
+                    }
+
                     if (centroideLatLng) {
-                        let secuenciaVisual = index + 1;
                         let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
-                        let labelTexto = esOmitido ? `<b>[${secuenciaVisual}] OMITIDO</b> - ${plan.punto}` : `<b>[${secuenciaVisual}]</b> ${plan.punto}`;
+                        if (esFilaManual) colorHito = '#d97706'; 
+
+                        let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
 
                         let geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
 
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
-                        geocercaVisual.bindPopup(`<b>Hito ${secuenciaVisual}: ${plan.punto}</b><br>Estado: ${tipoRegistro}`);
+                        geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
-                        if (esCompletado || esOmitido) coordenadasRecorridas.push(centroideLatLng);
-                        else coordenadasPendientes.push(centroideLatLng);
+                        if (!esFilaManual && !esOmitido) {
+                            coordenadasPendientes.push(centroideLatLng);
+                        }
                     }
                 });
 
-                // Trazados OSRM y rieles paralelos intactos...
+                if (coordenadasRecorridas.length >= 2) {
+                    let stringCoordsInput = coordenadasRecorridas.map(p => `${p[1]},${p[0]}`).join(';');
+                    fetch(`https://router.project-osrm.org/route/v1/driving/${stringCoordsInput}?overview=full&geometries=geojson`)
+                        .then(r => r.json())
+                        .then(jsonRoute => {
+                            if (jsonRoute.routes && jsonRoute.routes.length > 0) {
+                                let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1] - 0.00015, c[0] - 0.00015]);
+                                _satLineasRecorridas = L.polyline(caminoCarretera, { color: '#004b93', weight: 5 }).addTo(_satMapa);
+                            }
+                        }).catch(e => console.error("Error trazado OSRM:", e));
+                }
+
+                if (camionCoordenadaVivo) {
+                    _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
+                    _satMarcadorCamion.bindPopup(`<b>Unidad: ${placaActual}</b><br>Posición GPS en Vivo`);
+                    _satMapa.setView(camionCoordenadaVivo, 11);
+                    setTimeout(() => { _satMarcadorCamion.openPopup(); }, 500);
+                }
+
                 _satMapa.invalidateSize(true);
                 filtrarTablaSatelital('historial');
                 delete window[nombreCallbackTemporal]; 
             }
         };
 
-        // Función auxiliar matemática para restar horas HH:mm
-        function calcularDiferenciaHorasTexto(horaInicio, horaFin) {
-            try {
-                let pI = horaInicio.split(" ")[1] ? horaInicio.split(" ")[1].split(":") : horaInicio.split(":");
-                let pF = horaFin.split(" ")[1] ? horaFin.split(" ")[1].split(":") : horaFin.split(":");
-                let minInicio = (parseInt(pI[0], 10) * 60) + parseInt(pI[1], 10);
-                let minFin = (parseInt(pF[0], 10) * 60) + parseInt(pF[1], 10);
-                let diff = minFin - minInicio;
-                if (diff < 0) diff += 1440; // Ajuste cambio de día
-                let h = Math.floor(diff / 60);
-                let m = diff % 60;
-                return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
-            } catch(e) { return "---"; }
-        }
-
-         const script = document.createElement('script');
+        const script = document.createElement('script');
         script.src = `${WEB_APP_URL}?read=auditoria_detalle&idViaje=${idViaje}&callback=${nombreCallbackTemporal}&nocache=${Date.now()}`;
         document.body.appendChild(script);
         script.onload = function() { script.remove(); };
         script.onerror = function() {
             if (tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:30px; color:#b91c1c; font-weight:bold;">❌ Error de red al consultar el detalle.</td></tr>';
         };
-    };
+    }
 
-        // ====================================================================
-        // RENDERIZADO CORREGIDO CON LOS SEMÁFOROS NATIVOS CSS (PUNTOS ●)
-        // ====================================================================
-        window.filtrarTablaSatelital = function(tipoFiltro) {
-            document.querySelectorAll('.sat-btn-f').forEach(b => b.classList.remove('active'));
-            if (tipoFiltro === 'historial') document.getElementById('sat-btn-historial').classList.add('active');
-            if (tipoFiltro === 'completados') document.getElementById('sat-btn-completados').classList.add('active');
-            if (tipoFiltro === 'pendientes') document.getElementById('sat-btn-pendientes').classList.add('active');
-            if (tipoFiltro === 'desviaciones') document.getElementById('sat-btn-desviaciones').classList.add('active');
+    function calcularDiferenciaHorasTexto(horaInicio, horaFin) {
+        try {
+            let pI = horaInicio.split(" ")[1] ? horaInicio.split(" ")[1].split(":") : horaInicio.split(":");
+            let pF = horaFin.split(" ")[1] ? horaFin.split(" ")[1].split(":") : horaFin.split(":");
+            let minInicio = (parseInt(pI[0], 10) * 60) + parseInt(pI[1], 10);
+            let minFin = (parseInt(pF[0], 10) * 60) + parseInt(pF[1], 10);
+            let diff = minFin - minInicio;
+            if (diff < 0) diff += 1440; 
+            let h = Math.floor(diff / 60);
+            let m = diff % 60;
+            return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
+        } catch(e) { return "---"; }
+    }
 
-            const tbody = document.getElementById('sat-tbody-rows');
-            tbody.innerHTML = "";
+    function convertirFechaAFormatGps(strFecha) {
+        try {
+            let partes = strFecha.split(" ");
+            let dmp = partes[0].split("/");
+            let hmp = partes[1].split(":");
+            let d = parseInt(dmp[0],10), m = parseInt(dmp[1],10)-1, a = parseInt(dmp[2],10);
+            let h = parseInt(hmp[0],10), min = parseInt(hmp[1],10), s = parseInt(hmp[2],10)||0;
+            return new Date(a, m, d, h, min, s).toISOString();
+        } catch(e) { return new Date().toISOString(); }
+    }
 
-            let registrosFiltrados = _satCacheDatosRows.filter(r => {
-                if (tipoFiltro === 'completados') return r.st === "✓";
-                if (tipoFiltro === 'pendientes') return r.st === "⏳";
-                if (tipoFiltro === 'desviaciones') return r.semTiempo === "mostaza" || r.semTiempo === "rojo" || r.semDist === "mostaza" || r.semDist === "rojo" || r.st === "🚫";
-                return true;
-            });
+    window.filtrarTablaSatelital = function(tipoFiltro) {
+        document.querySelectorAll('.sat-btn-f').forEach(b => b.classList.remove('activo'));
+        
+        if (tipoFiltro === 'historial') document.getElementById('sat-btn-historial').classList.add('activo');
+        if (tipoFiltro === 'completados') document.getElementById('sat-btn-completados').classList.add('activo');
+        if (tipoFiltro === 'pendientes') document.getElementById('sat-btn-pendientes').classList.add('activo');
+        if (tipoFiltro === 'desviaciones') document.getElementById('sat-btn-desviaciones').classList.add('activo');
 
-            if (registrosFiltrados.length === 0) {
+        const tbody = document.getElementById('sat-tbody-rows');
+        tbody.innerHTML = "";
+
+        let registrosFiltrados = _satCacheDatosRows.filter(r => {
+            if (tipoFiltro === 'completados') return r.st === "✓";
+            if (tipoFiltro === 'pendientes') return r.st === "⏳";
+            if (tipoFiltro === 'desviaciones') return r.semTiempo === "mostaza" || r.semTiempo === "rojo" || r.semDist === "mostaza" || r.semDist === "rojo" || r.st === "🚫";
+            return true;
+        });
+
+        if (registrosFiltrados.length === 0) {
             tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:25px; color:#64748b; font-weight:500;">🚫 Ningún tramo de este viaje coincide con el filtro seleccionado.</td></tr>';
             return;
         }
 
-        // ====================================================================
-        // 🚀 BLOQUE REEMPLAZADO: MUESTREO DE FILAS CON SEMÁFOROS NATIVOS
-        // ====================================================================
-        registrosFiltrados.forEach((r, index) => {
+        registrosFiltrados.forEach((r) => {
             let tr = document.createElement('tr');
-            
-            // Si tiene pernocte real activo, pintar la fila completa en oro suave corporativo
-            if (r.pernocteReal !== "---" && r.pernocteReal !== "" && r.pernocteReal !== "00:00") {
-                tr.className = "sat-row-pernocte";
-            }
+            if (r.pernocteReal !== "---" && r.pernocteReal !== "" && r.pernocteReal !== "00:00") tr.className = "sat-row-pernocte";
 
-            // Badges de Estado Corporativos para la primera columna
             let badgeEst = `<span class="sat-badge-table st-pendiente">⏳ PENDIENTE</span>`;
             if (r.st === "✓") badgeEst = `<span class="sat-badge-table st-completado">✓ OK</span>`;
             if (r.st === "🚫") badgeEst = `<span class="sat-badge-table st-omitido">🚫 OMITIDO</span>`;
 
-            // Inyección de puntos de color nativos (●) según el semáforo de desviaciones
             let dotTiempo = `<span class="sat-table-dot dot-${r.semTiempo}">●</span>`;
             let dotDist = `<span class="sat-table-dot dot-${r.semDist}">●</span>`;
 
-            // Tratamiento de guiones automático para el Origen por índice cronológico puro
-            let desvT = (index === 0) ? "---" : (r.desvTiempo !== "---" ? `${dotTiempo} ${r.desvTiempo}` : "---");
-            let tReal = (index === 0) ? "---" : (r.tiempoReal !== "---" ? `${dotTiempo} ${r.tiempoReal}` : "---");
-            let dReal = (index === 0) ? "---" : (r.distReal !== "---" ? `${r.distReal} KM` : "---");
-            let dDif = (index === 0) ? "---" : (r.difKm !== "---" ? `${dotDist} ${r.difKm >= 0 ? "+" + r.difKm : r.difKm} KM` : "---");
+            let desvT = (r.desvTiempo !== "---") ? `${dotTiempo} ${r.desvTiempo}` : "---";
+            let tReal = (r.tiempoReal !== "---") ? `${dotTiempo} ${r.tiempoReal}` : "---";
+            let dPlan = (r.distPlan !== "---") ? `${r.distPlan} KM` : "---";
+            let dReal = (r.distReal !== "---") ? `${r.distReal} KM` : "---";
+            let dDif = (r.difKm !== "---") ? `${dotDist} ${r.difKm >= 0 ? "+" + r.difKm : r.difKm} KM` : "---";
 
             tr.innerHTML = `
-                <td style="text-align:center;">${badgeEst}</td>
+                <td style="text-align:center;"><strong>[${r.sec}]</strong> ${badgeEst}</td>
                 <td><strong>${r.punto}</strong></td>
                 <td><small style="color:#475569; font-weight:bold;">${r.tipo}</small></td>
                 <td>${r.planLlegada}</td>
@@ -782,23 +853,23 @@
                 <td>${desvT}</td>
                 <td>${r.tiempoPlan}</td>
                 <td>${tReal}</td>
-                <td>${r.distPlan} KM</td>
+                <td>${dPlan}</td>
                 <td>${dReal}</td>
                 <td style="font-weight:600;">${dDif}</td>
                 <td>${r.pernoctePlan}</td>
                 <td>${r.pernocteReal}</td>
                 <td style="font-weight:600; color:#004b93;">${r.realSalida}</td>
-                </tr>`;
+            </tr>`;
             tbody.appendChild(tr);
         });
     };
 
     // 6. INTEGRACIÓN CON GEOTAB (API)
-    geotab.addin.seguimiento = function () {
+    geotab.addin.seguimiento = () => {
         return {
             initialize(api, state, callback) {
                 apiGlobal = api; 
-                api.getSession(function (s) { _usuarioLogueado = s.userName; });
+                api.getSession(s => { _usuarioLogueado = s.userName; });
                 actualizar();
                 setInterval(actualizar, 60000);
                 callback();
