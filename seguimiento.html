@@ -453,6 +453,7 @@
                 return {
                     punto: p.punto || p.puntos || "---",
                     planHora: p.planHora || p.eta || "---",
+                    planHoraSalida: p.planHoraSalida || p.etd || "---",
                     realHora: p.realHora || "---",
                     deteccion: p.deteccion || "NO",
                     distanciaPlan: parseFloat(p.distanciaPlan || p.km || p.kilometros || 0)
@@ -559,6 +560,9 @@
                         tieneHitoManualActivo = true;
                         horaSalidaManualOculta = realManual ? realManual.hora_real_salida : nodoManual.realHora;
                         odometroManualOculto = realManual ? parseFloat(realManual.km_acumulado || 0) : 0;
+                        // 🚀 AGREGA ESTAS DOS LÍNEAS ABAJO:
+                        latitudManualOculta = realManual ? parseFloat(realManual.latitud_manual) : null;
+                        longitudManualOculta = realManual ? parseFloat(realManual.longitud_manual) : null;
                     }
                 }
 
@@ -653,11 +657,11 @@
                         if (tieneHitoManualActivo && index === 2) {
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
-                            basePlanHora = itinerarioPlan[0].planHora; 
+                            basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; // 🚀 CAMBIA ESTO
                         } else if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
                             baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
-                            basePlanHora = ultimoHitoRealValidoPlan ? ultimoHitoRealValidoPlan.planHora : itinerarioPlan[index - 1].planHora;
+                            basePlanHoraSalida = ultimoHitoRealValidoPlan ? ultimoHitoRealValidoPlan.planHoraSalida : itinerarioPlan[index - 1].planHoraSalida; // 🚀 CAMBIA ESTO
                         } else if (index > 0) {
                             let anterior = itinerarioPlan[index - 1];
                             baseSalidaHora = anterior.realHora;
