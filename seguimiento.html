@@ -514,6 +514,11 @@
                         }
                     }, function(logsGps) {
                         if (logsGps && logsGps.length > 0) {
+                            // 🚀 LÍNEA CORRECTA: Captura la coordenada real del camión al momento del clic manual
+                            if (tieneHitoManualActivo && !latitudManualOculta) {
+                                latitudManualOculta = logsGps[0].latitude;
+                                longitudManualOculta = logsGps[0].longitude;
+                            }
                             let ultimoMins = -1;
                             logsGps.forEach(log => {
                                 let fechaLog = new Date(log.dateTime);
@@ -729,8 +734,8 @@
                         else if (zonaMatch.points && zonaMatch.points[0]) centroideLatLng = [zonaMatch.points[0].y, zonaMatch.points[0].x];
                     }
 
-                    if (esFilaManual && tieneHitoManualActivo && real && real.latitud_manual) {
-                        centroideLatLng = [parseFloat(real.latitud_manual), parseFloat(real.longitud_manual)];
+                    if (esFilaManual && tieneHitoManualActivo && latitudManualOculta) {
+                        centroideLatLng = [latitudManualOculta, longitudManualOculta];
                     }
 
                     if (centroideLatLng) {
@@ -757,8 +762,10 @@
                         .then(r => r.json())
                         .then(jsonRoute => {
                             if (jsonRoute.routes && jsonRoute.routes.length > 0) {
-                                let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1] - 0.00015, c[0] - 0.00015]);
-                                _satLineasRecorridas = L.polyline(caminoCarretera, { color: '#004b93', weight: 5 }).addTo(_satMapa);
+                                // 🚀 RECTIFICADO: Mapeo limpio de coordenadas sin desfases que rompan la línea
+                                let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                                if (_satLineasRecorridas) _satMapa.removeLayer(_satLineasRecorridas);
+                                _satLineasRecorridas = L.polyline(caminoCarretera, { color: '#004b93', weight: 5, opacity: 0.85 }).addTo(_satMapa);
                             }
                         }).catch(e => console.error("Error trazado OSRM:", e));
                 }
