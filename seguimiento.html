@@ -493,14 +493,27 @@
             }, function(err) { consultarCentroidesZonas(); });
 
             function consultarHistorialRecorridoGps(deviceId) {
+                // 🚀 RECTIFICADO: Búsqueda blindada de la Hora Cero Real del viaje
                 let primerHitoReal = Array.isArray(datosSeguimiento) ? datosSeguimiento[0] : null;
-                let horaSalidaBase = primerHitoReal ? primerHitoReal.hora_real_salida : null;
+                let horaSalidaBase = (primerHitoReal && primerHitoReal.hora_real_salida !== "---") ? primerHitoReal.hora_real_salida : null;
                 
-                let hitoManual = itinerarioPlan.find(p => p.punto === "INICIO_MANUAL");
-                if (hitoManual && hitoManual.realHora && hitoManual.realHora !== "---") {
-                    horaSalidaBase = hitoManual.realHora;
+                // Si no hay salida en origen, buscar la hora de activación del Inicio Manual en el historial real
+                if (!horaSalidaBase && Array.isArray(datosSeguimiento)) {
+                    let manualReal = datosSeguimiento.find(h => h.punto_nombre === "INICIO_MANUAL");
+                    if (manualReal && manualReal.hora_real_salida !== "---") {
+                        horaSalidaBase = manualReal.hora_real_salida;
+                    }
                 }
 
+                // Si de todas formas no se encuentra, buscar en el itinerario planificado como último recurso
+                if (!horaSalidaBase) {
+                    let hitoManualPlan = itinerarioPlan.find(p => p.punto === "INICIO_MANUAL");
+                    if (hitoManualPlan && hitoManualPlan.realHora && hitoManualPlan.realHora !== "---") {
+                        horaSalidaBase = hitoManualPlan.realHora;
+                    }
+                }
+
+                // 🚀 DESTREBE DEL ADD-IN: Si ya tenemos hora válida, disparamos la telemetría
                 if (horaSalidaBase && horaSalidaBase !== "---") {
                     let fechaIso = convertirFechaAFormatGps(horaSalidaBase);
                     horaArranqueFiltroGps = fechaIso;
@@ -514,11 +527,12 @@
                         }
                     }, function(logsGps) {
                         if (logsGps && logsGps.length > 0) {
-                            // 🚀 LÍNEA CORRECTA: Captura la coordenada real del camión al momento del clic manual
+                            // Guardar la coordenada histórica donde se hizo clic en el manual
                             if (tieneHitoManualActivo && !latitudManualOculta) {
                                 latitudManualOculta = logsGps[0].latitude;
                                 longitudManualOculta = logsGps[0].longitude;
                             }
+
                             let ultimoMins = -1;
                             logsGps.forEach(log => {
                                 let fechaLog = new Date(log.dateTime);
@@ -532,6 +546,7 @@
                         consultarCentroidesZonas();
                     }, function(err) { consultarCentroidesZonas(); });
                 } else {
+                    // Si el viaje está en espera total ("⏳ PENDIENTE"), pintar solo los centroides limpios
                     consultarCentroidesZonas();
                 }
             }
