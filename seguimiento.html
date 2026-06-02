@@ -608,6 +608,10 @@
                     }
 
                     let tipoRegistro = esCompletado ? (esFilaManual ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
+                    let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
+                    if (esFilaManual) colorHito = '#d97706'; 
+
+                    let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
@@ -724,7 +728,7 @@
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     
                     let centroideLatLng = null;
-                    let puntoEntradaRuta = null; // 🚀 PUNTO DE ENTRADA EXCLUSIVO PARA OSRM
+                    let puntoEntradaCarretera = null; // 🚀 PUNTO DE ENTRADA EXCLUSIVO PARA OSRM
 
                     if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                         let sumaLat = 0, sumaLng = 0;
@@ -733,28 +737,22 @@
                             sumaLng += pt.x;
                         });
                         centroideLatLng = [sumaLat / zonaMatch.points.length, sumaLng / zonaMatch.points.length];
-                        puntoEntradaRuta = [zonaMatch.points[0].y, zonaMatch.points[0].x]; // Usa el primer vértice para no desviar la carretera
+                        puntoEntradaCarretera = [zonaMatch.points[0].y, zonaMatch.points[0].x]; // Evita el efecto corchete
                     } else if (zonaMatch) {
                         if (zonaMatch.center) centroideLatLng = [zonaMatch.center.y, zonaMatch.center.x];
                         else if (zonaMatch.y) centroideLatLng = [zonaMatch.y, zonaMatch.x];
-                        puntoEntradaRuta = centroideLatLng;
+                        puntoEntradaCarretera = centroideLatLng;
                     }
 
-                    // 🎯 REQUERIMIENTO 3: Forzar posicionamiento real del Inicio Manual por GPS
                     if (esFilaManual && tieneHitoManualActivo && latitudManualOculta) {
                         centroideLatLng = [latitudManualOculta, longitudManualOculta];
-                        puntoEntradaRuta = centroideLatLng;
+                        puntoEntradaCarretera = centroideLatLng;
                     }
 
                     if (centroideLatLng) {
-                        let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
-                        if (esFilaManual) colorHito = '#d97706'; 
-
-                        let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                         let geocercaVisual = null;
 
                         if (esFilaManual) {
-                            // 🍊 REQUERIMIENTO 3: Pintar el círculo naranja real de 30 metros usando el GPS capturado
                             geocercaVisual = L.circle(centroideLatLng, { radius: 30, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
                         } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                             let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
@@ -763,14 +761,13 @@
                             geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         }
 
-                        // 🎯 REQUERIMIENTO 1: El texto se queda anclado flotando en el medio del centroide geométrico calculado
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
-                        geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}<br>Hora: ${esFilaManual ? horaRealSalida : horaRealLlegada}`);
+                        geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
-                        // Alimentamos la cola de OSRM con el punto periférico de entrada para evitar el efecto corchete
+                        // Alimentamos la simulación con el punto de entrada periférico para eliminar el quiebre en "U"
                         puntosParaRutaOSRM.push({
-                            coordenada: puntoEntradaRuta,
+                            coordenada: puntoEntradaCarretera,
                             esCompletado: esCompletado,
                             esOmitido: esOmitido,
                             esManual: esFilaManual
@@ -778,7 +775,6 @@
                     }
                 });
 
-                // 🚀 REQUERIMIENTO 4: SIMULACIÓN EN PARALELO CON EXTENSIÓN GRIS CONTINUA EN OMISIONES (||)
                 function aplicarDesfaseParalelo(coords, offsetMetros) {
                     let factor = offsetMetros / 111111; 
                     return coords.map(c => [c[0] + factor, c[1] + factor]);
@@ -788,12 +784,11 @@
                     if (idx >= puntosParaRutaOSRM.length - 1) return;
                     let puntoDestino = puntosParaRutaOSRM[idx + 1];
 
-                    // Cambiamos la condición: Traza si el origen está tocado y el destino es procesable (sea real u omitido)
                     if ((puntoOrigen.esCompletado || puntoOrigen.esManual) && (puntoDestino.esCompletado || puntoDestino.esOmitido)) {
                         let coordInicio = puntoOrigen.coordenada;
                         let coordFin = puntoDestino.coordenada;
                         
-                        // 🎯 REQUERIMIENTO 2: Si el origen O el destino son omitidos, toda la carretera se vuelve gris punteada continua
+                        // 🎯 RECTIFICACIÓN LOGICA: Si el origen O el destino son omitidos, la línea gris continúa sin cortarse
                         let esTramoGris = puntoOrigen.esOmitido || puntoDestino.esOmitido;
                         let currentIdx = idx;
 
@@ -803,7 +798,6 @@
                                 if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                     let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                     
-                                    // Desfase en paralelo de 45 metros si se repite camino o es tramo gris para que no se encima con la ida
                                     if (esTramoGris || currentIdx > 1) { 
                                         caminoCarretera = aplicarDesfaseParalelo(caminoCarretera, 45); 
                                     }
