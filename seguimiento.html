@@ -145,11 +145,23 @@
 
     // 1. FUNCIÓN DE REFRESCO DE DATOS
     function actualizar() {
-        const script = document.createElement('script');
-        script.src = WEB_APP_URL + "?read=viajes&callback=renderizar&nocache=" + new Date().getTime();
-        document.body.appendChild(script);
-        script.onload = function() { script.remove(); };
-    }
+        // Realizamos la consulta de forma directa sin alterar el DOM para burlar bloqueos de appendChild
+        fetch(WEB_APP_URL + "?read=viajes&nocache=" + new Date().getTime())
+            .then(response => response.json())
+            .then(data => {
+                // Si tu Web App devuelve el JSON envuelto o directo, lo mandamos al renderizador nativo
+                if (data) {
+                    renderizar(data);
+                }
+            })
+            .catch(error => {
+                console.error("Error crítico en refresco de flota:", error);
+                const tbody = document.getElementById('lista-viajes');
+                if (tbody && tbody.innerHTML.includes("Sincronizando")) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color:#b91c1c; font-weight:bold;">❌ Error de conexión con el servidor de datos.</td></tr>';
+                }
+            });
+        }
 
     // 2. RENDERIZADO DE LA TABLA MONITOR PRINCIPAL
     window.renderizar = function(viajes) {
