@@ -565,8 +565,8 @@
             function dibujarTodoElModalSatelital(zonasGeotab) {
                 let ultimoIndiceCompletado = -1;
                 let esOrigenOmitido = false;
-                let latitudManualOculta = null;  // 🚀 LÍNEA CORREGIDA
-                let longitudManualOculta = null; // 🚀 LÍNEA CORREGIDA
+                let latitudManualOculta = null;  
+                let longitudManualOculta = null; 
                 
                 let indiceManual = itinerarioPlan.findIndex(p => p.punto === "INICIO_MANUAL");
                 let tieneHitoManualActivo = false;
@@ -582,9 +582,8 @@
                         tieneHitoManualActivo = true;
                         horaSalidaManualOculta = realManual ? realManual.hora_real_salida : nodoManual.realHora;
                         odometroManualOculto = realManual ? parseFloat(realManual.km_acumulado || 0) : 0;
-                        // 🚀 AGREGA ESTAS DOS LÍNEAS ABAJO:
-                         latitudManualOculta = realManual ? parseFloat(realManual.latitud_manual) : null;
-                         longitudManualOculta = realManual ? parseFloat(realManual.longitud_manual) : null;
+                        latitudManualOculta = realManual ? parseFloat(realManual.latitud_manual) : null;
+                        longitudManualOculta = realManual ? parseFloat(realManual.longitud_manual) : null;
                     }
                 }
 
@@ -609,6 +608,9 @@
                 let ultimoHitoRealValidoPlan = null;
                 let secuenciaCorrelativa = 1;
 
+                // 🚀 COMIENZA EL PROCESAMIENTO UNIFICADO DE HITOS Y RUTAS SIMULADAS
+                let puntosParaRutaOSRM = []; 
+
                 itinerarioPlan.forEach((plan, index) => {
                     let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
@@ -627,126 +629,22 @@
                     }
 
                     let tipoRegistro = esCompletado ? (esFilaManual ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
+                    let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
+                    if (esFilaManual) colorHito = '#d97706'; 
+
+                    let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                     
-                    let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
-                    let horaRealSalida = real ? real.hora_real_salida : "---";
-                    let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
-                    let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
-                    let pernocteReal = real ? real.hora_pernocte_real : "---";
-                    let odometroAcumulado = real ? parseFloat(real.km_acumulado || 0) : 0;
-
-                    let tiempoViajePlan = "---";
-                    let tiempoViajeReal = "---";
-                    let distPlanKm = "---";
-                    let distRealTramo = "---";
-                    let difKm = "---";
-                    let semaforoTiempo = "verde";
-                    let semaforoDistancia = "verde";
-
-                    if (esFilaManual) {
-                        horaRealLlegada = "---";
-                        horaRealSalida = horaSalidaManualOculta;
-                        desvTiempoTexto = "---";
-                        pernoctePlan = "---";
-                        pernocteReal = "---";
-                    } 
-                    else if (esOrigenFrioYEspera || esOmitido || (!esCompletado && tipoRegistro === "---")) {
-                        horaRealLlegada = "---";
-                        desvTiempoTexto = "---";
-                        tiempoViajePlan = "---";
-                        tiempoViajeReal = "---";
-                        distPlanKm = "---";
-                        distRealTramo = "---";
-                        difKm = "---";
-                        pernoctePlan = "---";
-                        pernocteReal = "---";
-                        horaRealSalida = "---";
-                    } 
-                    else {
-                        if (index === 0) {
-                            distPlanKm = plan.distanciaPlan;
-                        } else if (tieneHitoManualActivo && index === 2) {
-                            distPlanKm = plan.distanciaPlan;
-                        } else {
-                            let nodoBasePlan = ultimoHitoRealValidoPlan || itinerarioPlan[index - 1];
-                            distPlanKm = Math.max(0, plan.distanciaPlan - (nodoBasePlan.distanciaPlan || 0));
-                        }
-
-                        let baseSalidaHora = null;
-                        let baseOdometro = 0;
-                        let basePlanHoraSalida = null;
-
-                        if (tieneHitoManualActivo && index === 2) {
-                            baseSalidaHora = horaSalidaManualOculta;
-                            baseOdometro = odometroManualOculto;
-                            basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; // 🚀 CAMBIA ESTO
-                        } else if (ultimoHitoRealValido) {
-                            baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
-                            baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
-                            basePlanHoraSalida = ultimoHitoRealValidoPlan ? ultimoHitoRealValidoPlan.planHoraSalida : itinerarioPlan[index - 1].planHoraSalida; // 🚀 CAMBIA ESTO
-                        } else if (index > 0) {
-                            let anterior = itinerarioPlan[index - 1];
-                            baseSalidaHora = anterior.realHora;
-                            basePlanHora = anterior.planHora;
-                        }
-
-                        if (basePlanHoraSalida && plan.planHora && basePlanHoraSalida !== "---" && plan.planHora !== "---") {
-                            tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
-                        }
-
-                        if (baseSalidaHora && horaRealLlegada && baseSalidaHora !== "---" && horaRealLlegada !== "---") {
-                            tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
-                        }
-
-                        if (odometroAcumulado > 0 && index > 0) {
-                         distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
-                         difKm = distPlanKm - distRealTramo;
-
-                            if (difKm >= 0) semaforoDistancia = "verde";
-                            else if (difKm >= -5) semaforoDistancia = "mostaza";
-                            else semaforoDistancia = "rojo";
-                        }
-                    }
-
-                    if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
-                        let minsDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[1], 10)) || 0;
-                        let horasDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[0], 10)) || 0;
-                        let totalMins = (horasDesv * 60) + minsDesv;
-                        if (totalMins > 20) semaforoTiempo = "rojo";
-                        else if (totalMins > 0) semaforoTiempo = "mostaza";
-                    }
-
-                    _satCacheDatosRows.push({
-                        st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
-                        sec: numSecuencia,
-                        punto: plan.punto, 
-                        tipo: tipoRegistro, 
-                        planLlegada: plan.planHora || "---",
-                        realLlegada: horaRealLlegada, 
-                        desvTiempo: desvTiempoTexto, 
-                        semTiempo: semaforoTiempo,
-                        tiempoPlan: tiempoViajePlan, 
-                        tiempoReal: tiempoViajeReal, 
-                        distPlan: distPlanKm, 
-                        distReal: distRealTramo,
-                        semDist: semaforoDistancia, 
-                        difKm: difKm, 
-                        pernoctePlan: pernoctePlan, 
-                        pernocteReal: pernocteReal, 
-                        realSalida: horaRealSalida
-                    });
-
-                    if (esCompletado && !esFilaManual) {
-                        ultimoHitoRealValido = real || { hora_real_salida: plan.realHora, km_acumulado: odometroAcumulado };
-                        ultimoHitoRealValidoPlan = plan;
-                    }
-
-                    let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                    // 🎯 CÁLCULO MATEMÁTICO DEL CENTROIDE PARA ANCLAJE Y RUTAS PERFECTAS
                     let centroideLatLng = null;
-                    if (zonaMatch) {
-                        if (zonaMatch.center) centroideLatLng = [zonaMatch.center.y, zonaMatch.center.x];
-                        else if (zonaMatch.y) centroideLatLng = [zonaMatch.y, zonaMatch.x];
-                        else if (zonaMatch.points && zonaMatch.points[0]) centroideLatLng = [zonaMatch.points[0].y, zonaMatch.points[0].x];
+                    let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+
+                    if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                        let sumaLat = 0, sumaLng = 0;
+                        zonaMatch.points.forEach(pt => {
+                            sumaLat += pt.y;
+                            sumaLng += pt.x;
+                        });
+                        centroideLatLng = [sumaLat / zonaMatch.points.length, sumaLng / zonaMatch.points.length];
                     }
 
                     if (esFilaManual && tieneHitoManualActivo && latitudManualOculta) {
@@ -754,14 +652,19 @@
                     }
 
                     if (centroideLatLng) {
-                        let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
-                        if (esFilaManual) colorHito = '#d97706'; 
-
-                        let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                         let geocercaVisual = null;
 
-                        // 🚀 CAMBIO: Si la zona tiene puntos, dibuja el polígono real exacto de Geotab
-                        if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                        if (esFilaManual) {
+                            // 🍊 Círculo naranja exacto de 30 metros para el Inicio Manual
+                            geocercaVisual = L.circle(centroideLatLng, {
+                                radius: 30,
+                                color: '#d97706',
+                                fillColor: '#d97706',
+                                weight: 3,
+                                fillOpacity: 0.5
+                            }).addTo(window._satMarcadoresHitosGrupo);
+                        } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                            // 🟩 Polígono real calcando la forma exacta de MyGeotab
                             let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
                             geocercaVisual = L.polygon(verticesLeaflet, { 
                                 color: colorHito, 
@@ -770,42 +673,65 @@
                                 fillOpacity: 0.35 
                             }).addTo(window._satMarcadoresHitosGrupo);
                         } else {
-                            // Respaldo en círculo si es hito manual o no hay polígono
-                            geocercaVisual = L.circle(centroideLatLng, { 
-                                radius: 80, 
-                                fillColor: colorHito, 
-                                color: colorHito, 
-                                weight: 2, 
-                                fillOpacity: 0.35 
-                            }).addTo(window._satMarcadoresHitosGrupo);
+                            geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         }
 
-                        // El texto fijo y el popup se quedan igual mapeados a la nueva figura
+                        // 🎯 POSICIONADO AL MEDIO: Forzar que el texto flote en el centro geométrico de la zona
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
-                        if (!esFilaManual && !esOmitido) {
-                            coordenadasPendientes.push(centroideLatLng);
-                        }
+                        // Guardar para estructurar las líneas simuladas consecutivas
+                        puntosParaRutaOSRM.push({
+                            coordenada: centroideLatLng,
+                            esCompletado: esCompletado,
+                            esOmitido: esOmitido,
+                            esManual: esFilaManual
+                        });
                     }
                 });
 
-                if (coordenadasRecorridas.length >= 2) {
-                    let stringCoordsInput = coordenadasRecorridas.map(p => `${p[1]},${p[0]}`).join(';');
-                    fetch(`https://router.project-osrm.org/route/v1/driving/${stringCoordsInput}?overview=full&geometries=geojson`)
-                        .then(r => r.json())
-                        .then(jsonRoute => {
-                            if (jsonRoute.routes && jsonRoute.routes.length > 0) {
-                                // 🚀 RECTIFICADO: Mapeo limpio de coordenadas sin desfases que rompan la línea
-                                let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                                if (_satLineasRecorridas) _satMapa.removeLayer(_satLineasRecorridas);
-                                _satLineasRecorridas = L.polyline(caminoCarretera, { color: '#004b93', weight: 5, opacity: 0.85 }).addTo(_satMapa);
-                            }
-                        }).catch(e => console.error("Error trazado OSRM:", e));
+                // 🚀 SIMULACIÓN AUTOMÁTICA DE CARRETERAS CON TRAZADO EN PARALELO (||)
+                function aplicarDesfaseParalelo(coords, offsetMetros) {
+                    let factor = offsetMetros / 111111; 
+                    return coords.map(c => [c[0] + factor, c[1] + factor]);
                 }
 
+                for (let i = 0; i < puntosParaRutaOSRM.length - 1; i++) {
+                    let puntoOrigen = puntosParaRutaOSRM[i];
+                    let puntoDestino = puntosParaRutaOSRM[i + 1];
+
+                    // Regla: Se une si el origen está tocado o es manual, y el destino fue tocado u omitido
+                    if ((puntoOrigen.esCompletado || puntoOrigen.esManual) && (puntoDestino.esCompletado || puntoDestino.esOmitido)) {
+                        let coordInicio = puntoOrigen.coordenada;
+                        let coordFin = puntoDestino.coordenada;
+                        let esTramoGris = puntoDestino.esOmitido;
+
+                        fetch(`https://router.project-osrm.org/route/v1/driving/${coordInicio[1]},${coordInicio[0]};${coordFin[1]},${coordFin[0]}?overview=full&geometries=geojson`)
+                            .then(r => r.json())
+                            .then(jsonRoute => {
+                                if (jsonRoute.routes && jsonRoute.routes.length > 0) {
+                                    let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                                    
+                                    // Separación ancha (||) en tramos omitidos o tramos de retorno (i > 1) para evitar superposición
+                                    if (esTramoGris || i > 1) { 
+                                        caminoCarretera = aplicarDesfaseParalelo(caminoCarretera, 45); // 45 metros de separación paralela ancha
+                                    }
+
+                                    let colorLinea = esTramoGris ? '#94a3b8' : '#004b93'; 
+                                    let estiloLinea = esTramoGris ? 
+                                        { color: colorLinea, weight: 4, opacity: 0.7, dashArray: '5, 10' } : 
+                                        { color: colorLinea, weight: 5, opacity: 0.85 };
+
+                                    L.polyline(caminoCarretera, estiloLinea).addTo(_satMapa);
+                                }
+                            }).catch(e => console.error("Error simulación tramo OSRM:", e));
+                    }
+                }
+
+                // Mantener el marcador del camión en vivo al final del trayecto
                 if (camionCoordenadaVivo) {
+                    if (_satMarcadorCamion) _satMapa.removeLayer(_satMarcadorCamion);
                     _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
                     _satMarcadorCamion.bindPopup(`<b>Unidad: ${placaActual}</b><br>Posición GPS en Vivo`);
                     _satMapa.setView(camionCoordenadaVivo, 11);
@@ -816,16 +742,6 @@
                 filtrarTablaSatelital('historial');
                 delete window[nombreCallbackTemporal]; 
             }
-        };
-
-        const script = document.createElement('script');
-        script.src = `${WEB_APP_URL}?read=auditoria_detalle&idViaje=${idViaje}&callback=${nombreCallbackTemporal}&nocache=${Date.now()}`;
-        document.body.appendChild(script);
-        script.onload = function() { script.remove(); };
-        script.onerror = function() {
-            if (tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:30px; color:#b91c1c; font-weight:bold;">❌ Error de red al consultar el detalle.</td></tr>';
-        };
-    }
 
     function calcularDiferenciaHorasTexto(horaInicio, horaFin) {
         try {
