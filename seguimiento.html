@@ -471,87 +471,7 @@
 
             let placaActual = document.getElementById('lbl-sat-placa').innerText;
             
-            apiGlobal.call("Get", {
-                typeName: "Device",
-                search: { name: placaActual }
-            }, function(devices) {
-                if (devices && devices.length > 0) {
-                    let deviceId = devices[0].id;
-                    
-                    apiGlobal.call("Get", {
-                        typeName: "DeviceStatusInfo",
-                        search: { deviceSearch: { id: deviceId } }
-                    }, function(statusResult) {
-                        if (statusResult && statusResult.length > 0 && statusResult[0].latitude) {
-                            camionCoordenadaVivo = [statusResult[0].latitude, statusResult[0].longitude];
-                        }
-                        consultarHistorialRecorridoGps(deviceId);
-                    }, function(err) { consultarCentroidesZonas(); });
-                } else {
-                    consultarCentroidesZonas();
-                }
-            }, function(err) { consultarCentroidesZonas(); });
-
-            function consultarHistorialRecorridoGps(deviceId) {
-                // 🚀 RECTIFICADO: Búsqueda blindada de la Hora Cero Real del viaje
-                let primerHitoReal = Array.isArray(datosSeguimiento) ? datosSeguimiento[0] : null;
-                let horaSalidaBase = (primerHitoReal && primerHitoReal.hora_real_salida !== "---") ? primerHitoReal.hora_real_salida : null;
-                
-                // Si no hay salida en origen, buscar la hora de activación del Inicio Manual en el historial real
-                if (!horaSalidaBase && Array.isArray(datosSeguimiento)) {
-                    let manualReal = datosSeguimiento.find(h => h.punto_nombre === "INICIO_MANUAL");
-                    if (manualReal && manualReal.hora_real_salida !== "---") {
-                        horaSalidaBase = manualReal.hora_real_salida;
-                    }
-                }
-
-                // Si de todas formas no se encuentra, buscar en el itinerario planificado como último recurso
-                if (!horaSalidaBase) {
-                    let hitoManualPlan = itinerarioPlan.find(p => p.punto === "INICIO_MANUAL");
-                    if (hitoManualPlan && hitoManualPlan.realHora && hitoManualPlan.realHora !== "---") {
-                        horaSalidaBase = hitoManualPlan.realHora;
-                    }
-                }
-
-                // 🚀 DESTREBE DEL ADD-IN: Si ya tenemos hora válida, disparamos la telemetría
-                if (horaSalidaBase && horaSalidaBase !== "---") {
-                    let fechaIso = convertirFechaAFormatGps(horaSalidaBase);
-                    horaArranqueFiltroGps = fechaIso;
-
-                    apiGlobal.call("Get", {
-                        typeName: "LogRecord",
-                        search: {
-                            deviceSearch: { id: deviceId },
-                            fromDate: fechaIso,
-                            toDate: new Date().toISOString()
-                        }
-                    }, function(logsGps) {
-                        if (logsGps && logsGps.length > 0) {
-                            // Guardar la coordenada histórica donde se hizo clic en el manual
-                            if (tieneHitoManualActivo && !latitudManualOculta) {
-                                latitudManualOculta = logsGps[0].latitude;
-                                longitudManualOculta = logsGps[0].longitude;
-                            }
-
-                            let ultimoMins = -1;
-                            logsGps.forEach(log => {
-                                let fechaLog = new Date(log.dateTime);
-                                let minsActuales = Math.floor(fechaLog.getTime() / (1000 * 60 * 5)); 
-                                if (minsActuales !== ultimoMins) {
-                                    coordenadasRecorridas.push([log.latitude, log.longitude]);
-                                    ultimoMins = minsActuales;
-                                }
-                            });
-                        }
-                        consultarCentroidesZonas();
-                    }, function(err) { consultarCentroidesZonas(); });
-                } else {
-                    // Si el viaje está en espera total ("⏳ PENDIENTE"), pintar solo los centroides limpios
-                    consultarCentroidesZonas();
-                }
-            }
-
-            function consultarCentroidesZonas() {
+            if (apiGlobal) {
                 apiGlobal.call("Get", {
                     typeName: "Zone",
                     search: { zoneTypeIds: ["b4A3"] } 
@@ -560,6 +480,8 @@
                 }, function(err) {
                     dibujarTodoElModalSatelital([]);
                 });
+            } else {
+                dibujarTodoElModalSatelital([]);
             }
 
             function dibujarTodoElModalSatelital(zonasGeotab) {
