@@ -478,11 +478,11 @@
             _satCacheDatosRows = [];
             let coordenadasPendientes = [];
             let camionCoordenadaVivo = null;
-            let puntosParaRutaOSRM = []; // Eje central para la simulación
+            let puntosParaRutaOSRM = []; // Recolector matemático para el trazado por carretera
 
             let placaActual = document.getElementById('lbl-sat-placa').innerText;
             
-            // 🚀 CONECTOR DIRECTO Y SEGURO: Trae las zonas y activa el camión en vivo en paralelo sin colgar la pantalla
+            // 🚀 AJUSTE SEGURO: Jalar posición en vivo del camión y saltar directo a las geocercas sin romper la cadena
             if (apiGlobal) {
                 apiGlobal.call("Get", {
                     typeName: "Device",
@@ -496,15 +496,15 @@
                             if (statusResult && statusResult.length > 0 && statusResult[0].latitude) {
                                 camionCoordenadaVivo = [statusResult[0].latitude, statusResult[0].longitude];
                             }
-                            ejecutarCargaZonasDirecta();
-                        }, function(err) { ejecutarCargaZonasDirecta(); });
-                    } else { ejecutarCargaZonasDirecta(); }
-                }, function(err) { ejecutarCargaZonasDirecta(); });
+                            recuperarGeocercasNativas();
+                        }, function(err) { recuperarGeocercasNativas(); });
+                    } else { recuperarGeocercasNativas(); }
+                }, function(err) { recuperarGeocercasNativas(); });
             } else {
-                ejecutarCargaZonasDirecta();
+                recuperarGeocercasNativas();
             }
 
-            function ejecutarCargaZonasDirecta() {
+            function recuperarGeocercasNativas() {
                 if (apiGlobal) {
                     apiGlobal.call("Get", {
                         typeName: "Zone",
@@ -581,6 +581,10 @@
                     }
 
                     let tipoRegistro = esCompletado ? (esFilaManual ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
+                    let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
+                    if (esFilaManual) colorHito = '#d97706'; 
+
+                    let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
@@ -696,7 +700,7 @@
 
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     
-                    // 🎯 REQUERIMIENTO 1: CENTROIDE POLIGONAL EXACTO (Mismo punto para etiqueta y enrutamiento)
+                    // 🎯 REQUERIMIENTO 1: CENTROIDE GEOMÉTRICO (Mapeo idéntico para anclar tooltip y alimentar OSRM)
                     let centroideLatLng = null;
                     if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                         let sumaLat = 0, sumaLng = 0;
@@ -715,14 +719,10 @@
                     }
 
                     if (centroideLatLng) {
-                        let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
-                        if (esFilaManual) colorHito = '#d97706'; 
-
-                        let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                         let geocercaVisual = null;
 
                         if (esFilaManual) {
-                            // 🍊 REQUERIMIENTO 2: Círculo naranja real de 30 metros para el Inicio Manual (Sin zona)
+                            // 🍊 REQUERIMIENTO 2: Círculo naranja independiente de 30 metros para el Inicio Manual
                             geocercaVisual = L.circle(centroideLatLng, { radius: 30, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
                         } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                             let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
@@ -731,12 +731,11 @@
                             geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         }
 
-                        // 🎯 REQUERIMIENTO 1: FijarTooltip en el centro matemático estricto de la pista
+                        // 🎯 REQUERIMIENTO 1: Texto fijado estrictamente flotando en el medio del centroide calculado
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
-                        // Almacenar coordenadas para OSRM
                         puntosParaRutaOSRM.push({
                             coordenada: centroideLatLng,
                             esCompletado: esCompletado,
@@ -746,7 +745,7 @@
                     }
                 });
 
-                // 🚀 REQUERIMIENTO 3 y 4: ENRUTAMIENTO SIMULADO CON MOTOR OSRM POR CARRETERA Y SEPARACIÓN PARALELA (||)
+                // 🚀 REQUERIMIENTO 3 y 4: SIMULACIÓN DE CARRETERAS CON MOTOR OSRM Y SEPARACIÓN VISUAL PARALELA (||)
                 function aplicarDesfaseParalelo(coords, offsetMetros) {
                     let factor = offsetMetros / 111111; 
                     return coords.map(c => [c[0] + factor, c[1] + factor]);
@@ -756,7 +755,6 @@
                     if (idx >= puntosParaRutaOSRM.length - 1) return;
                     let puntoDestino = puntosParaRutaOSRM[idx + 1];
 
-                    // Regla de negocio: Trazar solo si se tocó o es manual, hacia el siguiente hito tocado u omitido
                     if ((puntoOrigen.esCompletado || puntoOrigen.esManual) && (puntoDestino.esCompletado || puntoDestino.esOmitido)) {
                         let coordInicio = puntoOrigen.coordenada;
                         let coordFin = puntoDestino.coordenada;
@@ -769,7 +767,7 @@
                                 if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                     let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                     
-                                    // Separación ancha paralelo (||) para tramos en gris u omisiones avanzadas
+                                    // Separación paralela ancha de 45m si el tramo es omitido o es de retorno
                                     if (esTramoGris || currentIdx > 1) { 
                                         caminoCarretera = aplicarDesfaseParalelo(caminoCarretera, 45); 
                                     }
@@ -781,7 +779,7 @@
 
                                     L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
                                 }
-                            }).catch(e => console.error("Error tramo OSRM:", e));
+                            }).catch(e => console.error("Error simulación tramo OSRM:", e));
                     }
                 });
 
