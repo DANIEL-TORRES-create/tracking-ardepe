@@ -648,7 +648,7 @@
                         horaRealSalida = "---";
                     } 
                     else {
-                        // 🎯 REQUERIMIENTO: Si es el hito 1 (Origen), km plan siempre sale como "--"
+                        // 🎯 CORRECCIÓN: Para el hito Origen (index 0) los km planificados siempre salen como "--"
                         if (index === 0) {
                             distPlanKm = "---";
                         } else if (tieneHitoManualActivo && index === 2) {
@@ -663,10 +663,10 @@
                         let basePlanHoraSalida = null;
 
                         if (tieneHitoManualActivo && index === 2) {
-                            // 🎯 REQUERIMIENTO PUNTO 2 REAL: Resta llegada real menos la salida del hito manual
+                            // 🎯 PUNTO 2 REAL: Resta llegada real del hito 2 menos la salida del hito manual
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
-                            // 🎯 REQUERIMIENTO PUNTO 2 PLAN: Considera desde el Origen estricto (Hito 0)
+                            // 🎯 PUNTO 2 PLAN: Aritmética de itinerario base partiendo desde el Origen (Hito 0)
                             basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
                         } else if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
@@ -678,7 +678,7 @@
                             basePlanHora = anterior.planHora;
                         }
 
-                        // 🎯 REQUERIMIENTO: Evitar cálculos erráticos (como las 12h de la nada) en el hito origen
+                        // 🎯 CORRECCIÓN: Si es el Origen (index 0) limpiamos los tiempos de viaje basuras (Evita las 12 horas)
                         if (index === 0) {
                             tiempoViajePlan = "---";
                             tiempoViajeReal = "---";
@@ -762,8 +762,10 @@
                         let geocercaVisual = null;
 
                         if (esFilaManual) {
+                            // 🍊 Círculo naranja exacto de 30 metros para el Inicio Manual (GPS real)
                             geocercaVisual = L.circle(centroideLatLng, { radius: 30, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
                         } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                            // 🟩 Polígonos con la forma exacta y nativa de MyGeotab
                             let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
                             geocercaVisual = L.polygon(verticesLeaflet, { color: colorHito, fillColor: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         } else {
@@ -774,14 +776,15 @@
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
+                        // 🎯 CORRECCIÓN EFECTO CORCHETE: Si puntoEntradaRuta es válido entra por ahí, sino usa el centroide de apoyo
                         puntosParaRutaOSRM.push({
-                            coordenada: puntoEntradaRuta,
+                            coordenada: puntoEntradaRuta || centroideLatLng,
                             esCompletado: esCompletado,
                             esOmitido: esOmitido,
                             esManual: esFilaManual
                         });
                     }
-                }); // 🎯 LLAVE DE CIERRE AGREGADA AQUÍ (Sintaxis reparada)
+                });
 
                 function aplicarDesfaseParalelo(coords, offsetMetros) {
                     let factor = offsetMetros / 111111; 
@@ -795,6 +798,8 @@
                     if ((puntoOrigen.esCompletado || puntoOrigen.esManual) && (puntoDestino.esCompletado || puntoDestino.esOmitido)) {
                         let coordInicio = puntoOrigen.coordenada;
                         let coordFin = puntoDestino.coordenada;
+                        
+                        // 🎯 CONTINUIDAD GRIS: El tramo completo es gris si el origen O el destino son omitidos
                         let esTramoGris = puntoOrigen.esOmitido || puntoDestino.esOmitido;
                         let currentIdx = idx;
 
