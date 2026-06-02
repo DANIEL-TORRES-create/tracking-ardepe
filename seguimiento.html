@@ -726,9 +726,8 @@
                     }
 
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
-                    
                     let centroideLatLng = null;
-                    let puntoEntradaCarretera = null; // 🚀 PUNTO DE ENTRADA EXCLUSIVO PARA OSRM
+                    let puntoEntradaRuta = null; 
 
                     if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                         let sumaLat = 0, sumaLng = 0;
@@ -737,22 +736,23 @@
                             sumaLng += pt.x;
                         });
                         centroideLatLng = [sumaLat / zonaMatch.points.length, sumaLng / zonaMatch.points.length];
-                        puntoEntradaCarretera = [zonaMatch.points[0].y, zonaMatch.points[0].x]; // Evita el efecto corchete
+                        puntoEntradaRuta = [zonaMatch.points[0].y, zonaMatch.points[0].x]; // 🎯 Quita el efecto corchete usando la entrada periférica
                     } else if (zonaMatch) {
                         if (zonaMatch.center) centroideLatLng = [zonaMatch.center.y, zonaMatch.center.x];
                         else if (zonaMatch.y) centroideLatLng = [zonaMatch.y, zonaMatch.x];
-                        puntoEntradaCarretera = centroideLatLng;
+                        puntoEntradaRuta = centroideLatLng;
                     }
 
                     if (esFilaManual && tieneHitoManualActivo && latitudManualOculta) {
                         centroideLatLng = [latitudManualOculta, longitudManualOculta];
-                        puntoEntradaCarretera = centroideLatLng;
+                        puntoEntradaRuta = centroideLatLng;
                     }
 
                     if (centroideLatLng) {
                         let geocercaVisual = null;
 
                         if (esFilaManual) {
+                            // 🍊 Círculo naranja real de 30 metros para el Inicio Manual directo por GPS del Sheet
                             geocercaVisual = L.circle(centroideLatLng, { radius: 30, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
                         } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                             let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
@@ -761,13 +761,13 @@
                             geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         }
 
+                        // 🎯 El texto se fija al centroide, pero la carretera se engancha a la entrada periférica
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
-                        // Alimentamos la simulación con el punto de entrada periférico para eliminar el quiebre en "U"
                         puntosParaRutaOSRM.push({
-                            coordenada: puntoEntradaCarretera,
+                            coordenada: puntoEntradaRuta,
                             esCompletado: esCompletado,
                             esOmitido: esOmitido,
                             esManual: esFilaManual
@@ -788,7 +788,7 @@
                         let coordInicio = puntoOrigen.coordenada;
                         let coordFin = puntoDestino.coordenada;
                         
-                        // 🎯 RECTIFICACIÓN LOGICA: Si el origen O el destino son omitidos, la línea gris continúa sin cortarse
+                        // 🎯 Si el origen O el destino son omitidos, la línea gris continúa punteada sin cortes
                         let esTramoGris = puntoOrigen.esOmitido || puntoDestino.esOmitido;
                         let currentIdx = idx;
 
