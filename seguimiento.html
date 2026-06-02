@@ -585,9 +585,12 @@
                 let origenHitoInicial = itinerarioPlan[0];
                 let esOrigenFrioYEspera = (origenHitoInicial && origenHitoInicial.deteccion === "NO" && !tieneHitoManualActivo);
 
-                let ultimoHitoRealValido = null;
+               let ultimoHitoRealValido = null;
                 let ultimoHitoRealValidoPlan = null;
                 let secuenciaCorrelativa = 1;
+
+                // 🚀 NUEVO RECOLECTOR DE HITOS PARA OSRM
+                let puntosParaRutaOSRM = []; 
 
                 itinerarioPlan.forEach((plan, index) => {
                     let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
@@ -607,6 +610,10 @@
                     }
 
                     let tipoRegistro = esCompletado ? (esFilaManual ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
+                    let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
+                    if (esFilaManual) colorHito = '#d97706'; 
+
+                    let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
@@ -659,11 +666,11 @@
                         if (tieneHitoManualActivo && index === 2) {
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
-                            basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; // 🚀 CAMBIA ESTO
+                            basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
                         } else if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
                             baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
-                            basePlanHoraSalida = ultimoHitoRealValidoPlan ? ultimoHitoRealValidoPlan.planHoraSalida : itinerarioPlan[index - 1].planHoraSalida; // 🚀 CAMBIA ESTO
+                            basePlanHoraSalida = ultimoHitoRealValidoPlan ? ultimoHitoRealValidoPlan.planHoraSalida : itinerarioPlan[index - 1].planHoraSalida; 
                         } else if (index > 0) {
                             let anterior = itinerarioPlan[index - 1];
                             baseSalidaHora = anterior.realHora;
@@ -679,12 +686,11 @@
                         }
 
                         if (odometroAcumulado > 0 && index > 0) {
-                         distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
-                         difKm = distPlanKm - distRealTramo;
-
-                            if (difKm >= 0) semaforoDistancia = "verde";
-                            else if (difKm >= -5) semaforoDistancia = "mostaza";
-                            else semaforoDistancia = "rojo";
+                             distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
+                             difKm = distPlanKm - distRealTramo;
+                             if (difKm >= 0) semaforoDistancia = "verde";
+                             else if (difKm >= -5) semaforoDistancia = "mostaza";
+                             else semaforoDistancia = "rojo";
                         }
                     }
 
@@ -722,32 +728,51 @@
                     }
 
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                    
+                    // 🎯 REQUERIMIENTO 1: CALCULO DE CENTROIDE GEOMÉTRICO ÚNICO
                     let centroideLatLng = null;
-                    if (zonaMatch) {
+                    if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                        let sumaLat = 0, sumaLng = 0;
+                        zonaMatch.points.forEach(pt => {
+                            sumaLat += pt.y;
+                            sumaLng += pt.x;
+                        });
+                        centroideLatLng = [sumaLat / zonaMatch.points.length, sumaLng / zonaMatch.points.length];
+                    } else if (zonaMatch) {
                         if (zonaMatch.center) centroideLatLng = [zonaMatch.center.y, zonaMatch.center.x];
                         else if (zonaMatch.y) centroideLatLng = [zonaMatch.y, zonaMatch.x];
-                        else if (zonaMatch.points && zonaMatch.points[0]) centroideLatLng = [zonaMatch.points[0].y, zonaMatch.points[0].x];
                     }
 
-                    if (esFilaManual && tieneHitoManualActivo && real && real.latitud_manual) {
-                        centroideLatLng = [parseFloat(real.latitud_manual), parseFloat(real.longitud_manual)];
+                    if (esFilaManual && tieneHitoManualActivo && latitudManualOculta) {
+                        centroideLatLng = [latitudManualOculta, longitudManualOculta];
                     }
 
                     if (centroideLatLng) {
-                        let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
-                        if (esFilaManual) colorHito = '#d97706'; 
+                        let geocercaVisual = null;
 
-                        let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
+                        if (esFilaManual) {
+                            // 🍊 REQUERIMIENTO 2: Círculo naranja exacto de 30 metros para el Inicio Manual
+                            geocercaVisual = L.circle(centroideLatLng, { radius: 30, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
+                        } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                            // 🟩 REQUERIMIENTO 1: Polígono real calcando la forma exacta de MyGeotab
+                            let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
+                            geocercaVisual = L.polygon(verticesLeaflet, { color: colorHito, fillColor: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
+                        } else {
+                            geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
+                        }
 
-                        let geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
+                        // 🎯 REQUERIMIENTO 1: Texto fijado estrictamente en el centro geométrico de la zona
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
-
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
-                        if (!esFilaManual && !esOmitido) {
-                            coordenadasPendientes.push(centroideLatLng);
-                        }
+                        // Alimentamos la cola de simulación
+                        puntosParaRutaOSRM.push({
+                            coordenada: centroideLatLng,
+                            esCompletado: esCompletado,
+                            esOmitido: esOmitido,
+                            esManual: esFilaManual
+                        });
                     }
                 });
 
