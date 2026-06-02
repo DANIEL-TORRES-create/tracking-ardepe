@@ -471,17 +471,19 @@
 
             let placaActual = document.getElementById('lbl-sat-placa').innerText;
             
-            if (apiGlobal) {
-                apiGlobal.call("Get", {
-                    typeName: "Zone",
-                    search: { zoneTypeIds: ["b4A3"] } 
-                }, function(zonasGeotab) {
-                    dibujarTodoElModalSatelital(zonasGeotab);
-                }, function(err) {
+            if (document.getElementById('mega-modal-detalle').style.display === 'flex') {
+                if (apiGlobal) {
+                    apiGlobal.call("Get", {
+                        typeName: "Zone",
+                        search: { zoneTypeIds: ["b4A3"] } 
+                    }, function(zonasGeotab) {
+                        dibujarTodoElModalSatelital(zonasGeotab);
+                    }, function(err) {
+                        dibujarTodoElModalSatelital([]);
+                    });
+                } else {
                     dibujarTodoElModalSatelital([]);
-                });
-            } else {
-                dibujarTodoElModalSatelital([]);
+                }
             }
 
             function dibujarTodoElModalSatelital(zonasGeotab) {
