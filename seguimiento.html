@@ -740,7 +740,10 @@
 
                 _satMapa.invalidateSize(true);
                 filtrarTablaSatelital('historial');
-                delete window[nombreCallbackTemporal]; 
+                
+                setTimeout(() => { 
+                    if (window[nombreCallbackTemporal]) delete window[nombreCallbackTemporal]; 
+                }, 1000);
             }
 
     function calcularDiferenciaHorasTexto(horaInicio, horaFin) {
