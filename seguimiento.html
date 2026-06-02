@@ -648,8 +648,9 @@
                         horaRealSalida = "---";
                     } 
                     else {
+                        // 🎯 REQUERIMIENTO: Si es el hito 1 (Origen), km plan siempre sale como "--"
                         if (index === 0) {
-                            distPlanKm = plan.distanciaPlan;
+                            distPlanKm = "---";
                         } else if (tieneHitoManualActivo && index === 2) {
                             distPlanKm = plan.distanciaPlan;
                         } else {
@@ -662,8 +663,10 @@
                         let basePlanHoraSalida = null;
 
                         if (tieneHitoManualActivo && index === 2) {
+                            // 🎯 REQUERIMIENTO PUNTO 2 REAL: Resta llegada real menos la salida del hito manual
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
+                            // 🎯 REQUERIMIENTO PUNTO 2 PLAN: Considera desde el Origen estricto (Hito 0)
                             basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
                         } else if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
@@ -675,20 +678,27 @@
                             basePlanHora = anterior.planHora;
                         }
 
-                        if (basePlanHoraSalida && plan.planHora && basePlanHoraSalida !== "---" && plan.planHora !== "---") {
-                            tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
-                        }
-
-                        if (baseSalidaHora && horaRealLlegada && baseSalidaHora !== "---" && horaRealLlegada !== "---") {
-                            tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
+                        // 🎯 REQUERIMIENTO: Evitar cálculos erráticos (como las 12h de la nada) en el hito origen
+                        if (index === 0) {
+                            tiempoViajePlan = "---";
+                            tiempoViajeReal = "---";
+                        } else {
+                            if (basePlanHoraSalida && plan.planHora && basePlanHoraSalida !== "---" && plan.planHora !== "---") {
+                                tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
+                            }
+                            if (baseSalidaHora && horaRealLlegada && baseSalidaHora !== "---" && horaRealLlegada !== "---") {
+                                tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
+                            }
                         }
 
                         if (odometroAcumulado > 0 && index > 0) {
                              distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
-                             difKm = distPlanKm - distRealTramo;
-                             if (difKm >= 0) semaforoDistancia = "verde";
-                             else if (difKm >= -5) semaforoDistancia = "mostaza";
-                             else semaforoDistancia = "rojo";
+                             if (distPlanKm !== "---") {
+                                 difKm = distPlanKm - distRealTramo;
+                                 if (difKm >= 0) semaforoDistancia = "verde";
+                                 else if (difKm >= -5) semaforoDistancia = "mostaza";
+                                 else semaforoDistancia = "rojo";
+                             }
                         }
                     }
 
@@ -736,7 +746,7 @@
                             sumaLng += pt.x;
                         });
                         centroideLatLng = [sumaLat / zonaMatch.points.length, sumaLng / zonaMatch.points.length];
-                        puntoEntradaRuta = [zonaMatch.points[0].y, zonaMatch.points[0].x]; // 🎯 Quita el efecto corchete usando la entrada periférica
+                        puntoEntradaRuta = [zonaMatch.points[0].y, zonaMatch.points[0].x]; 
                     } else if (zonaMatch) {
                         if (zonaMatch.center) centroideLatLng = [zonaMatch.center.y, zonaMatch.center.x];
                         else if (zonaMatch.y) centroideLatLng = [zonaMatch.y, zonaMatch.x];
@@ -752,7 +762,6 @@
                         let geocercaVisual = null;
 
                         if (esFilaManual) {
-                            // 🍊 Círculo naranja real de 30 metros para el Inicio Manual directo por GPS del Sheet
                             geocercaVisual = L.circle(centroideLatLng, { radius: 30, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
                         } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                             let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
@@ -761,7 +770,6 @@
                             geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         }
 
-                        // 🎯 El texto se fija al centroide, pero la carretera se engancha a la entrada periférica
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
@@ -773,7 +781,7 @@
                             esManual: esFilaManual
                         });
                     }
-                });
+                }); // 🎯 LLAVE DE CIERRE AGREGADA AQUÍ (Sintaxis reparada)
 
                 function aplicarDesfaseParalelo(coords, offsetMetros) {
                     let factor = offsetMetros / 111111; 
@@ -787,8 +795,6 @@
                     if ((puntoOrigen.esCompletado || puntoOrigen.esManual) && (puntoDestino.esCompletado || puntoDestino.esOmitido)) {
                         let coordInicio = puntoOrigen.coordenada;
                         let coordFin = puntoDestino.coordenada;
-                        
-                        // 🎯 Si el origen O el destino son omitidos, la línea gris continúa punteada sin cortes
                         let esTramoGris = puntoOrigen.esOmitido || puntoDestino.esOmitido;
                         let currentIdx = idx;
 
