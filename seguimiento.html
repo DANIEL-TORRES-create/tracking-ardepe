@@ -476,45 +476,84 @@
         const nombreCallbackTemporal = "cb_satelital_" + Date.now();
         window[nombreCallbackTemporal] = function(datosSeguimiento) {
             _satCacheDatosRows = [];
+            let coordenadasRecorridas = [];
             let coordenadasPendientes = [];
             let camionCoordenadaVivo = null;
-            let puntosParaRutaOSRM = []; // Recolector matemático para el trazado por carretera
+            let horaArranqueFiltroGps = null;
+            let puntosParaRutaOSRM = []; // Para el ruteo por carretera
 
             let placaActual = document.getElementById('lbl-sat-placa').innerText;
             
-            // 🚀 AJUSTE SEGURO: Jalar posición en vivo del camión y saltar directo a las geocercas sin romper la cadena
-            if (apiGlobal) {
-                apiGlobal.call("Get", {
-                    typeName: "Device",
-                    search: { name: placaActual }
-                }, function(devices) {
-                    if (devices && devices.length > 0) {
-                        apiGlobal.call("Get", {
-                            typeName: "DeviceStatusInfo",
-                            search: { deviceSearch: { id: devices[0].id } }
-                        }, function(statusResult) {
-                            if (statusResult && statusResult.length > 0 && statusResult[0].latitude) {
-                                camionCoordenadaVivo = [statusResult[0].latitude, statusResult[0].longitude];
-                            }
-                            recuperarGeocercasNativas();
-                        }, function(err) { recuperarGeocercasNativas(); });
-                    } else { recuperarGeocercasNativas(); }
-                }, function(err) { recuperarGeocercasNativas(); });
-            } else {
-                recuperarGeocercasNativas();
+            // 🟢 SE MANTIENE TU CADENA DE TELEMETRÍA ORIGINAL INTACTA PARA QUE LA TABLA PRINCIPAL CONECTE
+            apiGlobal.call("Get", {
+                typeName: "Device",
+                search: { name: placaActual }
+            }, function(devices) {
+                if (devices && devices.length > 0) {
+                    let deviceId = devices[0].id;
+                    
+                    apiGlobal.call("Get", {
+                        typeName: "DeviceStatusInfo",
+                        search: { deviceSearch: { id: deviceId } }
+                    }, function(statusResult) {
+                        if (statusResult && statusResult.length > 0 && statusResult[0].latitude) {
+                            camionCoordenadaVivo = [statusResult[0].latitude, statusResult[0].longitude];
+                        }
+                        consultarHistorialRecorridoGps(deviceId);
+                    }, function(err) { consultarCentroidesZonas(); });
+                } else {
+                    consultarCentroidesZonas();
+                }
+            }, function(err) { consultarCentroidesZonas(); });
+
+            function consultarHistorialRecorridoGps(deviceId) {
+                let primerHitoReal = Array.isArray(datosSeguimiento) ? datosSeguimiento[0] : null;
+                let horaSalidaBase = primerHitoReal ? primerHitoReal.hora_real_salida : null;
+                
+                let hitoManual = itinerarioPlan.find(p => p.punto === "INICIO_MANUAL");
+                if (hitoManual && hitoManual.realHora && hitoManual.realHora !== "---") {
+                    horaSalidaBase = hitoManual.realHora;
+                }
+
+                if (horaSalidaBase && horaSalidaBase !== "---") {
+                    let fechaIso = convertirFechaAFormatGps(horaSalidaBase);
+                    horaArranqueFiltroGps = fechaIso;
+
+                    apiGlobal.call("Get", {
+                        typeName: "LogRecord",
+                        search: {
+                            deviceSearch: { id: deviceId },
+                            fromDate: fechaIso,
+                            toDate: new Date().toISOString()
+                        }
+                    }, function(logsGps) {
+                        if (logsGps && logsGps.length > 0) {
+                            let ultimoMins = -1;
+                            logsGps.forEach(log => {
+                                let fechaLog = new Date(log.dateTime);
+                                let minsActuales = Math.floor(fechaLog.getTime() / (1000 * 60 * 5)); 
+                                if (minsActuales !== ultimoMins) {
+                                    coordenadasRecorridas.push([log.latitude, log.longitude]);
+                                    ultimoMins = minsActuales;
+                                }
+                            });
+                        }
+                        consultarCentroidesZonas();
+                    }, function(err) { consultarCentroidesZonas(); });
+                } else {
+                    consultarCentroidesZonas();
+                }
             }
 
-            function recuperarGeocercasNativas() {
-                if (apiGlobal) {
-                    apiGlobal.call("Get", {
-                        typeName: "Zone",
-                        search: { zoneTypeIds: ["b4A3"] } 
-                    }, function(zonasGeotab) {
-                        dibujarTodoElModalSatelital(zonasGeotab);
-                    }, function(err) { dibujarTodoElModalSatelital([]); });
-                } else {
+            function consultarCentroidesZonas() {
+                apiGlobal.call("Get", {
+                    typeName: "Zone",
+                    search: { zoneTypeIds: ["b4A3"] } 
+                }, function(zonasGeotab) {
+                    dibujarTodoElModalSatelital(zonasGeotab);
+                }, function(err) {
                     dibujarTodoElModalSatelital([]);
-                }
+                });
             }
 
             function dibujarTodoElModalSatelital(zonasGeotab) {
@@ -581,10 +620,6 @@
                     }
 
                     let tipoRegistro = esCompletado ? (esFilaManual ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
-                    let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
-                    if (esFilaManual) colorHito = '#d97706'; 
-
-                    let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
@@ -700,7 +735,7 @@
 
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     
-                    // 🎯 REQUERIMIENTO 1: CENTROIDE GEOMÉTRICO (Mapeo idéntico para anclar tooltip y alimentar OSRM)
+                    // 🎯 REQUERIMIENTO 1: CENTROIDE GEOMÉTRICO FIJO PARA EL TEXTO Y RUTAS
                     let centroideLatLng = null;
                     if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                         let sumaLat = 0, sumaLng = 0;
@@ -719,19 +754,23 @@
                     }
 
                     if (centroideLatLng) {
+                        let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
+                        if (esFilaManual) colorHito = '#d97706'; 
+
+                        let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                         let geocercaVisual = null;
 
                         if (esFilaManual) {
-                            // 🍊 REQUERIMIENTO 2: Círculo naranja independiente de 30 metros para el Inicio Manual
+                            // 🍊 REQUERIMIENTO 2: Círculo naranja real de 30 metros para el Inicio Manual
                             geocercaVisual = L.circle(centroideLatLng, { radius: 30, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
                         } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                            // 🟩 REQUERIMIENTO: Polígonos calcando la forma exacta de MyGeotab
                             let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
                             geocercaVisual = L.polygon(verticesLeaflet, { color: colorHito, fillColor: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         } else {
                             geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         }
 
-                        // 🎯 REQUERIMIENTO 1: Texto fijado estrictamente flotando en el medio del centroide calculado
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
@@ -745,7 +784,7 @@
                     }
                 });
 
-                // 🚀 REQUERIMIENTO 3 y 4: SIMULACIÓN DE CARRETERAS CON MOTOR OSRM Y SEPARACIÓN VISUAL PARALELA (||)
+                // 🚀 REQUERIMIENTO 3 y 4: SIMULACIÓN DE TRAZADOS CON MOTOR OSRM Y SEPARACIÓN PARALELA ANCHA (||)
                 function aplicarDesfaseParalelo(coords, offsetMetros) {
                     let factor = offsetMetros / 111111; 
                     return coords.map(c => [c[0] + factor, c[1] + factor]);
@@ -767,7 +806,6 @@
                                 if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                     let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                     
-                                    // Separación paralela ancha de 45m si el tramo es omitido o es de retorno
                                     if (esTramoGris || currentIdx > 1) { 
                                         caminoCarretera = aplicarDesfaseParalelo(caminoCarretera, 45); 
                                     }
