@@ -758,10 +758,30 @@
                         if (esFilaManual) colorHito = '#d97706'; 
 
                         let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
+                        let geocercaVisual = null;
 
-                        let geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
+                        // 🚀 CAMBIO: Si la zona tiene puntos, dibuja el polígono real exacto de Geotab
+                        if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                            let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
+                            geocercaVisual = L.polygon(verticesLeaflet, { 
+                                color: colorHito, 
+                                fillColor: colorHito, 
+                                weight: 2, 
+                                fillOpacity: 0.35 
+                            }).addTo(window._satMarcadoresHitosGrupo);
+                        } else {
+                            // Respaldo en círculo si es hito manual o no hay polígono
+                            geocercaVisual = L.circle(centroideLatLng, { 
+                                radius: 80, 
+                                fillColor: colorHito, 
+                                color: colorHito, 
+                                weight: 2, 
+                                fillOpacity: 0.35 
+                            }).addTo(window._satMarcadoresHitosGrupo);
+                        }
+
+                        // El texto fijo y el popup se quedan igual mapeados a la nueva figura
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
-
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
