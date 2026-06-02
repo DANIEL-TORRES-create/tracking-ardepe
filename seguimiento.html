@@ -701,7 +701,7 @@
                     let puntoOrigen = puntosParaRutaOSRM[i];
                     let puntoDestino = puntosParaRutaOSRM[i + 1];
 
-                    // Regla: Se une si el origen está tocado o es manual, y el destino fue tocado u omitido
+                    // 🎯 CORRECCIÓN AQUÍ: Evaluamos las propiedades nativas del objeto inyectado (.esCompletado / .esManual / .esOmitido)
                     if ((puntoOrigen.esCompletado || puntoOrigen.esManual) && (puntoDestino.esCompletado || puntoDestino.esOmitido)) {
                         let coordInicio = puntoOrigen.coordenada;
                         let coordFin = puntoDestino.coordenada;
