@@ -823,13 +823,27 @@
 
     function convertirFechaAFormatGps(strFecha) {
         try {
-            let partes = strFecha.split(" ");
+            // Separa "17/04/2026" de "08:34:50"
+            let partes = strFecha.trim().split(/\s+/);
             let dmp = partes[0].split("/");
             let hmp = partes[1].split(":");
-            let d = parseInt(dmp[0],10), m = parseInt(dmp[1],10)-1, a = parseInt(dmp[2],10);
-            let h = parseInt(hmp[0],10), min = parseInt(hmp[1],10), s = parseInt(hmp[2],10)||0;
-            return new Date(a, m, d, h, min, s).toISOString();
-        } catch(e) { return new Date().toISOString(); }
+            
+            let d = parseInt(dmp[0], 10);
+            let m = parseInt(dmp[1], 10) - 1; // Enero es 0
+            let a = parseInt(dmp[2], 10);
+            let h = parseInt(hmp[0], 10);
+            let min = parseInt(hmp[1], 10);
+            let s = parseInt(hmp[2], 10) || 0;
+            
+            // Crear la fecha en base al huso horario local de tu operación
+            let fechaObjeto = new Date(a, m, d, h, min, s);
+            
+            // 🚀 LA CORRECCIÓN: Exporta en formato ISO nativo (.toISOString) que exige Geotab
+            return fechaObjeto.toISOString(); 
+        } catch(e) { 
+            console.error("Error al formatear fecha:", e);
+            return new Date().toISOString(); 
+        }
     }
 
     window.filtrarTablaSatelital = function(tipoFiltro) {
