@@ -813,15 +813,15 @@
                     return coords.map(c => [c[0] + factor, c[1] + factor]);
                 }
 
-                for (let i = 0; i < puntosParaRutaOSRM.length - 1; i++) {
-                    let puntoOrigen = puntosParaRutaOSRM[i];
-                    let puntoDestino = puntosParaRutaOSRM[i + 1];
+                puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
+                    if (idx >= puntosParaRutaOSRM.length - 1) return;
+                    let puntoDestino = puntosParaRutaOSRM[idx + 1];
 
-                    // Unimos secuencialmente si el hito de origen está tocado/manual y el destino está tocado/omitido
                     if ((puntoOrigen.esCompletado || puntoOrigen.esManual) && (puntoDestino.esCompletado || puntoDestino.esOmitido)) {
                         let coordInicio = puntoOrigen.coordenada;
                         let coordFin = puntoDestino.coordenada;
                         let esTramoGris = puntoDestino.esOmitido;
+                        let tramoIndex = idx; // Captura segura del índice del tramo actual para el hilo asíncrono
 
                         fetch(`https://router.project-osrm.org/route/v1/driving/${coordInicio[1]},${coordInicio[0]};${coordFin[1]},${coordFin[0]}?overview=full&geometries=geojson`)
                             .then(r => r.json())
@@ -829,8 +829,8 @@
                                 if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                     let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                     
-                                    // Separación ancha paralelo si el tramo es omitido (gris) o si ya es un tramo avanzado para que no tape el flujo de ida
-                                    if (esTramoGris || i > 1) { 
+                                    // 🎯 RECTIFICADO: Usa 'tramoIndex' en lugar de 'i' para que no rompa el paralelismo visual
+                                    if (esTramoGris || tramoIndex > 1) { 
                                         caminoCarretera = aplicarDesfaseParalelo(caminoCarretera, 45); 
                                     }
 
@@ -839,12 +839,11 @@
                                         { color: colorLinea, weight: 4, opacity: 0.7, dashArray: '5, 10' } : 
                                         { color: colorLinea, weight: 5, opacity: 0.85 };
 
-                                    // Guardar el trazo en una variable local dinámica de Leaflet para el mapa
                                     L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
                                 }
                             }).catch(e => console.error("Error simulación tramo OSRM:", e));
                     }
-                }
+                });
 
                 if (camionCoordenadaVivo) {
                     _satMarcadorCamion = L.marker(camionCoordenadaVivo).addTo(_satMapa);
