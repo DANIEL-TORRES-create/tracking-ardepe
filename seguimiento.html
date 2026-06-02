@@ -650,8 +650,9 @@
                         horaRealSalida = "---";
                     } 
                     else {
+                        // 🎯 CORRECCIÓN: Si es el Hito Origen (index 0), km planificados siempre sale como "---"
                         if (index === 0) {
-                            distPlanKm = plan.distanciaPlan;
+                            distPlanKm = "---";
                         } else if (tieneHitoManualActivo && index === 2) {
                             distPlanKm = plan.distanciaPlan;
                         } else {
@@ -664,8 +665,10 @@
                         let basePlanHoraSalida = null;
 
                         if (tieneHitoManualActivo && index === 2) {
+                            // 🎯 REQUERIMIENTO PUNTO 2 REAL: Resta llegada real del hito 2 menos la salida del hito manual (clic)
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
+                            // 🎯 REQUERIMIENTO PUNTO 2 PLAN: Considera la planificación original desde el Origen estricto (Hito 0)
                             basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
                         } else if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
@@ -677,20 +680,27 @@
                             basePlanHora = anterior.planHora;
                         }
 
-                        if (basePlanHoraSalida && plan.planHora && basePlanHoraSalida !== "---" && plan.planHora !== "---") {
-                            tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
-                        }
-
-                        if (baseSalidaHora && horaRealLlegada && baseSalidaHora !== "---" && horaRealLlegada !== "---") {
-                            tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
+                        // 🎯 CORRECCIÓN: Si es el hito de Origen (index 0), limpiamos los tiempos de viaje (Evita las 12:00 horas basura)
+                        if (index === 0) {
+                            tiempoViajePlan = "---";
+                            tiempoViajeReal = "---";
+                        } else {
+                            if (basePlanHoraSalida && plan.planHora && basePlanHoraSalida !== "---" && plan.planHora !== "---") {
+                                tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
+                            }
+                            if (baseSalidaHora && horaRealLlegada && baseSalidaHora !== "---" && horaRealLlegada !== "---") {
+                                tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
+                            }
                         }
 
                         if (odometroAcumulado > 0 && index > 0) {
                              distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
-                             difKm = distPlanKm - distRealTramo;
-                             if (difKm >= 0) semaforoDistancia = "verde";
-                             else if (difKm >= -5) semaforoDistancia = "mostaza";
-                             else semaforoDistancia = "rojo";
+                             if (distPlanKm !== "---") {
+                                 difKm = distPlanKm - distRealTramo;
+                                 if (difKm >= 0) semaforoDistancia = "verde";
+                                 else if (difKm >= -5) semaforoDistancia = "mostaza";
+                                 else semaforoDistancia = "rojo";
+                             }
                         }
                     }
 
