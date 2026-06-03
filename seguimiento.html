@@ -664,23 +664,22 @@
                         let baseOdometro = 0;
                         let basePlanHoraSalida = null;
 
-                        // 🏁 REGLA 1: Tratamiento especial para el Punto 2 cuando hay acción manual activa
+                        // 🏁 REGLA 1: Tratamiento especial para el primer hito tocado después del manual (Punto 2)
                         if (tieneHitoManualActivo && index === 2) {
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
                             // Fuerza el cálculo planificado estrictamente contra el ETD (Salida) del Origen (Hito 0)
                             basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
                         } 
-                        // 🏁 REGLA 2: Lógica para hitos normales o recuperados post-omisión
+                        // 🏁 REGLA 2: Lógica para el arrastre acumulativo de hitos omitidos
                         else if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
                             baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
                             
-                            // Bucle hacia atrás: Busca el último hito que NO haya sido omitido para arrastrar su ETD
+                            // Bucle retrospectivo: Busca el último hito válido para heredar su ETD planificado
                             let idxBusqueda = index - 1;
                             while (idxBusqueda >= 0) {
                                 let hitoPrevio = itinerarioPlan[idxBusqueda];
-                                // Si el hito previo se completó o es el origen estricto, heredamos su salida planificada (etd)
                                 if (hitoPrevio.deteccion === "SI" || hitoPrevio.deteccion === "FORZADO" || idxBusqueda === 0) {
                                     basePlanHoraSalida = hitoPrevio.planHoraSalida;
                                     break;
@@ -692,12 +691,12 @@
                             basePlanHoraSalida = itinerarioPlan[index - 1].planHoraSalida; 
                         }
 
-                        // 🎯 REQUERIMIENTO: Guiones automáticos para congelar el origen y las filas omitidas
+                        // 🎯 REQUERIMIENTO: Guiones para congelar el origen [0] y las filas omitidas intermedias
                         if (index === 0 || esOmitido) {
                             tiempoViajePlan = "---";
                             tiempoViajeReal = "---";
                         } else {
-                            // Ejecuta las restas enviando las horas al formateador independiente
+                            // Se envían los strings directos al nuevo formateador Date inmune a comas
                             tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                             tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
                         }
@@ -856,16 +855,44 @@
 
     function calcularDiferenciaHorasTexto(horaInicio, horaFin) {
         try {
-            let pI = horaInicio.split(" ")[1] ? horaInicio.split(" ")[1].split(":") : horaInicio.split(":");
-            let pF = horaFin.split(" ")[1] ? horaFin.split(" ")[1].split(":") : horaFin.split(":");
-            let minInicio = (parseInt(pI[0], 10) * 60) + parseInt(pI[1], 10);
-            let minFin = (parseInt(pF[0], 10) * 60) + parseInt(pF[1], 10);
-            let diff = minFin - minInicio;
-            if (diff < 0) diff += 1440; 
-            let h = Math.floor(diff / 60);
-            let m = diff % 60;
+            if (!horaInicio || !horaFin || horaInicio === "---" || horaFin === "---") return "---";
+            
+            // Limpiar comas y espacios dobles para homogeneizar los formatos de Google y Geotab
+            let strI = horaInicio.toString().replace(",", "").trim();
+            let strF = horaFin.toString().replace(",", "").trim();
+            
+            // Función interna para convertir cualquier cadena "DD/MM/YYYY HH:MM:SS" a un objeto Date real
+            let formatearAFechaObjeto = (stringFecha) => {
+                let partes = stringFecha.split(/\s+/);
+                let fechaPartes = partes[0].split("/");
+                let horaPartes = partes[1].split(":");
+                
+                let dia = parseInt(fechaPartes[0], 10);
+                let mes = parseInt(fechaPartes[1], 10) - 1; // Enero es 0
+                let anio = parseInt(fechaPartes[2], 10);
+                let hora = parseInt(horaPartes[0], 10);
+                let min = parseInt(horaPartes[1], 10);
+                let seg = parseInt(horaPartes[2], 10) || 0;
+                
+                return new Date(anio, mes, dia, hora, min, seg);
+            };
+
+            let dateInicio = formatearAFechaObjeto(strI);
+            let dateFin = formatearAFechaObjeto(strF);
+            
+            // Calcular la diferencia neta en milisegundos absolutos
+            let diffMs = dateFin.getTime() - dateInicio.getTime();
+            
+            // Si por un desfase de clics la resta da negativa, extraemos el valor absoluto transcurrido
+            let totalMins = Math.abs(Math.floor(diffMs / (1000 * 60)));
+            let h = Math.floor(totalMins / 60);
+            let m = totalMins % 60;
+
             return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
-        } catch(e) { return "---"; }
+        } catch(e) { 
+            console.error("Error matemático en cálculo de horas:", e);
+            return "---"; 
+        }
     }
 
     function convertirFechaAFormatGps(strFecha) {
