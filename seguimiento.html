@@ -34,7 +34,7 @@
         </div>
 
         <div class="bunker-contador-flota">
-            <i class="fas fa-microchip" style="color: #38bdf8;"></i> FLOTA MONITORIZADA: <span id="num-flota-total">0</span> VIAJES
+            <i class="fas fa-microchip" style="color: #38bdf8;"></i> TOTAL UNIDADES: <span id="num-flota-total">0</span> VIAJES
         </div>
 
         <div class="grupo-inputs-predictivos" style="display: flex; flex-direction: column; gap: 6px;">
@@ -246,7 +246,31 @@
         viajesFiltrados.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
             let salidaVisual = (v.salidaReal && v.salidaReal !== "---") ? v.salidaReal : "---";
-            let salidaPlanVisual = (v.etdOrigen && v.etdOrigen !== "---") ? v.etdOrigen.replace("'", "") : "---"; // Limpieza del prefijo Excel
+            let salidaPlanVisual = "---";
+            if (v.etdOrigen && v.etdOrigen !== "---") {
+                try {
+                    let strEtd = v.etdOrigen.replace("'", "").trim(); // Limpia prefijos de Excel
+                    
+                    if (strEtd.indexOf("-") > -1) {
+                        let fechaNormalizada = strEtd.replace(/-/g, "/");
+                        let objFecha = new Date(fechaNormalizada);
+                        
+                        if (!isNaN(objFecha.getTime())) {
+                            salidaPlanVisual = objFecha.getDate() + "/" + 
+                                               (objFecha.getMonth() + 1) + "/" + 
+                                               objFecha.getFullYear() + ", " + 
+                                               objFecha.getHours() + ":" + 
+                                               (objFecha.getMinutes() < 10 ? "0" : "") + objFecha.getMinutes() + ":00";
+                        } else {
+                            salidaPlanVisual = strEtd;
+                        }
+                    } else {
+                        salidaPlanVisual = strEtd;
+                    }
+                } catch(e) {
+                    salidaPlanVisual = v.etdOrigen;
+                }
+            }
             
             if (v.itinerarioFull) {
                 window._cacheItinerarios[v.idViaje] = typeof v.itinerarioFull === 'string' ? v.itinerarioFull : JSON.stringify(v.itinerarioFull);
@@ -1076,6 +1100,15 @@
                         this.style.opacity = "1";
                         
                         estadoFiltroActivo = this.getAttribute("data-estado");
+
+                        // 🎯 OPERACIÓN ADICIONAL: Si presiona "Todos", limpia por completo las búsquedas escritas
+                        if (estadoFiltroActivo === "TODOS") {
+                            const txtPlaca = document.getElementById("txt-filtro-placa");
+                            const txtRuta = document.getElementById("txt-filtro-ruta");
+                            if (txtPlaca) txtPlaca.value = "";
+                            if (txtRuta) txtRuta.value = "";
+                        }
+                        
                         filtrarYMostrarTabla();
                     });
                 });
