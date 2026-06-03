@@ -552,7 +552,7 @@
                 let tieneHitoManualActivo = false;
                 let odometroManualOculto = 0;
                 let horaSalidaManualOculta = "---";
-
+                let itinerarioPlanOriginalAmarrado = JSON.parse(JSON.stringify(itinerarioPlan));
                 if (indiceManual > -1) {
                     let [nodoManual] = itinerarioPlan.splice(indiceManual, 1);
                     itinerarioPlan.splice(1, 0, nodoManual);
@@ -664,39 +664,37 @@
                         let baseOdometro = 0;
                         let basePlanHoraSalida = null;
 
-                        // 🏁 REGLA 1: Caso especial Punto 2 con acción manual activa
+                        // 🏁 MUNDO REAL: Mantiene intacta la lógica que ya te calculaba bien los tiempos físicos
                         if (tieneHitoManualActivo && index === 2) {
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
-                            
-                            // Si el Origen no se inició por GPS, el plan del Punto 2 descuenta contra el clic manual
-                            if (esOrigenOmitido || itinerarioPlan[0].deteccion === "NO") {
-                                basePlanHoraSalida = horaSalidaManualOculta; 
-                            } else {
-                                basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
-                            }
-                        } 
-                        // 🏁 REGLA 2: Caso normal y arrastre acumulativo de hitos omitidos
-                        else {
-                            if (ultimoHitoRealValido) {
-                                baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
-                                baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
-                            } else if (index > 0) {
-                                baseSalidaHora = itinerarioPlan[index - 1].realHora;
-                            }
+                        } else if (ultimoHitoRealValido) {
+                            baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
+                            baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
+                        } else if (index > 0) {
+                            baseSalidaHora = itinerarioPlan[index - 1].realHora;
+                        }
 
-                            // 🚀 BÚSQUEDA RETROSPECTIVA DIRECTA EN EL ARRAY ORIGINAL DE ITINERARIO
-                            let idxBusqueda = index - 1;
-                            while (idxBusqueda >= 0) {
-                                let hitoPrevio = itinerarioPlan[idxBusqueda];
-                                let realPrevio = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === hitoPrevio.punto.toString().toUpperCase().trim()) : null;
-                                let prevCompletado = (hitoPrevio.deteccion === "SI" || hitoPrevio.deteccion === "FORZADO" || !!realPrevio);
+                        // 🚀 MUNDO PLANIFICADO (Inmune al Hito Manual y Omitidos):
+                        // Buscamos de forma retrospectiva en el array espejo original usando el nombre del punto actual
+                        let idxOriginal = itinerarioPlanOriginalAmarrado.findIndex(p => p.punto.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                        
+                        if (idxOriginal > 0) {
+                            let idxBusquedaPlan = idxOriginal - 1;
+                            while (idxBusquedaPlan >= 0) {
+                                let hitoPrevioPlan = itinerarioPlanOriginalAmarrado[idxBusquedaPlan];
+                                
+                                // Buscamos en el itinerario real si ese hito previo fue completado o si es la base (Origen)
+                                let hitoCorrespondienteEnItinerario = itinerarioPlan.find(p => p.punto.toString().toUpperCase().trim() === hitoPrevioPlan.punto.toString().toUpperCase().trim());
+                                let realPrevio = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === hitoPrevioPlan.punto.toString().toUpperCase().trim()) : null;
+                                let prevCompletado = hitoCorrespondienteEnItinerario ? (hitoCorrespondienteEnItinerario.deteccion === "SI" || hitoCorrespondienteEnItinerario.deteccion === "FORZADO" || !!realPrevio) : false;
 
-                                if (prevCompletado || idxBusqueda === 0) {
-                                    basePlanHoraSalida = hitoPrevio.planHoraSalida;
+                                // Si el hito previo fue completado en ruta, o es el origen estricto, tomamos su ETD
+                                if (prevCompletado || idxBusquedaPlan === 0) {
+                                    basePlanHoraSalida = hitoPrevioPlan.planHoraSalida;
                                     break;
                                 }
-                                idxBusqueda--;
+                                idxBusquedaPlan--; // Si fue omitido, salta en cascada acumulando hacia atrás
                             }
                         }
 
@@ -705,7 +703,7 @@
                             tiempoViajePlan = "---";
                             tiempoViajeReal = "---";
                         } else {
-                            // Se ejecutan los cálculos con el extractor de horas puestas en minutos
+                            // Se ejecutan los cálculos con las bases de tiempo perfectamente direccionadas
                             tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                             tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
                         }
