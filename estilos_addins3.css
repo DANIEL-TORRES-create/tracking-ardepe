@@ -17,32 +17,75 @@ body {
    ENCABEZADO (NAV BAR)
    ========================================= */
 .header-container {
-    background-color: var(--navisaf-light);
-    padding: 20px 35px;
-    border-bottom: 4px solid var(--primary);
+    background: linear-gradient(90deg, #002244, #004b93); /* Azul Navisaf corporativo profundo */
+    padding: 18px 35px;
+    border-bottom: 4px solid #38bdf8; /* Línea neón celeste de Geotab */
     display: flex;
     justify-content: space-between;
     align-items: center;
     position: relative;
     z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
+
+.bloque-titulo-bunker {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 .neon-title {
     margin: 0;
-    color: var(--primary);
-    font-size: 24px;
-    font-weight: 800;
-    position: relative;
+    color: #ffffff !important; /* Blanco puro ejecutivo de alto impacto */
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    font-family: 'Lexend', sans-serif;
+    text-transform: uppercase;
 }
-/* El subrayado blanco grueso bajo el título */
-.neon-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: -6px;
-    width: 100%;
-    height: 4px;
-    background: #ffffff;
-    box-shadow: 0 0 8px rgba(255,255,255,0.8);
+
+.subtitulo-bunker {
+    margin: 0;
+    color: #93c5fd; /* Celeste suave de alta legibilidad corporativa */
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-family: 'Lexend', sans-serif;
+}
+
+/* 🕒 PANEL DEL RELOJ EN TIEMPO REAL */
+.bunker-clock-wrapper {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#bunker-time {
+    color: #38bdf8;
+    font-family: monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.ping-bunker-vivo {
+    width: 8px;
+    height: 8px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px #22c55e;
+    animation: pulseClock 1.5s infinite;
+}
+
+@keyframes pulseClock {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 .nav-shortcuts {
     display: flex;
@@ -818,39 +861,38 @@ textarea {
    🚀 BÚNKER DE CONTROLES PRO (ESTADOS Y PREDICTIVOS)
    ========================================= */
 .bunker-controles-superiores {
-    background: linear-gradient(145deg, #0f172a, #1e293b); /* Fondo búnker oscuro ejecutivo */
-    padding: 16px 24px; /* Ajuste sutil de padding para balancear la fila */
-    border-radius: 16px;
+    background: #004b93; /* Fondo exacto Azul Navisaf */
+    padding: 16px 24px;
+    border-radius: 14px;
     margin-bottom: 25px;
-    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.3);
-    border: 1px solid #334155;
+    box-shadow: 0 10px 25px -5px rgba(0, 75, 147, 0.3);
+    border: 1px solid #003366;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 20px;
-    flex-wrap: nowrap; /* 🚀 REGLA DE ORO: Bloquea el salto de línea para mantener la simetría horizontal */
+    gap: 15px;
+    flex-wrap: nowrap; /* Evita que los buscadores o botones se caigan */
 }
 
-/* 🎛️ CONTENEDOR PARA OBLIGAR A LOS BOTONES A QUEDARSE EN UNA SOLA FILA */
 .grupo-filtros-estados {
     display: flex !important;
     flex-direction: row !important;
     gap: 8px !important;
-    flex-wrap: nowrap !important; /* Prohibido que se caigan los botones */
+    flex-wrap: nowrap !important;
 }
 
-/* 📊 INDICADOR EJECUTIVO CENTRAL (OCUPA EL VACÍO VISUAL) */
+/* 📊 INDICADOR CENTRAL DE FLOTA EN VIVO */
 .bunker-contador-flota {
     font-family: 'Lexend', sans-serif;
     font-size: 11px;
     font-weight: 800;
-    color: #64748b;
+    color: #e6f1fa; /* Letras claras de Navisaf */
     letter-spacing: 1px;
     text-transform: uppercase;
-    background: rgba(30, 41, 59, 0.7);
+    background: rgba(0, 35, 68, 0.6);
     padding: 8px 16px;
     border-radius: 8px;
-    border: 1px solid #334155;
+    border: 1px solid rgba(56, 189, 248, 0.2);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -858,61 +900,65 @@ textarea {
 }
 
 #num-flota-total {
-    color: #38bdf8; /* Azul neón brillante para el número */
-    font-size: 14px;
+    color: #38bdf8; /* Número Neón Resaltante */
+    font-size: 15px;
     font-weight: 900;
 }
 
-/* 🎛️ BOTONES DE ESTADO CON LOOK DE PANTALLA TÁCTIL INDUSTRIAL */
+/* 🎛️ BOTONES DE ESTADO: MÁXIMA LEGIBILIDAD (BLANCO SOBRE TRASLÚCIDO) */
 .btn-filto-est {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.03);
-    color: #94a3b8;
-    padding: 10px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff !important; /* SOLUCIÓN: Letras Blancas de alta visibilidad */
+    padding: 10px 16px;
     border-radius: 8px;
     font-size: 11px;
     font-weight: 800;
     font-family: 'Lexend', sans-serif;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease-in-out;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     text-transform: uppercase;
-    opacity: 0.5;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    white-space: nowrap; /* Evita que el texto de dos palabras salte de línea */
+    opacity: 0.65; /* Atenuado elegante pero legible */
+    white-space: nowrap;
 }
 
 .btn-filto-est:hover {
-    opacity: 0.85;
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    opacity: 0.95;
+    background: rgba(255, 255, 255, 0.2);
 }
 
-/* ILUMINACIÓN DE NEÓN CUANDO EL BOTÓN ESTÁ ACTIVO */
+/* ILUMINACIÓN DE NEÓN EXECUTIVA CUANDO EL BOTÓN ESTÁ SELECCIONADO */
 .btn-filto-est.activo[data-estado="TODOS"] { 
-    opacity: 1 !important; background: #38bdf8 !important; color: #0f172a !important; font-weight: 900;
-    box-shadow: 0 0 15px rgba(56, 189, 248, 0.5) !important;
+    opacity: 1 !important; background: #ffffff !important; color: #004b93 !important; font-weight: 900;
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.6) !important; border-color: #ffffff !important;
 }
 .btn-filto-est.activo[data-estado="ATRASADO"] { 
     opacity: 1 !important; background: #ef4444 !important; color: #ffffff !important;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6) !important; border-color: #ef4444 !important;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.7) !important; border-color: #ef4444 !important;
 }
 .btn-filto-est.activo[data-estado="EN CURSO"] { 
     opacity: 1 !important; background: #22c55e !important; color: #ffffff !important;
-    box-shadow: 0 0 15px rgba(34, 197, 94, 0.6) !important; border-color: #22c55e !important;
+    box-shadow: 0 0 14px rgba(34, 197, 94, 0.7) !important; border-color: #22c55e !important;
 }
 .btn-filto-est.activo[data-estado="NO INICIADO"] { 
-    opacity: 1 !important; background: #64748b !important; color: #ffffff !important;
-    box-shadow: 0 0 12px rgba(100, 116, 139, 0.5) !important; border-color: #64748b !important;
+    opacity: 1 !important; background: #94a3b8 !important; color: #ffffff !important;
+    box-shadow: 0 0 12px rgba(148, 163, 184, 0.6) !important; border-color: #94a3b8 !important;
 }
 .btn-filto-est.activo[data-estado="PROGRAMADO"] { 
-    opacity: 1 !important; background: #06b6d4 !important; color: #ffffff !important;
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.6) !important; border-color: #06b6d4 !important;
+    opacity: 1 !important; background: #38bdf8 !important; color: #002244 !important;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.7) !important; border-color: #38bdf8 !important;
 }
 
-/* 🔍 CAJAS DE BÚSQUEDA TECNOLÓGICAS */
+/* 🔍 CONTENEDORES DE BÚSQUEDA INTEGRADOS */
+.grupo-inputs-predictivos {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
 .caja-predictiva-wrapper {
     position: relative;
     display: flex;
@@ -922,31 +968,31 @@ textarea {
 .caja-predictiva-wrapper i {
     position: absolute;
     left: 14px;
-    color: #38bdf8; /* Iconos color azul Geotab brillante */
-    font-size: 14px;
+    color: #38bdf8; /* Icono celeste Geotab */
+    font-size: 13px;
     z-index: 10;
 }
 
 .input-predictivo-pro {
     font-family: 'Lexend', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 11px 14px 11px 40px;
-    border-radius: 8px;
-    border: 1px solid #475569;
-    width: 200px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 10px 14px 10px 38px;
+    border-radius: 6px;
+    border: 1px solid #003366;
+    width: 190px;
     color: #ffffff;
-    background-color: #1e293b; /* Fondo oscuro integrado para el buscador */
-    transition: all 0.25s ease;
+    background-color: #002344; /* Fondo azul noche interno para las cajas */
+    transition: all 0.2s ease;
 }
 
 .input-predictivo-pro:focus {
     outline: none;
     border-color: #38bdf8;
-    background-color: #0f172a;
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25), inset 0 1px 2px rgba(0,0,0,0.4);
+    background-color: #001a33;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
 }
 
 .input-predictivo-pro::placeholder {
-    color: #64748b;
+    color: #6484a6;
 }
