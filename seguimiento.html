@@ -19,15 +19,20 @@
 <div class="dashboard">
 
     <div class="bunker-controles-superiores">
+        
         <div class="grupo-filtros-estados">
-            <button type="button" class="btn-filto-est activo" data-estado="TODOS" style="background-color: #0f172a; color: #ffffff; border-color: #0f172a;">🔍 Todos</button>
-            <button type="button" class="btn-filto-est" data-estado="ATRASADO" style="background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5;">⚠️ ATRASADO</button>
-            <button type="button" class="btn-filto-est" data-estado="EN CURSO" style="background-color: #dcfce7; color: #15803d; border-color: #86efac;">🚚 EN CURSO</button>
-            <button type="button" class="btn-filto-est" data-estado="NO INICIADO" style="background-color: #f1f5f9; color: #475569; border-color: #cbd5e1;">🕒 NO INICIADO</button>
-            <button type="button" class="btn-filto-est" data-estado="PROGRAMADO" style="background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb;">📅 PROGRAMADO</button>
+            <button type="button" class="btn-filto-est activo" data-estado="TODOS" style="background-color: #38bdf8; color: #0f172a; box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);">🔍 Todos</button>
+            <button type="button" class="btn-filto-est" data-estado="ATRASADO">⚠️ ATRASADO</button>
+            <button type="button" class="btn-filto-est" data-estado="EN CURSO">🚚 EN CURSO</button>
+            <button type="button" class="btn-filto-est" data-estado="NO INICIADO">🕒 NO INICIADO</button>
+            <button type="button" class="btn-filto-est" data-estado="PROGRAMADO">📅 PROGRAMADO</button>
         </div>
 
-        <div class="grupo-inputs-predictivos">
+        <div class="bunker-contador-flota">
+            <i class="fas fa-server" style="color: #64748b;"></i> MONITOREO TOTAL: <span id="num-flota-total">0</span> UNIDADES
+        </div>
+
+        <div class="grupo-inputs-predictivos" style="display: flex; flex-direction: column; gap: 8px;">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
                 <input type="text" id="txt-filtro-placa" list="dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off">
@@ -39,6 +44,7 @@
                 <datalist id="dl-rutas-activas"></datalist>
             </div>
         </div>
+
     </div>
 
     <table class="monitor-table">
@@ -217,7 +223,13 @@
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
             return true;
         });
-
+        
+     // 📊 ACTIVACIÓN MATEMÁTICA: Actualiza el marcador central en tiempo real
+        const contenedorContador = document.getElementById("num-flota-total");
+        if (contenedorContador) {
+            contenedorContador.innerText = viajesFiltrados.length;
+        }
+        
         if (viajesFiltrados.length === 0) {
             tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún viaje activo coincide con los criterios seleccionados.</td></tr>';
             return;
