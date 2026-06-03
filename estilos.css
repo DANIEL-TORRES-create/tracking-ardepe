@@ -55,12 +55,12 @@ body {
     background: #ffffff;
     border-radius: 12px;
     padding: 20px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01);
+    border: 1.5px solid #94a3b8; /* Borde gris slate intermedio para romper el blanco */
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 12px rgba(0, 75, 147, 0.03);
     position: sticky;
-    top: 15px; /* Sigue al operador en el scroll */
+    top: 15px;
     max-height: 85vh;
-    overflow-y: auto; /* Scroll independiente si hay muchos datos */
+    overflow-y: auto;
 }
 
 /* 🎛️ BÚNKER DE HERRAMIENTAS INTEGRADO */
@@ -185,9 +185,9 @@ body {
 .btn-cancelar:hover { background: #475569 !important; }
 
 .editando { 
-    border: 2px solid #ef4444 !important; 
-    background: #fef2f2 !important; 
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.2) !important;
+    background: linear-gradient(145deg, #004b93, #003366) !important; /* Mantiene el fondo azul original intacto */
+    border: 2.5px solid #ef4444 !important; /* Borde rojo neón grueso */
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.5) !important; /* Resplandor rojo de advertencia */
 }
 .error-log { 
     background: #fef2f2; color: #991b1b; padding: 10px; border-radius: 6px; 
