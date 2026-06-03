@@ -153,15 +153,6 @@
 
     // 2. RENDERIZADO DE LA TABLA MONITOR PRINCIPAL
     window.renderizar = function(viajes) {
-        // 🚀 EL ESPÍA TEMPORAL (Pégalo aquí adentro sin borrar nada de abajo):
-        console.log("=== PRUEBA DE ESCRITORIO EN VIVO ===");
-        console.log("¿Qué viene en viajes?", viajes);
-        if (viajes && viajes[0]) {
-            console.log("Estructura de un viaje completo:", viajes[0]);
-            console.log("Contenido de itinerarioFull del primer viaje:", viajes[0].itinerarioFull);
-        }
-
-        // 🔒 TU CÓDIGO ORIGINAL SE QUEDA IGUALITO ABAJO:
         const tbody = document.getElementById('lista-viajes');
         if (!tbody) return;
         tbody.innerHTML = "";
@@ -561,7 +552,7 @@
                 let tieneHitoManualActivo = false;
                 let odometroManualOculto = 0;
                 let horaSalidaManualOculta = "---";
-                let itinerarioPlanOriginalAmarrado = JSON.parse(JSON.stringify(itinerarioPlan));
+
                 if (indiceManual > -1) {
                     let [nodoManual] = itinerarioPlan.splice(indiceManual, 1);
                     itinerarioPlan.splice(1, 0, nodoManual);
@@ -673,38 +664,31 @@
                         let baseOdometro = 0;
                         let basePlanHoraSalida = null;
 
-                        // 🏁 MUNDO REAL: Mantiene intacta la lógica que ya te calculaba bien los tiempos físicos
+                        // 🏁 REGLA 1: Tratamiento especial para el primer hito tocado después del manual (Punto 2)
                         if (tieneHitoManualActivo && index === 2) {
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
-                        } else if (ultimoHitoRealValido) {
+                            // Fuerza el cálculo planificado estrictamente contra el ETD (Salida) del Origen (Hito 0)
+                            basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
+                        } 
+                        // 🏁 REGLA 2: Lógica para el arrastre acumulativo de hitos omitidos
+                        else if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
                             baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
-                        } else if (index > 0) {
-                            baseSalidaHora = itinerarioPlan[index - 1].realHora;
-                        }
-
-                        // 🚀 MUNDO PLANIFICADO (Inmune al Hito Manual y Omitidos):
-                        // Buscamos de forma retrospectiva en el array espejo original usando el nombre del punto actual
-                        let idxOriginal = itinerarioPlanOriginalAmarrado.findIndex(p => p.punto.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
-                        
-                        if (idxOriginal > 0) {
-                            let idxBusquedaPlan = idxOriginal - 1;
-                            while (idxBusquedaPlan >= 0) {
-                                let hitoPrevioPlan = itinerarioPlanOriginalAmarrado[idxBusquedaPlan];
-                                
-                                // Buscamos en el itinerario real si ese hito previo fue completado o si es la base (Origen)
-                                let hitoCorrespondienteEnItinerario = itinerarioPlan.find(p => p.punto.toString().toUpperCase().trim() === hitoPrevioPlan.punto.toString().toUpperCase().trim());
-                                let realPrevio = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === hitoPrevioPlan.punto.toString().toUpperCase().trim()) : null;
-                                let prevCompletado = hitoCorrespondienteEnItinerario ? (hitoCorrespondienteEnItinerario.deteccion === "SI" || hitoCorrespondienteEnItinerario.deteccion === "FORZADO" || !!realPrevio) : false;
-
-                                // Si el hito previo fue completado en ruta, o es el origen estricto, tomamos su ETD
-                                if (prevCompletado || idxBusquedaPlan === 0) {
-                                    basePlanHoraSalida = hitoPrevioPlan.planHoraSalida;
+                            
+                            // Bucle retrospectivo: Busca el último hito válido para heredar su ETD planificado
+                            let idxBusqueda = index - 1;
+                            while (idxBusqueda >= 0) {
+                                let hitoPrevio = itinerarioPlan[idxBusqueda];
+                                if (hitoPrevio.deteccion === "SI" || hitoPrevio.deteccion === "FORZADO" || idxBusqueda === 0) {
+                                    basePlanHoraSalida = hitoPrevio.planHoraSalida;
                                     break;
                                 }
-                                idxBusquedaPlan--; // Si fue omitido, salta en cascada acumulando hacia atrás
+                                idxBusqueda--;
                             }
+                        } else if (index > 0) {
+                            baseSalidaHora = itinerarioPlan[index - 1].realHora;
+                            basePlanHoraSalida = itinerarioPlan[index - 1].planHoraSalida; 
                         }
 
                         // 🎯 REQUERIMIENTO: Guiones para congelar el origen [0] y las filas omitidas intermedias
@@ -712,7 +696,7 @@
                             tiempoViajePlan = "---";
                             tiempoViajeReal = "---";
                         } else {
-                            // Se ejecutan los cálculos con las bases de tiempo perfectamente direccionadas
+                            // Se envían los strings directos al nuevo formateador Date inmune a comas
                             tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                             tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
                         }
@@ -872,37 +856,42 @@
     function calcularDiferenciaHorasTexto(horaInicio, horaFin) {
         try {
             if (!horaInicio || !horaFin || horaInicio === "---" || horaFin === "---") return "---";
-
-            // Función interna para extraer HH y MM de cualquier cadena de texto
-            let extraerMinutosPuros = (cadenaTexto) => {
-                let str = cadenaTexto.toString().trim();
-                // Busca el patrón de la hora HH:MM o HH:MM:SS en el texto
-                let coincidencia = str.match(/(\d{1,2}):(\d{2})(?::\d{2})?/);
-                if (!coincidencia) throw new Error("Formato de hora no reconocible");
+            
+            // Limpiar comas y espacios dobles para homogeneizar los formatos de Google y Geotab
+            let strI = horaInicio.toString().replace(",", "").trim();
+            let strF = horaFin.toString().replace(",", "").trim();
+            
+            // Función interna para convertir cualquier cadena "DD/MM/YYYY HH:MM:SS" a un objeto Date real
+            let formatearAFechaObjeto = (stringFecha) => {
+                let partes = stringFecha.split(/\s+/);
+                let fechaPartes = partes[0].split("/");
+                let horaPartes = partes[1].split(":");
                 
-                let horas = parseInt(coincidencia[1], 10);
-                let minutos = parseInt(coincidencia[2], 10);
-                return (horas * 60) + minutos;
+                let dia = parseInt(fechaPartes[0], 10);
+                let mes = parseInt(fechaPartes[1], 10) - 1; // Enero es 0
+                let anio = parseInt(fechaPartes[2], 10);
+                let hora = parseInt(horaPartes[0], 10);
+                let min = parseInt(horaPartes[1], 10);
+                let seg = parseInt(horaPartes[2], 10) || 0;
+                
+                return new Date(anio, mes, dia, hora, min, seg);
             };
 
-            let minutosInicio = extraerMinutosPuros(horaInicio);
-            let minutosFin = extraerMinutosPuros(horaFin);
-
-            // Calcular diferencia en minutos puros
-            let diferenciaMinutos = minutosFin - minutosInicio;
+            let dateInicio = formatearAFechaObjeto(strI);
+            let dateFin = formatearAFechaObjeto(strF);
             
-            // Si el viaje cruza la medianoche, se le suma un día completo en minutos
-            if (diferenciaMinutos < 0) {
-                diferenciaMinutos += 1440;
-            }
-
-            let h = Math.floor(diferenciaMinutos / 60);
-            let m = diferenciaMinutos % 60;
+            // Calcular la diferencia neta en milisegundos absolutos
+            let diffMs = dateFin.getTime() - dateInicio.getTime();
+            
+            // Si por un desfase de clics la resta da negativa, extraemos el valor absoluto transcurrido
+            let totalMins = Math.abs(Math.floor(diffMs / (1000 * 60)));
+            let h = Math.floor(totalMins / 60);
+            let m = totalMins % 60;
 
             return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
-        } catch(e) {
-            console.error("Error en cálculo de minutos puros:", e);
-            return "---";
+        } catch(e) { 
+            console.error("Error matemático en cálculo de horas:", e);
+            return "---"; 
         }
     }
 
