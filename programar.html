@@ -269,15 +269,51 @@
                 document.getElementById("checkRetorno").addEventListener("change", calcular);
                 document.getElementById("btnCancelar").addEventListener("click", resetearFormularioProgramacion);
                 
+                // 🚀 BLOQUE CORRECTO INTEGRADO SIN ALTERAR EL RESTO DE TU FLUJO
                 document.getElementById("btnProgramar").addEventListener("click", function() {
-                    const id = document.getElementById("idEdicion").value, v = document.getElementById("inputVehiculo").value, r = document.getElementById("selectRuta").value, s = document.getElementById("fechaSalida").value;
-                    if (!v || (r === "" && !document.getElementById("selectRuta").disabled) || !s) return alert("Faltan datos");
-                    this.innerText = "⏳ Guardando..."; this.disabled = true;
-                    const itinerario = Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({ orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText }));
+                    const id = document.getElementById("idEdicion").value;
+                    const v = document.getElementById("inputVehiculo").value;
+                    const r = document.getElementById("selectRuta").value;
+                    const s = document.getElementById("fechaSalida").value;
+                    const c = document.getElementById("inputConductor").value;
+                    
+                    const estaEnCurso = document.getElementById("selectRuta").disabled;
+
+                    // Validar dinámicamente según el estado en vivo del viaje
+                    if (estaEnCurso) {
+                        if (!id || !v) return alert("Faltan datos críticos del viaje en curso");
+                    } else {
+                        if (!v || r === "" || !s) return alert("Faltan datos");
+                    }
+
+                    this.innerText = "⏳ Guardando..."; 
+                    this.disabled = true;
+
+                    // Si está en curso no requiere mapear la tabla para no borrar el itinerario base en el Sheet
+                    const itinerario = estaEnCurso ? "[]" : Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({ 
+                        orden: f.cells[0].innerText, 
+                        punto: f.cells[1].innerText, 
+                        km: f.cells[2].innerText, 
+                        eta: f.cells[3].innerText, 
+                        etd: f.cells[4].innerText 
+                    }));
+
                     fetch(WEB_APP_URL, { 
                         method: "POST", 
-                        body: JSON.stringify({ action: id ? "editarViaje" : "programarViaje", idViaje: id, vehiculo: v, conductor: document.getElementById("inputConductor").value, etdOrigen: "'" + s.replace('T', ' '), nombreRuta: (r!=="")?rutasMaestras[r].nombre:"", itinerario: JSON.stringify(itinerario) }) 
-                    }).then(() => { alert("✅ Éxito"); resetearFormularioProgramacion(); cargarViajesExistentes(); });
+                        body: JSON.stringify({ 
+                            action: id ? "editarViaje" : "programarViaje", 
+                            idViaje: id, 
+                            vehiculo: v, 
+                            conductor: c || "Sin Conductor", 
+                            etdOrigen: estaEnCurso ? "" : "'" + s.replace('T', ' '), 
+                            nombreRuta: (r !== "" && !estaEnCurso) ? rutasMaestras[r].nombre : "", 
+                            itinerario: JSON.stringify(itinerario) 
+                        }) 
+                    }).then(() => { 
+                        alert("✅ Éxito"); 
+                        resetearFormularioProgramacion(); 
+                        cargarViajesExistentes(); 
+                    });
                 });
 
                 document.getElementById("btnProcesarExcel").addEventListener("click", function() {
