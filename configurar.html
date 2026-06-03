@@ -7,53 +7,71 @@
 <body>
 
 <div class="card-container">
-    <h2 class="titulo-seccion">🛠️ CREAR PLAN DE RUTA</h2>
+    <h2 class="titulo-seccion">🛠️ Crear Plan de Rutas</h2>
     
-    <div class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1.5fr auto; gap: 15px; align-items: flex-end;">
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-            <label>NOMBRE DE LA RUTA:</label>
-            <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 100%;">
+    <!-- 🎛 shrink CONTENEDOR DE DOS COLUMNAS EN ACCIÓN -->
+    <div class="bunker-split-container">
+        
+        <!-- [VENTANA IZQUIERDA (50%)]: CONSTRUCTOR DE TRAMOS -->
+        <div class="columna-izquierda-pro">
+            
+            <div class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: flex-end;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label>NOMBRE DE LA RUTA:</label>
+                    <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 100%;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label id="lblZonas">BUSCANDO ZONAS EN MYGEOTAB...</label>
+                    <input list="listaZonas" id="buscadorZonas" placeholder="Buscar geocerca..." style="width: 100%;">
+                    <datalist id="listaZonas"></datalist>
+                </div>
+                <div style="grid-column: span 2; display: flex; justify-content: flex-end; margin-top: 4px;">
+                    <button id="btnAgregar" class="btn-lupa" style="width: 100%; height: 34px;">➕ Añadir Punto al Itinerario</button>
+                </div>
+            </div>
+
+            <table class="tabla-constructor">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">Ord</th>
+                        <th style="text-align: left; padding-left: 8px;">Punto de Control</th>
+                        <th>Dist (Km)</th>
+                        <th>Tiempo Tramo</th>
+                        <th>Pernocte</th>
+                        <th style="width: 50px;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoRuta"></tbody>
+            </table>
+
+            <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="btnCancelar" class="btn-cancelar" style="margin: 0;">❌ Cancelar</button>
+                <button id="btnGuardar" class="btn-guardar" style="margin: 0;">💾 Guardar Ruta</button>
+            </div>
+
         </div>
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-            <label id="lblZonas">BUSCANDO ZONAS EN MYGEOTAB...</label>
-            <input list="listaZonas" id="buscadorZonas" placeholder="Escriba para buscar geocerca..." style="width: 100%;">
-            <datalist id="listaZonas"></datalist>
+
+        <!-- [VENTANA DERECHA (50%)]: PANEL DE RUTAS GUARDADAS -->
+        <div class="columna-derecha-pro">
+            <div class="seccion-lista">
+                <div style="margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                    <h3 style="margin: 0; color: #004b93; font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: 0.3px;">📂 Estructuras Maestras Guardadas</h3>
+                </div>
+                
+                <table class="tabla-constructor">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding-left: 8px;">Nombre Oficial de la Ruta</th>
+                            <th>Puntos</th>
+                            <th>Fecha Creación</th>
+                            <th>Cargar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaRutasGuardadas"></tbody>
+                </table>
+            </div>
         </div>
-        <button id="btnAgregar" class="btn-lupa" style="height: 38px; padding: 0 25px !important;">➕ Añadir Punto</button>
-    </div>
 
-    <table class="tabla-constructor">
-        <thead>
-            <tr>
-                <th style="width: 70px;">Orden</th>
-                <th style="text-align: left; padding-left: 15px;">Punto de Control / Geocerca</th>
-                <th>Distancia Tramo</th>
-                <th>Tiempo Tramo (HH:mm)</th>
-                <th>Tiempo Pernocte (HH:mm)</th>
-                <th style="width: 80px;">Acción</th>
-            </tr>
-        </thead>
-        <tbody id="cuerpoRuta"></tbody>
-    </table>
-
-    <div style="margin-top: 25px; display: flex; gap: 12px; justify-content: flex-end;">
-        <button id="btnCancelar" class="btn-cancelar" style="margin: 0; float: none;">❌ Cancelar</button>
-        <button id="btnGuardar" class="btn-guardar" style="margin: 0; float: none;">💾 Guardar Ruta</button>
-    </div>
-
-    <div class="seccion-lista">
-        <h3 style="margin: 0 0 15px 0; color: #004b93; font-weight: 800; text-transform: uppercase; font-size: 15px;">📂 Estructuras Maestras Guardadas</h3>
-        <table class="tabla-constructor">
-            <thead>
-                <tr>
-                    <th style="text-align: left; padding-left: 15px;">Nombre Oficial de la Ruta</th>
-                    <th style="width: 150px;">Cantidad Puntos</th>
-                    <th style="width: 200px;">Fecha Creación</th>
-                    <th style="width: 100px;">Cargar</th>
-                </tr>
-            </thead>
-            <tbody id="listaRutasGuardadas"></tbody>
-        </table>
     </div>
 </div>
 
