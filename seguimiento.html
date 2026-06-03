@@ -11,9 +11,14 @@
 <body>
 
 <div class="header-container">
-    <h1 class="neon-title">Tablero de Control de Viajes</h1>
-    <div class="nav-shortcuts">
-        </div>
+    <div class="bloque-titulo-bunker">
+        <h1 class="neon-title"><i class="fas fa-satellite" style="margin-right: 12px; color: #38bdf8;"></i>CONTROL DE VIAJES</h1>
+        <p class="subtitulo-bunker">SISTEMA INTERNO DE MONITOREO Y RENDIMIENTO DE OPERACIONES ACTIVAS</p>
+    </div>
+    <div class="bunker-clock-wrapper">
+        <span class="ping-bunker-vivo"></span>
+        <div id="bunker-time">00:00:00</div>
+    </div>
 </div>
 
 <div class="dashboard">
@@ -21,18 +26,18 @@
     <div class="bunker-controles-superiores">
         
         <div class="grupo-filtros-estados">
-            <button type="button" class="btn-filto-est activo" data-estado="TODOS" style="background-color: #38bdf8; color: #0f172a; box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);">🔍 Todos</button>
-            <button type="button" class="btn-filto-est" data-estado="ATRASADO">⚠️ ATRASADO</button>
-            <button type="button" class="btn-filto-est" data-estado="EN CURSO">🚚 EN CURSO</button>
-            <button type="button" class="btn-filto-est" data-estado="NO INICIADO">🕒 NO INICIADO</button>
-            <button type="button" class="btn-filto-est" data-estado="PROGRAMADO">📅 PROGRAMADO</button>
+            <button type="button" class="btn-filto-est activo" data-estado="TODOS">🔍 Todos</button>
+            <button type="button" class="btn-filto-est" data-estado="ATRASADO">⚠️ Atrasado</button>
+            <button type="button" class="btn-filto-est" data-estado="EN CURSO">🚚 En Curso</button>
+            <button type="button" class="btn-filto-est" data-estado="NO INICIADO">🕒 No Iniciado</button>
+            <button type="button" class="btn-filto-est" data-estado="PROGRAMADO">📅 Programado</button>
         </div>
 
         <div class="bunker-contador-flota">
-            <i class="fas fa-server" style="color: #64748b;"></i> MONITOREO TOTAL: <span id="num-flota-total">0</span> UNIDADES
+            <i class="fas fa-microchip" style="color: #38bdf8;"></i> FLOTA MONITORIZADA: <span id="num-flota-total">0</span> VIAJES
         </div>
 
-        <div class="grupo-inputs-predictivos" style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="grupo-inputs-predictivos" style="display: flex; flex-direction: column; gap: 6px;">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
                 <input type="text" id="txt-filtro-placa" list="dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off">
@@ -54,7 +59,8 @@
                 <th>ESTADO MONITOR</th>
                 <th>RUTA</th>
                 <th>ORIGEN / DESTINO</th>
-                <th>SALIDA PLAN</th> <th>SALIDA REAL</th>
+                <th>SALIDA PLAN</th>
+                <th>SALIDA REAL</th>
                 <th>LLEGADA EST.</th>
                 <th>PROGRESO</th>
                 <th style="text-align:center;">CONTROL DEL VIAJE</th>
@@ -62,7 +68,7 @@
             </tr>
         </thead>
         <tbody id="lista-viajes">
-            <tr><td colspan="10" style="text-align:center; padding:40px;">Sincronizando búnker y flota activa...</td></tr>
+            <tr><td colspan="10" style="text-align:center; padding:40px; color:#475569; font-weight:bold;">Sincronizando búnker corporativo...</td></tr>
         </tbody>
     </table>
 </div>
