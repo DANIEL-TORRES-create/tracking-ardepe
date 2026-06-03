@@ -316,25 +316,47 @@
     // ====================================================================
     // ⚡ CONTROLADOR DE EVENTOS ACTIVOS (BOTONERA + INPUTS PREDICTIVOS)
     // ====================================================================
+    
     document.addEventListener("DOMContentLoaded", function() {
         
-        // 1. Escucha de clics para los Botones de Estado Corporativos
+        // ⏰ 1. MOTOR DEL RELOJ EN TIEMPO REAL
+        const contenedorHora = document.getElementById("bunker-time");
+        if (contenedorHora) {
+            setInterval(() => {
+                const ahora = new Date();
+                let hrs = ahora.getHours();
+                let mins = ahora.getMinutes();
+                let segs = ahora.getSeconds();
+                
+                // Forzar formato de dos dígitos (01, 02, etc.)
+                hrs = hrs < 10 ? "0" + hrs : hrs;
+                mins = mins < 10 ? "0" + mins : mins;
+                segs = segs < 10 ? "0" + segs : segs;
+                
+                contenedorHora.innerText = hrs + ":" + mins + ":" + segs;
+            }, 1000);
+        }
+
+        // 🎛️ 2. ESCUCHA DE CLICS PARA LOS BOTONES DE ESTADO NAVISAF
         const botonesEstado = document.querySelectorAll(".btn-filto-est");
         botonesEstado.forEach(boton => {
             boton.addEventListener("click", function() {
+                // Opaca todos los botones
                 botonesEstado.forEach(b => {
                     b.classList.remove("activo");
-                    b.style.opacity = "0.6";
+                    b.style.opacity = "0.65";
                 });
+                // Enciende en neón el seleccionado
                 this.classList.add("activo");
                 this.style.opacity = "1";
                 
+                // Cambia el estado global y filtra
                 estadoFiltroActivo = this.getAttribute("data-estado");
                 filtrarYMostrarTabla();
             });
         });
 
-        // 2. Escucha en tiempo real (letra por letra) para la caja de PLACAS
+        // 🔍 3. ESCUCHA LETRA POR LETRA PARA EL FILTRO DE PLACAS
         const inputPlaca = document.getElementById("txt-filtro-placa");
         if (inputPlaca) {
             inputPlaca.addEventListener("input", function() {
@@ -342,7 +364,7 @@
             });
         }
 
-        // 3. Escucha en tiempo real (letra por letra) para la caja de RUTAS
+        // 🔍 4. ESCUCHA LETRA POR LETRA PARA EL FILTRO DE RUTAS
         const inputRuta = document.getElementById("txt-filtro-ruta");
         if (inputRuta) {
             inputRuta.addEventListener("input", function() {
