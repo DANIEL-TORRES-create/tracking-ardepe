@@ -113,7 +113,7 @@
                 <thead>
                     <tr>
                         <th>ESTADO<br>HITO</th>
-                        <th style="text-align: left; padding-left: 15px;">PUNTO / CONTROL<br>GEOCERCA</th>
+                        <th>CONDUCTOR</th> <th style="text-align: left; padding-left: 15px;">PUNTO / CONTROL<br>GEOCERCA</th>
                         <th>TIPO<br>REGISTRO</th>
                         <th>PLANIFICADO<br>LLEGADA</th>
                         <th>REAL<br>LLEGADA</th>
@@ -650,7 +650,6 @@
                         horaRealSalida = "---";
                     } 
                     else {
-                        // 🎯 REQUERIMIENTO: Si es el hito 1 (Origen), km planificados siempre sale como "---"
                         if (index === 0) {
                             distPlanKm = "---";
                         } else if (tieneHitoManualActivo && index === 2) {
@@ -664,19 +663,14 @@
                         let baseOdometro = 0;
                         let basePlanHoraSalida = null;
 
-                        // 🏁 REGLA 1: Tratamiento especial para el primer hito tocado después del manual (Punto 2)
                         if (tieneHitoManualActivo && index === 2) {
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
-                            // Fuerza el cálculo planificado estrictamente contra el ETD (Salida) del Origen (Hito 0)
                             basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
-                        } 
-                        // 🏁 REGLA 2: Lógica para el arrastre acumulativo de hitos omitidos
-                        else if (ultimoHitoRealValido) {
+                        } else if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
                             baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
                             
-                            // Bucle retrospectivo: Busca el último hito válido para heredar su ETD planificado
                             let idxBusqueda = index - 1;
                             while (idxBusqueda >= 0) {
                                 let hitoPrevio = itinerarioPlan[idxBusqueda];
@@ -691,12 +685,10 @@
                             basePlanHoraSalida = itinerarioPlan[index - 1].planHoraSalida; 
                         }
 
-                        // 🎯 REQUERIMIENTO: Guiones para congelar el origen [0] y las filas omitidas intermedias
                         if (index === 0 || esOmitido) {
                             tiempoViajePlan = "---";
                             tiempoViajeReal = "---";
                         } else {
-                            // Se envían los strings directos al nuevo formateador Date inmune a comas
                             tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                             tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
                         }
@@ -720,10 +712,21 @@
                         else if (totalMins > 0) semaforoTiempo = "mostaza";
                     }
 
+                    // 🚀 OBTENCIÓN DINÁMICA DEL CONDUCTOR DEL VIAJE PRINCIPAL COMO RESPALDO
+                    let conductorActual = "---";
+                    if (typeof viajes !== 'undefined' && Array.isArray(viajes)) {
+                        let vMatch = viajes.find(v => v.placa === placaActual);
+                        if (vMatch) conductorActual = vMatch.conductor || "---";
+                    }
+
+                    // 🎯 REQUERIMIENTO: Si es Omitido (o el origen está omitido), conductor sale como guión "---"
+                    let conductorVisualFila = (esOmitido || (index === 0 && esOrigenOmitido)) ? "---" : (real ? (real.conductor || conductorActual) : conductorActual);
+
                     _satCacheDatosRows.push({
                         st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
                         sec: numSecuencia,
                         punto: plan.punto, 
+                        conductor: conductorVisualFila, // 🚀 ENLACE DE PROPIEDAD
                         tipo: tipoRegistro, 
                         planLlegada: plan.planHora || "---",
                         realLlegada: horaRealLlegada, 
@@ -948,6 +951,7 @@
 
             tr.innerHTML = `
                 <td style="text-align:center;"><strong>[${r.sec}]</strong> ${badgeEst}</td>
+                <td style="font-weight:700; color:#0f172a;">${r.conductor}</td>
                 <td><strong>${r.punto}</strong></td>
                 <td><small style="color:#475569; font-weight:bold;">${r.tipo}</small></td>
                 <td>${r.planLlegada}</td>
