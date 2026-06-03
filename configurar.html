@@ -15,7 +15,7 @@
         <!-- [VENTANA IZQUIERDA (50%)]: CONSTRUCTOR DE TRAMOS -->
         <div class="columna-izquierda-pro">
             
-            <div class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: flex-end;">
+            <div id="contenedorManual" class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: flex-end;">
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label>NOMBRE DE LA RUTA:</label>
                     <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 100%;">
@@ -131,13 +131,13 @@
     }
 
     const resetearFormulario = () => {
+        document.getElementById("contenedorManual").classList.remove("editando"); // 🚀 Apaga el contorno rojo
         document.getElementById("nombreRuta").value = "";
         document.getElementById("buscadorZonas").value = "";
         rutaActual = [];
         idRutaActiva = null;
         updateUI();
     };
-
     function updateUI() {
         const cuerpo = document.getElementById("cuerpoRuta");
         cuerpo.innerHTML = "";
@@ -157,6 +157,7 @@
 
     window.borrar = (idx) => { rutaActual.splice(idx, 1); updateUI(); };
     window.cargarParaEditar = (pts, nombre, id) => {
+        document.getElementById("contenedorManual").classList.add("editando"); // 🚀 Enciende el contorno rojo
         document.getElementById("nombreRuta").value = nombre;
         rutaActual = pts;
         idRutaActiva = id; 
