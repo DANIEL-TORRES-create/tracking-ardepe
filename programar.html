@@ -19,80 +19,98 @@
 <body>
 
 <div class="card-container">
-    <h2 class="titulo-seccion">📅 Programación de Viajes</h2>
+    <h2 class="titulo-seccion">📅 Control de Programación y Edición</h2>
     
-    <div class="modo-masivo">
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <label style="font-size: 14px !important;">🚀 PANEL DE CARGA MASIVA EXCEL</label>
-            <button onclick="exportarPlantilla()" class="btn-descarga">📥 Descargar Plantilla</button>
-        </div>
-        <div style="display: flex; gap: 10px; margin-top: 12px; width: 100%;">
-            <input type="file" id="inputExcel" style="flex-grow: 1;" accept=".xlsx, .xls">
-            <button id="btnProcesarExcel" class="btn-lupa" style="height: 38px;">Validar y Subir</button>
-        </div>
-        <div id="errorLog" class="error-log"></div>
-    </div>
-
-    <div id="contenedorManual" class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <input type="hidden" id="idEdicion"> 
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label>1. RUTA MAESTRA:</label>
-            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                <select id="selectRuta" style="width: 100%;"><option value="">Cargando...</option></select>
-                <label style="white-space: nowrap; display: flex; align-items: center; gap: 5px;"><input type="checkbox" id="checkRetorno" style="margin:0;"> ¿RET?</label>
+    <!-- 🎛️ CONTENEDOR DE DOS COLUMNAS EN ACCIÓN CORREGIDO -->
+    <div class="bunker-split-container">
+        
+        <!-- [VENTANA IZQUIERDA (50%)]: OPERACIONES DE DESPACHO -->
+        <div class="columna-izquierda-pro">
+            
+            <!-- Carga Masiva Excel -->
+            <div class="modo-masivo">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <label style="font-size: 12px !important;">🚀 PANEL DE CARGA MASIVA EXCEL</label>
+                    <button onclick="exportarPlantilla()" class="btn-descarga" style="padding: 5px 12px !important; font-size: 10px !important;">📥 Plantilla</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%;">
+                    <input type="file" id="inputExcel" style="flex-grow: 1;">
+                    <button id="btnProcesarExcel" class="btn-lupa" style="height: 33px;">Validar y Subir</button>
+                </div>
+                <div id="errorLog" class="error-log"></div>
             </div>
-            <label>2. SALIDA PROGRAMADA (ETD):</label>
-            <input type="datetime-local" id="fechaSalida" style="width: 100%;">
+
+            <!-- Registro Manual Especializado -->
+            <div id="contenedorManual" class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <input type="hidden" id="idEdicion"> 
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label>1. RUTA MAESTRA:</label>
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                        <select id="selectRuta" style="width: 100%;"><option value="">Cargando...</option></select>
+                        <label style="white-space: nowrap; display: flex; align-items: center; gap: 4px; margin: 0;"><input type="checkbox" id="checkRetorno" style="margin:0;"> ¿RET?</label>
+                    </div>
+                    <label>2. SALIDA PROGRAMADA (ETD):</label>
+                    <input type="datetime-local" id="fechaSalida" style="width: 100%;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label id="lblVehiculo">3. VEHÍCULO (PLACA):</label>
+                    <input list="listaVehiculos" id="inputVehiculo" placeholder="Placa..." style="width: 100%;">
+                    <datalist id="listaVehiculos"></datalist>
+                    <label>4. CONDUCTOR ASIGNADO:</label>
+                    <input list="listaConductores" id="inputConductor" placeholder="Conductor..." style="width: 100%;">
+                    <datalist id="listaConductores"></datalist>
+                </div>
+            </div>
+
+            <!-- Previsualización del Itinerario Calculado -->
+            <table class="tabla-constructor">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">Ord</th>
+                        <th style="text-align: left; padding-left: 8px;">Punto de Control</th>
+                        <th>Km</th>
+                        <th>ETA Llegada</th>
+                        <th>ETD Salida</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoItinerario"></tbody>
+            </table>
+
+            <!-- Acciones de Confirmación -->
+            <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="btnCancelar" class="btn-cancelar" style="margin: 0;">❌ Limpiar</button>
+                <button id="btnProgramar" class="btn-guardar" style="margin: 0;">🚀 Confirmar Viaje</button>
+            </div>
+
         </div>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label id="lblVehiculo">3. VEHÍCULO (PLACA):</label>
-            <input list="listaVehiculos" id="inputVehiculo" placeholder="Escriba placa..." style="width: 100%;">
-            <datalist id="listaVehiculos"></datalist>
-            <label>4. CONDUCTOR ASIGNADO:</label>
-            <input list="listaConductores" id="inputConductor" placeholder="Escriba conductor..." style="width: 100%;">
-            <datalist id="listaConductores"></datalist>
-        </div>
-    </div>
 
-    <table class="tabla-constructor">
-        <thead>
-            <tr>
-                <th>Orden</th>
-                <th style="text-align: left; padding-left: 15px;">Punto de Control</th>
-                <th>Km Acum.</th>
-                <th>Hora Est. Llegada (ETA)</th>
-                <th>Hora Est. Salida (ETD)</th>
-            </tr>
-        </thead>
-        <tbody id="cuerpoItinerario"></tbody>
-    </table>
-
-    <div style="margin-top: 25px; display: flex; gap: 12px; justify-content: flex-end;">
-        <button id="btnCancelar" class="btn-cancelar" style="margin: 0; float: none;">❌ Limpiar / Cancelar</button>
-        <button id="btnProgramar" class="btn-guardar" style="margin: 0; float: none;">🚀 Confirmar Viaje</button>
-    </div>
-
-    <div class="seccion-lista">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin: 0; color: #004b93; font-weight: 800; text-transform: uppercase; font-size: 15px;">🗂️ Historial de Despachos</h3>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <input type="date" id="filtroFechaLista" style="padding: 8px !important; border: 1px solid #cbd5e1 !important; color:#334155 !important; background:#ffffff !important;">
-                <button onclick="cargarViajesExistentes()" class="btn-lupa" style="padding: 9px 20px !important;">🔍 Buscar</button>
+        <!-- [VENTANA DERECHA (50%)]: PANEL DE HISTORIAL VIVO -->
+        <div class="columna-derecha-pro">
+            <div class="seccion-lista">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                    <h3 style="margin: 0; color: #004b93; font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: 0.3px;">🗂️ Historial de Despachos</h3>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="date" id="filtroFechaLista" style="padding: 5px !important; border: 1px solid #cbd5e1 !important; font-size: 11px !important; border-radius: 4px; color:#334155; background:#ffffff !important; height:28px; box-sizing:border-box;">
+                        <button onclick="cargarViajesExistentes()" class="btn-lupa" style="padding: 0 12px !important; font-size: 11px !important; height:28px;">🔍 Buscar</button>
+                    </div>
+                </div>
+                
+                <table class="tabla-constructor">
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Conductor</th>
+                            <th style="text-align: left; padding-left: 8px;">Ruta</th>
+                            <th>Salida</th>
+                            <th>Estado</th>
+                            <th>Editar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpoListaViajes"></tbody>
+                </table>
             </div>
         </div>
-        <table class="tabla-constructor">
-            <thead>
-                <tr>
-                    <th>Placa</th>
-                    <th>Conductor</th>
-                    <th style="text-align: left; padding-left:15px;">Ruta Ejecutada</th>
-                    <th>Fecha Salida</th>
-                    <th>Estado</th>
-                    <th>Editar</th>
-                </tr>
-            </thead>
-            <tbody id="cuerpoListaViajes"></tbody>
-        </table>
+
     </div>
 </div>
 
