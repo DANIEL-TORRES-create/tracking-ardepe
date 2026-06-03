@@ -8,16 +8,16 @@ body {
 
 .card-container { 
     background: #ffffff !important; 
-    padding: 30px !important; 
+    padding: 25px !important; 
     border-radius: 16px !important; 
     box-shadow: 0 10px 25px -5px rgba(0, 75, 147, 0.08) !important; 
-    max-width: 1100px !important; 
+    max-width: 98% !important; /* Maximiza espacio para la pantalla dividida */
     margin: auto !important; 
     border: 1px solid #e2e8f0;
 }
 
 .titulo-seccion { 
-    color: #004b93 !important; /* Azul Navisaf */
+    color: #004b93 !important; 
     font-size: 22px !important;
     font-weight: 800 !important;
     border-bottom: 3px solid #004b93 !important; 
@@ -27,14 +27,50 @@ body {
     text-transform: uppercase;
 }
 
+/* =========================================
+   ⚡ CONTENEDOR SIMÉTRICO 50/50 (SPLIT-SCREEN)
+   ========================================= */
+.bunker-split-container {
+    display: flex !important;
+    gap: 20px !important;
+    width: 100% !important;
+    align-items: flex-start !important;
+    box-sizing: border-box;
+    margin-top: 20px;
+}
+
+/* Ventana Izquierda: Zona Operativa / Constructor */
+.columna-izquierda-pro {
+    flex: 1 !important; /* 50% Exacto */
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Ventana Derecha: Módulo de Listas / Historial */
+.columna-derecha-pro {
+    flex: 1 !important; /* 50% Exacto */
+    width: 50%;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01);
+    position: sticky;
+    top: 15px; /* Sigue al operador en el scroll */
+    max-height: 85vh;
+    overflow-y: auto; /* Scroll independiente si hay muchos datos */
+}
+
 /* 🎛️ BÚNKER DE HERRAMIENTAS INTEGRADO */
 .barra-herramientas, .modo-masivo { 
-    background: linear-gradient(145deg, #004b93, #003366) !important; /* Degradado Navisaf */
-    padding: 20px !important; 
+    background: linear-gradient(145deg, #004b93, #003366) !important; 
+    padding: 16px !important; 
     border-radius: 12px !important; 
-    margin-bottom: 25px !important; 
+    margin-bottom: 0px !important; 
     display: flex !important;
-    gap: 15px !important;
+    gap: 12px !important;
     align-items: flex-end !important; 
     box-shadow: 0 4px 15px rgba(0, 75, 147, 0.15) !important;
     border: 1px solid #002244 !important;
@@ -45,20 +81,19 @@ body {
     align-items: stretch !important;
 }
 
-/* Etiquetas y campos dentro de las zonas oscuras */
 .barra-herramientas label, .modo-masivo label {
     color: #ffffff !important;
     font-weight: 700 !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
     letter-spacing: 0.5px;
 }
 
 .barra-herramientas input, .barra-herramientas select,
 .modo-masivo input, .modo-masivo select {
     font-family: 'Lexend', sans-serif;
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 600;
-    padding: 10px 12px !important;
+    padding: 8px 10px !important;
     border-radius: 6px !important;
     border: 1px solid #002244 !important;
     background-color: #002344 !important;
@@ -73,23 +108,22 @@ body {
     box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3) !important;
 }
 
-/* 📊 TABLAS INDUSTRIALES */
+/* 📊 TABLAS COMPACTAS PARA SPLIT SCREEN */
 .tabla-constructor { 
     width: 100% !important; 
     border-collapse: collapse !important; 
-    margin-top: 25px !important; 
+    margin-top: 15px !important; 
     background: #ffffff;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
 .tabla-constructor th { 
-    background: #f1f5f9 !important; /* Gris suave ejecutivo */
+    background: #f1f5f9 !important; 
     color: #475569 !important; 
-    padding: 14px 12px !important; 
+    padding: 10px 6px !important; 
     text-align: center !important; 
-    font-size: 11px !important;
+    font-size: 10.5px !important;
     font-weight: 800 !important;
     text-transform: uppercase;
     border-bottom: 2px solid #cbd5e1 !important;
@@ -97,10 +131,10 @@ body {
 }
 
 .tabla-constructor td { 
-    padding: 12px !important; 
+    padding: 10px 6px !important; 
     border-bottom: 1px solid #f1f5f9 !important; 
     color: #334155;
-    font-size: 13px;
+    font-size: 12px;
     text-align: center !important; 
     vertical-align: middle !important; 
 }
@@ -109,80 +143,60 @@ body {
     background-color: #f8fafc !important;
 }
 
-/* Controles de tiempo dentro de las celdas */
 .input-tiempo { 
-    width: 80px !important; 
+    width: 70px !important; 
     border: 1px solid #cbd5e1 !important; 
     text-align: center !important; 
     font-weight: 700 !important; 
     color: #004b93 !important; 
-    padding: 6px !important; 
+    padding: 4px !important; 
     border-radius: 6px !important; 
     background: #f8fafc !important;
-}
-.input-tiempo:focus {
-    outline: none;
-    border-color: #004b93 !important;
-    background: #ffffff !important;
+    font-size: 11px;
 }
 
 /* 🎛️ BOTONES PRO */
 .btn-lupa, .btn-descarga, .btn-guardar, .btn-cancelar {
     font-family: 'Lexend', sans-serif;
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 700 !important;
-    padding: 10px 20px !important;
+    padding: 8px 16px !important;
     border-radius: 6px !important;
     border: none !important;
     cursor: pointer !important;
-    transition: all 0.2s ease-in-out !important;
+    transition: all 0.15s ease-in-out !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     text-transform: uppercase;
 }
 
 .btn-lupa { background: #38bdf8 !important; color: #002244 !important; }
-.btn-lupa:hover { background: #0ea5e9 !important; transform: translateY(-1px); }
+.btn-lupa:hover { background: #0ea5e9 !important; }
 
 .btn-descarga { background: #1e8e3e !important; color: white !important; }
 .btn-descarga:hover { background: #146c2e !important; }
 
-.btn-guardar { background: #004b93 !important; color: white !important; padding: 14px 30px !important; }
-.btn-guardar:hover { background: #003366 !important; box-shadow: 0 4px 12px rgba(0,75,147,0.2); }
+.btn-guardar { background: #004b93 !important; color: white !important; padding: 10px 24px !important; }
+.btn-guardar:hover { background: #003366 !important; }
 
-.btn-cancelar { background: #64748b !important; color: white !important; padding: 14px 30px !important; }
+.btn-cancelar { background: #64748b !important; color: white !important; padding: 10px 24px !important; }
 .btn-cancelar:hover { background: #475569 !important; }
 
-/* Estados especiales */
 .editando { 
     border: 2px solid #ef4444 !important; 
     background: #fef2f2 !important; 
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.15) !important;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.2) !important;
 }
 .error-log { 
-    background: #fef2f2; 
-    color: #991b1b; 
-    padding: 12px; 
-    border-radius: 6px; 
-    margin-top: 15px; 
-    display: none; 
-    font-size: 12px; 
-    border: 1px solid #fee2e2; 
-    line-height: 1.6; 
-    font-weight: 600;
+    background: #fef2f2; color: #991b1b; padding: 10px; border-radius: 6px; 
+    margin-top: 10px; display: none; font-size: 11px; border: 1px solid #fee2e2; font-weight: 600;
 }
 
 input:disabled, select:disabled { 
-    background-color: rgba(0,0,0,0.15) !important; 
-    cursor: not-allowed !important; 
-    color: #94a3b8 !important; 
-    border-color: rgba(255,255,255,0.05) !important;
+    background-color: rgba(0,0,0,0.15) !important; cursor: not-allowed !important; 
+    color: #94a3b8 !important; border-color: rgba(255,255,255,0.05) !important;
 }
 
-.seccion-lista { 
-    margin-top: 40px !important; 
-    border-top: 2px dashed #cbd5e1 !important; 
-    padding-top: 25px !important; 
-}
+.seccion-lista { margin-top: 0px !important; border-top: none !important; padding-top: 0px !important; }
