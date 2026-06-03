@@ -153,6 +153,15 @@
 
     // 2. RENDERIZADO DE LA TABLA MONITOR PRINCIPAL
     window.renderizar = function(viajes) {
+        // 🚀 EL ESPÍA TEMPORAL (Pégalo aquí adentro sin borrar nada de abajo):
+        console.log("=== PRUEBA DE ESCRITORIO EN VIVO ===");
+        console.log("¿Qué viene en viajes?", viajes);
+        if (viajes && viajes[0]) {
+            console.log("Estructura de un viaje completo:", viajes[0]);
+            console.log("Contenido de itinerarioFull del primer viaje:", viajes[0].itinerarioFull);
+        }
+
+        // 🔒 TU CÓDIGO ORIGINAL SE QUEDA IGUALITO ABAJO:
         const tbody = document.getElementById('lista-viajes');
         if (!tbody) return;
         tbody.innerHTML = "";
