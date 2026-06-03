@@ -664,31 +664,41 @@
                         let baseOdometro = 0;
                         let basePlanHoraSalida = null;
 
-                        // 🏁 REGLA 1: Tratamiento especial para el primer hito tocado después del manual (Punto 2)
+                        // 🏁 REGLA 1: Caso especial Punto 2 con acción manual activa
                         if (tieneHitoManualActivo && index === 2) {
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
-                            // Fuerza el cálculo planificado estrictamente contra el ETD (Salida) del Origen (Hito 0)
-                            basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
-                        } 
-                        // 🏁 REGLA 2: Lógica para el arrastre acumulativo de hitos omitidos
-                        else if (ultimoHitoRealValido) {
-                            baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
-                            baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
                             
-                            // Bucle retrospectivo: Busca el último hito válido para heredar su ETD planificado
+                            // Si el Origen no se inició por GPS, el plan del Punto 2 descuenta contra el clic manual
+                            if (esOrigenOmitido || itinerarioPlan[0].deteccion === "NO") {
+                                basePlanHoraSalida = horaSalidaManualOculta; 
+                            } else {
+                                // Apunta directamente al planHoraSalida (etd) del hito Origen
+                                basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
+                            }
+                        } 
+                        // 🏁 REGLA 2: Caso normal y arrastre de hitos omitidos
+                        else {
+                            // Para el tiempo Real usamos el último hito físicamente válido detectado por GPS
+                            if (ultimoHitoRealValido) {
+                                baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
+                                baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
+                            } else if (index > 0) {
+                                baseSalidaHora = itinerarioPlan[index - 1].realHora;
+                            }
+
+                            // 🚀 CORRECCIÓN DEFINITIVA PLANIFICADO:
+                            // Buscamos hacia atrás en el array original 'itinerarioPlan' para asegurar que agarre el 'etd' original
                             let idxBusqueda = index - 1;
                             while (idxBusqueda >= 0) {
                                 let hitoPrevio = itinerarioPlan[idxBusqueda];
+                                // Buscamos el hito anterior que esté completado, o por defecto el origen (index 0)
                                 if (hitoPrevio.deteccion === "SI" || hitoPrevio.deteccion === "FORZADO" || idxBusqueda === 0) {
                                     basePlanHoraSalida = hitoPrevio.planHoraSalida;
                                     break;
                                 }
                                 idxBusqueda--;
                             }
-                        } else if (index > 0) {
-                            baseSalidaHora = itinerarioPlan[index - 1].realHora;
-                            basePlanHoraSalida = itinerarioPlan[index - 1].planHoraSalida; 
                         }
 
                         // 🎯 REQUERIMIENTO: Guiones para congelar el origen [0] y las filas omitidas intermedias
@@ -696,7 +706,7 @@
                             tiempoViajePlan = "---";
                             tiempoViajeReal = "---";
                         } else {
-                            // Se envían los strings directos al nuevo formateador Date inmune a comas
+                            // Se ejecutan los cálculos con las variables extraídas de forma segura
                             tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                             tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
                         }
