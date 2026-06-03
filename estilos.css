@@ -186,8 +186,8 @@ body {
 
 .editando { 
     background: linear-gradient(145deg, #004b93, #003366) !important; /* Mantiene el fondo azul original intacto */
-    border: 2.5px solid #ef4444 !important; /* Borde rojo neón grueso */
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.5) !important; /* Resplandor rojo de advertencia */
+    border: 2.5px solid #ef4444 !important; /* Enmarca solo el contorno en rojo neón */
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.5) !important; /* Resplandor de alerta */
 }
 .error-log { 
     background: #fef2f2; color: #991b1b; padding: 10px; border-radius: 6px; 
