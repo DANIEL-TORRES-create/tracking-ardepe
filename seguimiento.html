@@ -17,6 +17,30 @@
 </div>
 
 <div class="dashboard">
+
+    <div class="bunker-controles-superiores">
+        <div class="grupo-filtros-estados">
+            <button type="button" class="btn-filto-est activo" data-estado="TODOS" style="background-color: #0f172a; color: #ffffff; border-color: #0f172a;">🔍 Todos</button>
+            <button type="button" class="btn-filto-est" data-estado="ATRASADO" style="background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5;">⚠️ ATRASADO</button>
+            <button type="button" class="btn-filto-est" data-estado="EN CURSO" style="background-color: #dcfce7; color: #15803d; border-color: #86efac;">🚚 EN CURSO</button>
+            <button type="button" class="btn-filto-est" data-estado="NO INICIADO" style="background-color: #f1f5f9; color: #475569; border-color: #cbd5e1;">🕒 NO INICIADO</button>
+            <button type="button" class="btn-filto-est" data-estado="PROGRAMADO" style="background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb;">📅 PROGRAMADO</button>
+        </div>
+
+        <div class="grupo-inputs-predictivos">
+            <div class="caja-predictiva-wrapper">
+                <i class="fas fa-truck"></i>
+                <input type="text" id="txt-filtro-placa" list="dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off">
+                <datalist id="dl-placas-activas"></datalist>
+            </div>
+            <div class="caja-predictiva-wrapper">
+                <i class="fas fa-route"></i>
+                <input type="text" id="txt-filtro-ruta" list="dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off">
+                <datalist id="dl-rutas-activas"></datalist>
+            </div>
+        </div>
+    </div>
+
     <table class="monitor-table">
         <thead>
             <tr>
@@ -24,7 +48,7 @@
                 <th>ESTADO MONITOR</th>
                 <th>RUTA</th>
                 <th>ORIGEN / DESTINO</th>
-                <th>SALIDA REAL</th>
+                <th>SALIDA PLAN</th> <th>SALIDA REAL</th>
                 <th>LLEGADA EST.</th>
                 <th>PROGRESO</th>
                 <th style="text-align:center;">CONTROL DEL VIAJE</th>
@@ -32,7 +56,7 @@
             </tr>
         </thead>
         <tbody id="lista-viajes">
-            <tr><td colspan="8" style="text-align:center; padding:40px;">Sincronizando flota activa...</td></tr>
+            <tr><td colspan="10" style="text-align:center; padding:40px;">Sincronizando búnker y flota activa...</td></tr>
         </tbody>
     </table>
 </div>
@@ -151,33 +175,61 @@
         script.onload = function() { script.remove(); };
     }
 
+    let listaViajesGlobal = [];
+    let estadoFiltroActivo = "TODOS";
+    
     // 2. RENDERIZADO DE LA TABLA MONITOR PRINCIPAL
     window.renderizar = function(viajes) {
+        listaViajesGlobal = viajes || [];
+        
+        // 🎯 LÓGICA ALIMENTACIÓN DATALISTS: Extrae solo Placas y Rutas VIVAS de la DB_OPERACION actual
+        const dlPlacas = document.getElementById("dl-placas-activas");
+        const dlRutas = document.getElementById("dl-rutas-activas");
+        
+        if (dlPlacas && dlRutas) {
+            let placasUnicas = [...new Set(listaViajesGlobal.map(v => v.placa).filter(Boolean))].sort();
+            let rutasUnicas = [...new Set(listaViajesGlobal.map(v => v.ruta).filter(Boolean))].sort();
+            
+            dlPlacas.innerHTML = placasUnicas.map(p => `<option value="${p}"></option>`).join("");
+            dlRutas.innerHTML = rutasUnicas.map(r => `<option value="${r}"></option>`).join("");
+        }
+
+        // Ejecutamos el filtro unificado para pintar la pantalla de inmediato
+        filtrarYMostrarTabla();
+    };
+
+    // 🧠 MOTOR UNIFICADO DE FILTRADO TRIPLE (ESTADOS + PLACA + RUTA)
+    function filtrarYMostrarTabla() {
         const tbody = document.getElementById('lista-viajes');
         if (!tbody) return;
         tbody.innerHTML = "";
-        
-        if (!viajes || viajes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px;">No hay viajes activos en este momento.</td></tr>';
+
+        const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
+        const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
+
+        // Aplicamos discriminación en cascada de los tres filtros en simultáneo
+        let viajesFiltrados = listaViajesGlobal.filter(v => {
+            // Filtro 1: Botonera de Estados
+            if (estadoFiltroActivo !== "TODOS" && v.estadoVisual !== estadoFiltroActivo) return false;
+            // Filtro 2: Predictivo de Placas
+            if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
+            // Filtro 3: Predictivo de Rutas
+            if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
+            return true;
+        });
+
+        if (viajesFiltrados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún viaje activo coincide con los criterios seleccionados.</td></tr>';
             return;
         }
 
-        // Ordenar cronológicamente de menor a mayor
-        viajes.sort((a, b) => {
-            let horaA = String(a.salidaReal || "").trim();
-            let horaB = String(b.salidaReal || "").trim();
-            if (horaA < horaB) return -1;
-            if (horaA > horaB) return 1;
-            return 0;
-        });
-
         window._cacheItinerarios = {};
 
-        viajes.forEach(v => {
+        viajesFiltrados.forEach(v => {
             const estaEnCurso = (v.estado === "EN CURSO");
             let salidaVisual = (v.salidaReal && v.salidaReal !== "---") ? v.salidaReal : "---";
+            let salidaPlanVisual = (v.etdOrigen && v.etdOrigen !== "---") ? v.etdOrigen.replace("'", "") : "---"; // Limpieza del prefijo Excel
             
-            // Almacenamiento seguro en caché tolerante a formatos
             if (v.itinerarioFull) {
                 window._cacheItinerarios[v.idViaje] = typeof v.itinerarioFull === 'string' ? v.itinerarioFull : JSON.stringify(v.itinerarioFull);
             } else {
@@ -186,26 +238,25 @@
             
             let badgeColor = "";
             if (v.estadoVisual === "RETRASADO") {
-                badgeColor = '<span style="background-color: #ffcccc; color: #cc0000; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; animation: blinker 1.5s linear infinite;"><i class="fas fa-exclamation-triangle"></i> RETRASADO</span>';
+                badgeColor = '<span style="background-color: #fee2e2; color: #b91c1c; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block; border:1px solid #fca5a5; animation: blinker 1.5s linear infinite;"><i class="fas fa-exclamation-triangle"></i> RETRASADO</span>';
             } else if (v.estadoVisual === "NO INICIADO") {
-                badgeColor = '<span style="background-color: #e0e0e0; color: #555555; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;"><i class="far fa-clock"></i> NO INICIADO</span>';
+                badgeColor = '<span style="background-color: #f1f5f9; color: #475569; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block; border:1px solid #cbd5e1;"><i class="far fa-clock"></i> NO INICIADO</span>';
             } else if (v.estadoVisual === "PROGRAMADO") {
-                // 🔵 Nuevo diseño para los días posteriores (Mañana, pasado, etc.)
-                badgeColor = '<span style="background-color: #d1ecf1; color: #0c5460; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;"><i class="far fa-calendar-alt"></i> PROGRAMADO</span>';
+                badgeColor = '<span style="background-color: #d1ecf1; color: #0c5460; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block; border:1px solid #bee5eb;"><i class="far fa-calendar-alt"></i> PROGRAMADO</span>';
             } else if (v.estadoVisual === "EN CURSO") {
-                badgeColor = '<span style="background-color: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;"><i class="fas fa-truck"></i> EN CURSO</span>';
+                badgeColor = '<span style="background-color: #dcfce7; color: #15803d; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block; border:1px solid #86efac;"><i class="fas fa-truck"></i> EN CURSO</span>';
             } else {
-                badgeColor = `<span style="background-color: #e2e3e5; color: #383d41; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${v.estadoVisual}</span>`;
+                badgeColor = `<span style="background-color: #e2e3e5; color: #383d41; padding: 5px 10px; border-radius: 6px; font-size: 11px; display:inline-block;">${v.estadoVisual}</span>`;
             }
             
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><b>${v.placa}</b><br><small style="color:#777">${v.conductor}</small></td>
+                <td><b style="font-size:14px; color:#0f172a;">${v.placa}</b><br><small style="color:#64748b; font-weight:500;">${v.conductor}</small></td>
                 <td>${badgeColor}</td>
-                <td><small>${v.ruta}</small></td>
-                <td>📍 ${v.origen}<br>🏁 ${v.destino}</td>
-                <td style="color:black; font-weight:bold;">${salidaVisual}</td>
-                <td style="font-weight:bold;">${v.llegadaEstimada}</td>
+                <td><small style="font-weight:600; color:#334155;">${v.ruta}</small></td>
+                <td style="font-size:12px; color:#334155;">📍 ${v.origen}<br>🏁 ${v.destino}</td>
+                <td style="color:#0f172a; font-weight:700; font-size:12px;">${salidaPlanVisual}</td> <td style="color:#004b93; font-weight:700; font-size:12px;">${salidaVisual}</td>
+                <td style="font-weight:700; font-size:12px; color:#334155;">${v.llegadaEstimada}</td>
                 <td>
                     <div class="segment-bar">
                         ${Array.from({length:10}, (_,i) => `<div class="segment ${i < (v.progreso/10) ? 'active' : ''}"></div>`).join('')}
@@ -223,18 +274,16 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="#d93025"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
                     </button>
                 </td>
-                <td class="vistas-cell" style="display: flex; gap: 8px; justify-content: center;">
-                    <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">
-                        📋
-                    </button>
-                    <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalleManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.ruta)}', '${v.estadoVisual}', '${v.progreso}')">
-                        🔍
-                    </button>
+                <td class="vistas-cell">
+                    <div style="display:flex; gap:4px; justify-content:center;">
+                        <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">📋</button>
+                        <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalleManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.ruta)}', '${v.estadoVisual}', '${v.progreso}')">🔍</button>
+                    </div>
                 </td>
             `;
             tbody.appendChild(tr);
         });
-    };
+    }
 
     window.abrirResumenManualmente = function(idViaje, placa, logAuditoria) {
         let stringData = window._cacheItinerarios[idViaje] || "[]";
