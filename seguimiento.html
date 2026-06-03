@@ -650,7 +650,7 @@
                         horaRealSalida = "---";
                     } 
                     else {
-                        // 🎯 CORRECCIÓN: Si es el Hito Origen (index 0), km planificados siempre sale como "---"
+                        // 🎯 REQUERIMIENTO: Si es el hito 1 (Origen), km plan siempre sale como "---"
                         if (index === 0) {
                             distPlanKm = "---";
                         } else if (tieneHitoManualActivo && index === 2) {
@@ -664,27 +664,46 @@
                         let baseOdometro = 0;
                         let basePlanHoraSalida = null;
 
+                        // 🎯 ESCENARIO 1: Lógica matemática si hubo Inicio Manual activo
                         if (tieneHitoManualActivo && index === 2) {
-                            // 🎯 REQUERIMIENTO PUNTO 2 REAL: Resta llegada real del hito 2 menos la salida del hito manual (clic)
                             baseSalidaHora = horaSalidaManualOculta;
                             baseOdometro = odometroManualOculto;
-                            // 🎯 REQUERIMIENTO PUNTO 2 PLAN: Considera la planificación original desde el Origen estricto (Hito 0)
-                            basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
+                            
+                            // Si el Origen fue omitido/no iniciado, el plan del Punto 2 usa la hora del clic manual
+                            if (esOrigenOmitido || itinerarioPlan[0].deteccion === "NO") {
+                                basePlanHoraSalida = horaSalidaManualOculta; 
+                            } else {
+                                basePlanHoraSalida = itinerarioPlan[0].planHoraSalida; 
+                            }
                         } else if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
                             baseOdometro = parseFloat(ultimoHitoRealValido.km_acumulado || 0);
-                            basePlanHoraSalida = ultimoHitoRealValidoPlan ? ultimoHitoRealValidoPlan.planHoraSalida : itinerarioPlan[index - 1].planHoraSalida; 
+                            
+                            // 🎯 ESCENARIO 2: Buscar hacia atrás el último hito planificado que NO haya sido omitido
+                            let idxBusqueda = index - 1;
+                            while (idxBusqueda >= 0) {
+                                let hitoPrevio = itinerarioPlan[idxBusqueda];
+                                let realPrevio = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === hitoPrevio.punto.toString().toUpperCase().trim()) : null;
+                                let prevCompletado = (hitoPrevio.deteccion === "SI" || hitoPrevio.deteccion === "FORZADO" || !!realPrevio);
+                                
+                                // Si el hito anterior fue completado o es el origen, tomamos su salida (etd) como base
+                                if (prevCompletado || idxBusqueda === 0) {
+                                    basePlanHoraSalida = hitoPrevio.planHoraSalida;
+                                    break;
+                                }
+                                idxBusqueda--;
+                            }
                         } else if (index > 0) {
-                            let anterior = itinerarioPlan[index - 1];
-                            baseSalidaHora = anterior.realHora;
-                            basePlanHora = anterior.planHora;
+                            baseSalidaHora = itinerarioPlan[index - 1].realHora;
+                            basePlanHoraSalida = itinerarioPlan[index - 1].planHoraSalida; 
                         }
 
-                        // 🎯 CORRECCIÓN: Si es el hito de Origen (index 0), limpiamos los tiempos de viaje (Evita las 12:00 horas basura)
-                        if (index === 0) {
+                        // 🎯 REQUERIMIENTO: Evitar cálculos erráticos en el hito origen o en filas marcadas como omitidas
+                        if (index === 0 || esOmitido) {
                             tiempoViajePlan = "---";
                             tiempoViajeReal = "---";
                         } else {
+                            // Calcula acumulando correctamente las horas sin que afecten las zonas intermedias vacías
                             if (basePlanHoraSalida && plan.planHora && basePlanHoraSalida !== "---" && plan.planHora !== "---") {
                                 tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                             }
