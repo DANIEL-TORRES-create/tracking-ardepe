@@ -295,6 +295,44 @@
         abrirMegaDetalle(idViaje, placa, rutaEncoded, estado, progreso, encodeURIComponent(stringData));
     };
 
+    // ====================================================================
+    // ⚡ CONTROLADOR DE EVENTOS ACTIVOS (BOTONERA + INPUTS PREDICTIVOS)
+    // ====================================================================
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // 1. Escucha de clics para los Botones de Estado Corporativos
+        const botonesEstado = document.querySelectorAll(".btn-filto-est");
+        botonesEstado.forEach(boton => {
+            boton.addEventListener("click", function() {
+                botonesEstado.forEach(b => {
+                    b.classList.remove("activo");
+                    b.style.opacity = "0.6";
+                });
+                this.classList.add("activo");
+                this.style.opacity = "1";
+                
+                estadoFiltroActivo = this.getAttribute("data-estado");
+                filtrarYMostrarTabla();
+            });
+        });
+
+        // 2. Escucha en tiempo real (letra por letra) para la caja de PLACAS
+        const inputPlaca = document.getElementById("txt-filtro-placa");
+        if (inputPlaca) {
+            inputPlaca.addEventListener("input", function() {
+                filtrarYMostrarTabla();
+            });
+        }
+
+        // 3. Escucha en tiempo real (letra por letra) para la caja de RUTAS
+        const inputRuta = document.getElementById("txt-filtro-ruta");
+        if (inputRuta) {
+            inputRuta.addEventListener("input", function() {
+                filtrarYMostrarTabla();
+            });
+        }
+    });
+    
     // 3. LÓGICA DE MODALES Y ACCIONES MANUALES
     function prepararAccion(id, tipo) {
         _viajeSeleccionado = id;
