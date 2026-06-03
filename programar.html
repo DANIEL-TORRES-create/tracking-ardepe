@@ -112,6 +112,7 @@
             ["4. EL CONDUCTOR debe ser el nombre y apellido registrado en la plataforma."],
             ["5. La RUTA debe ser idéntica al nombre de la ruta creada en el Add-in 1. Configurar Rutas."],
             ["6. No cambie el nombre de los encabezados de la primera fila."],
+            ["7. Si es un viaje de retorno, al final del nombre de la ruta agregar /RETORNO (Ejemplo: LIMA-ICA/RETORNO)."], // 🚀 PUNTO 7 INYECTADO
             [""],
             ["Nota: El botón 'Validar y Subir' verificará que las Placas y Rutas existan antes de procesar."]
         ];
@@ -145,12 +146,39 @@
     }
 
     function generarItinerarioMasivo(nombreRuta, fechaSalida) {
-        const ruta = rutasMaestras.find(r => r.nombre === nombreRuta);
+        // 🚀 DETECCIÓN QUIRÚRGICA: Verificamos si el nombre termina estrictamente con /RETORNO
+        let esRetornoMasivo = false;
+        let nombreBuscar = nombreRuta.toString().trim();
+        
+        if (nombreBuscar.toUpperCase().endsWith("/RETORNO")) {
+            esRetornoMasivo = true;
+            // Removemos el sufijo /RETORNO para buscar la estructura original de la Ruta Maestra
+            nombreBuscar = nombreBuscar.substring(0, nombreBuscar.toUpperCase().lastIndexOf("/RETORNO")).trim();
+        }
+
+        const ruta = rutasMaestras.find(r => r.nombre === nombreBuscar);
         if (!ruta) return "[]";
-        let puntos = JSON.parse(ruta.puntos);
+        
+        let puntosOriginales = JSON.parse(ruta.puntos);
+        let puntos;
+
+        // 🔄 REGLA DE NEGOCIO: Si es retorno, invertimos el itinerario idéntico a tu lógica manual
+        if (esRetornoMasivo) {
+            puntos = [...puntosOriginales].reverse();
+            puntos = puntos.map((p, i) => {
+                if (i === 0) return { ...p, km: 0, tiempo: "00:00" };
+                let originalIndex = puntosOriginales.findIndex(orig => orig.name === p.name);
+                let dataReferencia = puntosOriginales[originalIndex + 1] || puntosOriginales[originalIndex];
+                return { ...p, km: dataReferencia.km, tiempo: dataReferencia.tiempo };
+            });
+        } else {
+            puntos = puntosOriginales;
+        }
+
         let partFecha = fechaSalida.toString().replace("'", "").trim().split(" ");
         let f = partFecha[0].split("-"), h = partFecha[1].split(":");
         let tiempoMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime(), kmAcum = 0;
+        
         let resultado = puntos.map((p, i) => {
             let perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000), eta, etd;
             if (i === 0) { etd = tiempoMs; eta = etd - perMs; }
@@ -317,55 +345,67 @@
                 });
 
                 document.getElementById("btnProcesarExcel").addEventListener("click", function() {
-                    const fileInput = document.getElementById("inputExcel"), log = document.getElementById("errorLog"), btn = this;
-                    if (!fileInput.files[0]) return alert("Seleccione archivo");
-                    log.style.display = "none"; log.innerHTML = "";
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                        const sheet = workbook.Sheets["Programación"];
-                        if (!sheet) return alert("No se encontró hoja 'Programación'");
-                        const jsonData = XLSX.utils.sheet_to_json(sheet);
-                        let errores = [];
-                        const nombresRutas = rutasMaestras.map(r => r.nombre);
-                        jsonData.forEach((f, i) => {
-                            let n = i + 2;
-                            if (!placasValidas.includes(f.PLACA)) errores.push(`Fila ${n}: Placa '${f.PLACA}' inválida.`);
-                            if (!nombresRutas.includes(f.RUTA)) errores.push(`Fila ${n}: Ruta '${f.RUTA}' no existe.`);
-                            if (!f.FECHA_ETD || !validarFechaReal(f.FECHA_ETD)) errores.push(`Fila ${n}: Fecha inválida.`);
-                        });
-                        if (errores.length > 0) { 
-                            log.style.display = "block"; 
-                            log.innerHTML = errores.join("<br>"); 
-                            return; 
-                        }
-                        btn.disabled = true;
-                        const total = jsonData.length;
-                        for (let [idx, f] of jsonData.entries()) {
-                            btn.innerText = `⏳ Procesando ${idx + 1}/${total}...`;
-                            try {
-                                await fetch(WEB_APP_URL, { 
-                                    method: "POST", 
-                                    body: JSON.stringify({ 
-                                        action: "programarViaje", 
-                                        vehiculo: f.PLACA, 
-                                        conductor: f.CONDUCTOR || "Sin Conductor", 
-                                        etdOrigen: f.FECHA_ETD.toString().startsWith("'") ? f.FECHA_ETD : "'" + f.FECHA_ETD, 
-                                        nombreRuta: f.RUTA, 
-                                        itinerario: generarItinerarioMasivo(f.RUTA, f.FECHA_ETD) 
-                                    }) 
-                                });
-                            } catch (error) { console.error("Error en fila " + (idx + 2), error); }
-                        }
-                        alert("✅ Carga masiva completada con éxito");
-                        fileInput.value = ""; 
-                        btn.innerText = "Validar y Subir";
-                        btn.disabled = false;
-                        resetearFormularioProgramacion(); 
-                        cargarViajesExistentes(); 
-                    };
-                    reader.readAsArrayBuffer(fileInput.files[0]);
-                });
+        const fileInput = document.getElementById("inputExcel"), log = document.getElementById("errorLog"), btn = this;
+        if (!fileInput.files[0]) return alert("Seleccione archivo");
+        log.style.display = "none"; log.innerHTML = "";
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            const sheet = workbook.Sheets["Programación"];
+            if (!sheet) return alert("No se encontró hoja 'Programación'");
+            const jsonData = XLSX.utils.sheet_to_json(sheet);
+            let errores = [];
+            const nombresRutas = rutasMaestras.map(r => r.nombre);
+            
+            jsonData.forEach((f, i) => {
+                let n = i + 2;
+                if (!placasValidas.includes(f.PLACA)) errores.push(`Fila ${n}: Placa '${f.PLACA}' inválida.`);
+                
+                // Limpieza del sufijo para verificar la existencia de la ruta en la base de datos base
+                let rutaCelda = String(f.RUTA || "").trim();
+                let rutaLimpiaParaValidar = rutaCelda;
+                if (rutaCelda.toUpperCase().endsWith("/RETORNO")) {
+                    rutaLimpiaParaValidar = rutaCelda.substring(0, rutaCelda.toUpperCase().lastIndexOf("/RETORNO")).trim();
+                }
+                
+                if (!nombresRutas.includes(rutaLimpiaParaValidar)) errores.push(`Fila ${n}: Ruta '${rutaCelda}' no existe en las Maestras.`);
+                if (!f.FECHA_ETD || !validarFechaReal(f.FECHA_ETD)) errores.push(`Fila ${n}: Fecha inválida.`);
+            });
+            
+            if (errores.length > 0) { 
+                log.style.display = "block"; 
+                log.innerHTML = errores.join("<br>"); 
+                return; 
+            }
+            btn.disabled = true;
+            const total = jsonData.length;
+            for (let [idx, f] of jsonData.entries()) {
+                btn.innerText = `⏳ Procesando ${idx + 1}/${total}...`;
+                let rutaCelda = String(f.RUTA || "").trim();
+
+                try {
+                    await fetch(WEB_APP_URL, { 
+                        method: "POST", 
+                        body: JSON.stringify({ 
+                            action: "programarViaje", 
+                            vehiculo: f.PLACA, 
+                            conductor: f.CONDUCTOR || "Sin Conductor", 
+                            etdOrigen: f.FECHA_ETD.toString().startsWith("'") ? f.FECHA_ETD : "'" + f.FECHA_ETD, 
+                            nombreRuta: rutaCelda, // Se almacena con el sufijo para auditoría e historial visual
+                            itinerario: generarItinerarioMasivo(f.RUTA, f.FECHA_ETD) 
+                        }) 
+                    });
+                } catch (error) { console.error("Error en fila " + (idx + 2), error); }
+            }
+            alert("✅ Carga masiva completada con éxito");
+            fileInput.value = ""; 
+            btn.innerText = "Validar y Subir";
+            btn.disabled = false;
+            resetearFormularioProgramacion(); 
+            cargarViajesExistentes(); 
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    });
 
                 callback();
             },
