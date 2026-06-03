@@ -818,12 +818,12 @@ textarea {
    🚀 BÚNKER DE CONTROLES PRO (ESTADOS Y PREDICTIVOS)
    ========================================= */
 .bunker-controles-superiores {
-    background: #ffffff;
-    padding: 16px 24px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    border: 1px solid #e2e8f0;
+    background: linear-gradient(145deg, #0f172a, #1e293b); /* Fondo búnker oscuro ejecutivo */
+    padding: 20px 28px;
+    border-radius: 16px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.3);
+    border: 1px solid #334155;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -831,75 +831,83 @@ textarea {
     flex-wrap: wrap;
 }
 
-.grupo-filtros-estados {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
+/* 🎛️ BOTONES DE ESTADO CON LOOK DE PANTALLA TÁCTIL INDUSTRIAL */
 .btn-filto-est {
-    border: 1px solid #cbd5e1;
-    padding: 8px 16px;
-    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+    padding: 10px 18px;
+    border-radius: 8px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800;
     font-family: 'Lexend', sans-serif;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     text-transform: uppercase;
-    opacity: 0.6;
+    opacity: 0.5;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.btn-filto-est.activo {
-    opacity: 1 !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+.btn-filto-est:hover {
+    opacity: 0.85;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
 }
 
-.grupo-inputs-predictivos {
-    display: flex;
-    gap: 12px;
-    align-items: center;
+/* ILUMINACIÓN DE NEÓN CUANDO EL BOTÓN ESTÁ ACTIVO */
+.btn-filto-est.activo[data-estado="TODOS"] { 
+    opacity: 1 !important; background: #38bdf8 !important; color: #0f172a !important; font-weight: 900;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.5) !important;
+}
+.btn-filto-est.activo[data-estado="ATRASADO"] { 
+    opacity: 1 !important; background: #ef4444 !important; color: #ffffff !important;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6) !important; border-color: #ef4444 !important;
+}
+.btn-filto-est.activo[data-estado="EN CURSO"] { 
+    opacity: 1 !important; background: #22c55e !important; color: #ffffff !important;
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.6) !important; border-color: #22c55e !important;
+}
+.btn-filto-est.activo[data-estado="NO INICIADO"] { 
+    opacity: 1 !important; background: #64748b !important; color: #ffffff !important;
+    box-shadow: 0 0 12px rgba(100, 116, 139, 0.5) !important; border-color: #64748b !important;
+}
+.btn-filto-est.activo[data-estado="PROGRAMADO"] { 
+    opacity: 1 !important; background: #06b6d4 !important; color: #ffffff !important;
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.6) !important; border-color: #06b6d4 !important;
 }
 
-.caja-predictiva-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
+/* 🔍 CAJAS DE BÚSQUEDA TECNOLÓGICAS */
 .caja-predictiva-wrapper i {
     position: absolute;
-    left: 12px;
-    color: #94a3b8;
+    left: 14px;
+    color: #38bdf8; /* Iconos color azul Geotab brillante */
     font-size: 14px;
+    z-index: 10;
 }
 
 .input-predictivo-pro {
     font-family: 'Lexend', sans-serif;
     font-size: 12px;
-    padding: 9px 12px 9px 36px;
+    font-weight: 600;
+    padding: 11px 14px 11px 40px;
     border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    width: 180px;
-    color: var(--text-dark);
-    background-color: #f8fafc;
-    transition: all 0.2s ease;
+    border: 1px solid #475569;
+    width: 200px;
+    color: #ffffff;
+    background-color: #1e293b; /* Fondo oscuro integrado para el buscador */
+    transition: all 0.25s ease;
 }
 
 .input-predictivo-pro:focus {
     outline: none;
-    border-color: var(--primary);
-    background-color: #ffffff;
-    box-shadow: 0 0 0 3px rgba(0, 75, 147, 0.15);
+    border-color: #38bdf8;
+    background-color: #0f172a;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25), inset 0 1px 2px rgba(0,0,0,0.4);
 }
 
-/* Forzado de alineación de textos en la cabecera del monitor */
-.monitor-table th {
-    vertical-align: middle !important;
-    line-height: 1.4 !important;
-    white-space: nowrap;
+.input-predictivo-pro::placeholder {
+    color: #64748b;
 }
