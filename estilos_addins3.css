@@ -819,7 +819,7 @@ textarea {
    ========================================= */
 .bunker-controles-superiores {
     background: linear-gradient(145deg, #0f172a, #1e293b); /* Fondo búnker oscuro ejecutivo */
-    padding: 20px 28px;
+    padding: 16px 24px; /* Ajuste sutil de padding para balancear la fila */
     border-radius: 16px;
     margin-bottom: 25px;
     box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.3);
@@ -828,7 +828,39 @@ textarea {
     justify-content: space-between;
     align-items: center;
     gap: 20px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; /* 🚀 REGLA DE ORO: Bloquea el salto de línea para mantener la simetría horizontal */
+}
+
+/* 🎛️ CONTENEDOR PARA OBLIGAR A LOS BOTONES A QUEDARSE EN UNA SOLA FILA */
+.grupo-filtros-estados {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important; /* Prohibido que se caigan los botones */
+}
+
+/* 📊 INDICADOR EJECUTIVO CENTRAL (OCUPA EL VACÍO VISUAL) */
+.bunker-contador-flota {
+    font-family: 'Lexend', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: rgba(30, 41, 59, 0.7);
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+#num-flota-total {
+    color: #38bdf8; /* Azul neón brillante para el número */
+    font-size: 14px;
+    font-weight: 900;
 }
 
 /* 🎛️ BOTONES DE ESTADO CON LOOK DE PANTALLA TÁCTIL INDUSTRIAL */
@@ -849,6 +881,7 @@ textarea {
     text-transform: uppercase;
     opacity: 0.5;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    white-space: nowrap; /* Evita que el texto de dos palabras salte de línea */
 }
 
 .btn-filto-est:hover {
@@ -880,6 +913,12 @@ textarea {
 }
 
 /* 🔍 CAJAS DE BÚSQUEDA TECNOLÓGICAS */
+.caja-predictiva-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
 .caja-predictiva-wrapper i {
     position: absolute;
     left: 14px;
