@@ -313,66 +313,6 @@
         abrirMegaDetalle(idViaje, placa, rutaEncoded, estado, progreso, encodeURIComponent(stringData));
     };
 
-    // ====================================================================
-    // ⚡ CONTROLADOR DE EVENTOS ACTIVOS (BOTONERA + INPUTS PREDICTIVOS)
-    // ====================================================================
-    
-    document.addEventListener("DOMContentLoaded", function() {
-        
-        // ⏰ 1. MOTOR DEL RELOJ EN TIEMPO REAL
-        const contenedorHora = document.getElementById("bunker-time");
-        if (contenedorHora) {
-            setInterval(() => {
-                const ahora = new Date();
-                let hrs = ahora.getHours();
-                let mins = ahora.getMinutes();
-                let segs = ahora.getSeconds();
-                
-                // Forzar formato de dos dígitos (01, 02, etc.)
-                hrs = hrs < 10 ? "0" + hrs : hrs;
-                mins = mins < 10 ? "0" + mins : mins;
-                segs = segs < 10 ? "0" + segs : segs;
-                
-                contenedorHora.innerText = hrs + ":" + mins + ":" + segs;
-            }, 1000);
-        }
-
-        // 🎛️ 2. ESCUCHA DE CLICS PARA LOS BOTONES DE ESTADO NAVISAF
-        const botonesEstado = document.querySelectorAll(".btn-filto-est");
-        botonesEstado.forEach(boton => {
-            boton.addEventListener("click", function() {
-                // Opaca todos los botones
-                botonesEstado.forEach(b => {
-                    b.classList.remove("activo");
-                    b.style.opacity = "0.65";
-                });
-                // Enciende en neón el seleccionado
-                this.classList.add("activo");
-                this.style.opacity = "1";
-                
-                // Cambia el estado global y filtra
-                estadoFiltroActivo = this.getAttribute("data-estado");
-                filtrarYMostrarTabla();
-            });
-        });
-
-        // 🔍 3. ESCUCHA LETRA POR LETRA PARA EL FILTRO DE PLACAS
-        const inputPlaca = document.getElementById("txt-filtro-placa");
-        if (inputPlaca) {
-            inputPlaca.addEventListener("input", function() {
-                filtrarYMostrarTabla();
-            });
-        }
-
-        // 🔍 4. ESCUCHA LETRA POR LETRA PARA EL FILTRO DE RUTAS
-        const inputRuta = document.getElementById("txt-filtro-ruta");
-        if (inputRuta) {
-            inputRuta.addEventListener("input", function() {
-                filtrarYMostrarTabla();
-            });
-        }
-    });
-    
     // 3. LÓGICA DE MODALES Y ACCIONES MANUALES
     function prepararAccion(id, tipo) {
         _viajeSeleccionado = id;
@@ -1106,6 +1046,52 @@
             initialize(api, state, callback) {
                 apiGlobal = api; 
                 api.getSession(s => { _usuarioLogueado = s.userName; });
+                
+                // ⏰ A. ENTRADA EN TIEMPO REAL: ACTIVACIÓN DEL RELOJ DEL BUNKER
+                const contenedorHora = document.getElementById("bunker-time");
+                if (contenedorHora) {
+                    setInterval(() => {
+                        const ahora = new Date();
+                        let hrs = ahora.getHours();
+                        let mins = ahora.getMinutes();
+                        let segs = ahora.getSeconds();
+                        
+                        hrs = hrs < 10 ? "0" + hrs : hrs;
+                        mins = mins < 10 ? "0" + mins : mins;
+                        segs = segs < 10 ? "0" + segs : segs;
+                        
+                        contenedorHora.innerText = hrs + ":" + mins + ":" + segs;
+                    }, 1000);
+                }
+
+                // 🎛️ B. ENGANCHE TÁCTIL: CLICS EN LA BOTONERA DE ESTADOS NAVISAF
+                const botonesEstado = document.querySelectorAll(".btn-filto-est");
+                botonesEstado.forEach(boton => {
+                    boton.addEventListener("click", function() {
+                        botonesEstado.forEach(b => {
+                            b.classList.remove("activo");
+                            b.style.opacity = "0.65";
+                        });
+                        this.classList.add("activo");
+                        this.style.opacity = "1";
+                        
+                        estadoFiltroActivo = this.getAttribute("data-estado");
+                        filtrarYMostrarTabla();
+                    });
+                });
+
+                // 🔍 C. FILTRADO DINÁMICO INPUT POR INPUT (PLACAS Y RUTAS)
+                const inputPlaca = document.getElementById("txt-filtro-placa");
+                if (inputPlaca) {
+                    inputPlaca.addEventListener("input", filtrarYMostrarTabla);
+                }
+
+                const inputRuta = document.getElementById("txt-filtro-ruta");
+                if (inputRuta) {
+                    inputRuta.addEventListener("input", filtrarYMostrarTabla);
+                }
+
+                // Ejecución e intervalos base del Servidor
                 actualizar();
                 setInterval(actualizar, 60000);
                 callback();
@@ -1113,7 +1099,7 @@
         };
     };
 
-    // Ejecución inicial por si se prueba fuera de Geotab
+    // Ejecución inicial de respaldo para entornos de pruebas locales
     actualizar();
 </script>
 </body>
