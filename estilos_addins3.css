@@ -813,3 +813,93 @@ textarea {
     line-height: 1.3 !important;
     font-size: 11px !important;
 }
+
+/* =========================================
+   🚀 BÚNKER DE CONTROLES PRO (ESTADOS Y PREDICTIVOS)
+   ========================================= */
+.bunker-controles-superiores {
+    background: #ffffff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.grupo-filtros-estados {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-filto-est {
+    border: 1px solid #cbd5e1;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Lexend', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+
+.btn-filto-est.activo {
+    opacity: 1 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+}
+
+.grupo-inputs-predictivos {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.caja-predictiva-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.caja-predictiva-wrapper i {
+    position: absolute;
+    left: 12px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.input-predictivo-pro {
+    font-family: 'Lexend', sans-serif;
+    font-size: 12px;
+    padding: 9px 12px 9px 36px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    width: 180px;
+    color: var(--text-dark);
+    background-color: #f8fafc;
+    transition: all 0.2s ease;
+}
+
+.input-predictivo-pro:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(0, 75, 147, 0.15);
+}
+
+/* Forzado de alineación de textos en la cabecera del monitor */
+.monitor-table th {
+    vertical-align: middle !important;
+    line-height: 1.4 !important;
+    white-space: nowrap;
+}
