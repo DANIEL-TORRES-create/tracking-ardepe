@@ -216,27 +216,41 @@
             
             // 📅 Filtro de Fecha por Integros
             if (filtroFecha !== "") {
-                let pF = filtroFecha.split("-"); 
+                let pF = filtroFecha.split("-"); // ["2026", "06", "03"]
                 let anioFiltro = parseInt(pF[0], 10);
                 let mesFiltro = parseInt(pF[1], 10);
                 let diaFiltro = parseInt(pF[2], 10);
 
-                let textoCelda = (v.fechaInicio || "").toString().replace("'", "").trim();
-                let pC = textoCelda.split(/[^\d]+/); 
+                // Forzamos a que la fecha de la celda se vuelva texto limpio
+                let textoCelda = "";
+                if (v.fechaInicio) {
+                    if (v.fechaInicio instanceof Date) {
+                        // Si llega como objeto Date nativo de Google
+                        textoCelda = v.fechaInicio.toLocaleDateString('es-PE'); // "17/4/2026"
+                    } else {
+                        // Si llega como texto del Sheet
+                        textoCelda = v.fechaInicio.toString().replace("'", "").trim();
+                    }
+                }
+                
+                let pC = textoCelda.split(/[^\d]+/); // Extrae los números puros
 
                 if (pC.length >= 3) {
                     let dCelda, mCelda, aCelda;
                     
+                    // Si el formato de texto guardado empezó por Año (2026-04-17)
                     if (textoCelda.indexOf("-") > -1 && textoCelda.indexOf("-") < 5) {
                         aCelda = parseInt(pC[0], 10);
                         mCelda = parseInt(pC[1], 10);
                         dCelda = parseInt(pC[2], 10);
                     } else { 
+                        // Formato estándar latino (17/4/2026 o 17/04/2026)
                         dCelda = parseInt(pC[0], 10);
                         mCelda = parseInt(pC[1], 10);
                         aCelda = parseInt(pC[2], 10);
                     }
 
+                    // Comparación matemática blindada
                     if (dCelda !== diaFiltro || mCelda !== mesFiltro || aCelda !== anioFiltro) {
                         return false;
                     }
