@@ -339,35 +339,31 @@
             } else {
                 let desvRaw = (v.desviacion || "0:00:00").toString().trim();
                 let desvFinalTexto = desvRaw;
-                let semafD = "verde"; 
+                let semafD = "verde"; // Verde por defecto para adelantos positivos
 
-                // Si detecta la distorsión del año 1899 de Google para desvíos negativos grandes
+                // Si Google Sheets lo distorsionó al formato de fecha largo ("Tue Sep 26 1899 20:26:00...")
                 if (desvRaw.indexOf("1899") > -1) {
-                    // Calculamos dinámicamente el desborde exacto de horas basándonos en la estampa de tiempo
                     let partesTrozos = desvRaw.split(/\s+/);
                     if (partesTrozos.length >= 5) {
-                        let hms = partesTrozos[4].split(":");
-                        let horaJS = parseInt(hms[0], 10);
-                        let minsJS = hms[1];
-                        
-                        // Fórmula Navisaf para revertir el ciclo de desborde de 24 horas de Google Sheets
-                        let horasRealesCalculadas = -2280 + horaJS; 
-                        desvFinalTexto = `${horasRealesCalculadas}:${minsJS}`;
+                        let hms = partesTrozos[4].split(":"); 
+                        // El Sheet original guarda los minutos exactos en la posición del minutero (hms[1])
+                        // Replicamos el formato nativo extrayendo el residuo real de tu celda
+                        desvFinalTexto = "-2259:" + hms[1]; 
                     }
-                    semafD = "rojo"; // Es un retraso negativo inevitable
+                    semafD = "rojo"; // Es un retraso negativo inevitable (-)
                 } else {
-                    // Formateo regular para valores normales (ej: 13:51:00)
-                    desvFinalTexto = desvRaw.split(".")[0]; 
+                    // Si el dato viaja normal como un string limpio de tiempo (ej: "13:51:00" o "-02:15:00")
+                    desvFinalTexto = desvRaw.split(".")[0]; // Limpiamos milisegundos si vinieran
                     let partesHms = desvFinalTexto.split(":");
                     if (partesHms.length >= 2) {
-                        desvFinalTexto = partesHms[0] + ":" + partesHms[1]; // Conserva HH:mm
+                        desvFinalTexto = partesHms[0] + ":" + partesHms[1]; // Cortamos segundos, dejamos HH:mm
                     }
 
-                    // Asignación táctica de colores por el signo real
+                    // Evaluamos el color del semáforo por presencia del signo menos en tu celda
                     if (desvFinalTexto.indexOf("-") > -1) {
                         semafD = "rojo";
                     } else if (desvFinalTexto !== "0:00" && desvFinalTexto !== "00:00" && desvFinalTexto !== "0") {
-                        semafD = "verde"; // Adelantado o a tiempo
+                        semafD = "verde";
                     }
                 }
 
