@@ -338,7 +338,16 @@
         apiGlobal = api;
         return {
             initialize(api, state, callback) {
-                document.getElementById('filtroFechaLista').valueAsDate = new Date();
+                
+                //  AQUÍ PEGAS EL BLOQUE NUEVO PARA CLAVAR LA FECHA EN HOY:
+                const filtroFechaInput = document.getElementById('filtroFechaLista');
+                if (filtroFechaInput) {
+                    const hoyLocal = new Date();
+                    const offset = hoyLocal.getTimezoneOffset();
+                    const fechaAjustada = new Date(hoyLocal.getTime() - (offset * 60 * 1000));
+                    filtroFechaInput.value = fechaAjustada.toISOString().split('T')[0];
+                }
+
                 cargarDatosGeotab(api);
                 document.getElementById("selectRuta").addEventListener("change", calcular);
                 document.getElementById("fechaSalida").addEventListener("change", calcular);
