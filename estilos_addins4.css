@@ -1,0 +1,176 @@
+:root {
+    --primary: #004b93;      /* Azul Navisaf */
+    --navisaf-light: #e6f1fa; /* Fondo celeste suave */
+    --danger: #d93025;       /* Rojo alertas/cancelar */
+    --success: #1e8e3e;      /* Verde progreso/confirmar */
+    --text-dark: #333333;
+    --border-color: #dddddd;
+}
+body {
+    font-family: 'Lexend', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+    color: var(--text-dark);
+}
+.header-container {
+    background: linear-gradient(90deg, #002244, #004b93); 
+    padding: 18px 35px;
+    border-bottom: 4px solid #38bdf8; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+.bloque-titulo-bunker { display: flex; flex-direction: column; gap: 4px; }
+.neon-title {
+    margin: 0;
+    color: #ffffff !important; 
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+.dashboard { padding: 20px; }
+.monitor-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.monitor-table thead { background: #e1e4e8; }
+.monitor-table th {
+    padding: 15px;
+    text-align: left;
+    font-size: 11px;
+    color: #444;
+    text-transform: uppercase;
+    border-bottom: 2px solid #ccc;
+}
+.monitor-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    vertical-align: middle;
+}
+.vistas-cell { text-align: center; }
+.btn-vista, .btn-vista-detalle {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px 12px;
+    transition: 0.2s;
+}
+.btn-vista:hover, .btn-vista-detalle:hover { transform: scale(1.2); color: var(--primary); }
+.segment-bar {
+    display: flex;
+    gap: 3px;
+    height: 10px;
+    width: 110px;
+    background: #eee;
+    border-radius: 5px;
+    margin-bottom: 4px;
+}
+.segment { flex: 1; background: #eee; }
+.segment.active { background: var(--success); }
+
+/* SIDE PANEL RESUMEN CRONOLÓGICO */
+#side-panel {
+    position: fixed;
+    right: -460px;
+    top: 55px;     
+    width: 430px !important;
+    height: calc(100% - 55px); 
+    background: #f4f6f9 !important; 
+    transition: 0.4s ease-in-out;
+    z-index: 999;  
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column; 
+    padding: 0 !important; 
+}
+#side-panel.open { right: 0; }
+.side-panel-header {
+    background: #ffffff;
+    padding: 15px 20px;
+    display: grid;
+    grid-template-columns: 140px 1fr 140px; 
+    align-items: center;
+    border-bottom: 3px solid var(--primary);
+    z-index: 20;
+}
+.header-left-box { font-size: 11px; font-weight: bold; color: #555; text-transform: uppercase; }
+.btn-close-panel {
+    border: none; background: #f1f3f5; font-size: 24px; cursor: pointer; color: #555;
+    width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s;
+}
+.btn-close-panel:hover { background: #e63946; color: white; transform: rotate(90deg); }
+.timeline-v-container { flex: 1; overflow-y: auto; padding: 20px; }
+.auditoria-panel-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 15px; margin-bottom: 20px; border-radius: 6px; font-size: 11.5px; color: #664d03; }
+
+/* MODAL DETALLE SATELITAL COMPACTO */
+#mega-modal-detalle {
+    position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; 
+    background: rgba(15, 23, 42, 0.75) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important;
+    display: none; justify-content: flex-end !important; align-items: flex-start !important; z-index: 999999 !important;
+}
+.mega-modal-content {
+    background: #ffffff !important; width: calc(100% - 320px) !important; height: 89vh !important; margin-top: 8vh !important;
+    margin-right: 25px !important; border-radius: 14px !important; box-shadow: -15px 0 45px rgba(0, 0, 0, 0.4) !important;
+    padding: 24px !important; display: flex !important; flex-direction: column !important; overflow: hidden !important;
+}
+.mega-cabecera-satelital { display: flex !important; flex-direction: column !important; gap: 12px !important; margin-bottom: 14px !important; width: 100% !important; }
+.mega-bloque-mapa { background: #e2e8f0 !important; border-radius: 12px !important; border: 1px solid #cbd5e1 !important; overflow: hidden !important; height: 320px !important; width: 100% !important; }
+#sat-map-container { width: 100% !important; height: 100% !important; z-index: 10 !important; }
+.sat-badge-estado { display: inline-flex !important; align-items: center !important; gap: 6px !important; padding: 5px 14px !important; border-radius: 20px !important; font-weight: 700 !important; font-size: 11px !important; }
+.sat-ping { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.sat-status-en-curso { background: #dcfce7 !important; color: #15803d !important; }
+.sat-status-en-curso .sat-ping { background: #16a34a; }
+.sat-status-atrasado { background: #fee2e2 !important; color: #b91c1c !important; }
+.sat-status-atrasado .sat-ping { background: #dc2626; }
+.sat-progreso-wrapper { width: 100% !important; min-width: 180px !important; }
+.sat-progreso-texto { display: flex !important; justify-content: space-between !important; font-size: 10px !important; font-weight: 700 !important; color: #64748b !important; margin-bottom: 3px !important; }
+.sat-barra-bg { width: 100% !important; height: 8px !important; background: #e2e8f0 !important; border-radius: 4px !important; overflow: hidden !important; }
+.sat-barra-fill { height: 100% !important; background: linear-gradient(90deg, #004b93, #1e8e3e) !important; transition: width 0.4s ease !important; }
+.mega-barra-filtros { display: flex !important; gap: 8px !important; margin-bottom: 12px !important; }
+.sat-btn-f { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; padding: 6px 14px !important; border-radius: 6px !important; font-size: 12px !important; color: #475569 !important; cursor: pointer; }
+.sat-btn-f.activo { background: #0f172a !important; border-color: #0f172a !important; color: #ffffff !important; font-weight: 600 !important; }
+.mega-bunker-tabla { flex: 1 !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; overflow-x: auto !important; overflow-y: auto !important; background: #ffffff !important; width: 100% !important; }
+.mega-tabla-datos { width: 100% !important; border-collapse: collapse !important; font-size: 12.5px !important; min-width: 1580px !important; }
+.mega-tabla-datos th { position: sticky !important; top: 0 !important; background: #f8fafc !important; color: #475569 !important; font-weight: 700 !important; padding: 12px 10px !important; border-bottom: 2px solid #cbd5e1 !important; }
+.mega-tabla-datos td { padding: 10px 10px !important; border-bottom: 1px solid #f1f5f9 !important; white-space: nowrap !important; text-align: center !important; }
+
+/* TIMELINE VERTICAL COMPACTO (📋) */
+.resumen-lista-puntos { display: flex !important; flex-direction: column !important; padding-left: 30px !important; list-style: none !important; position: relative !important; }
+.resumen-lista-puntos::before { content: '' !important; position: absolute !important; left: 17px !important; top: 15px !important; bottom: 25px !important; width: 3px !important; background: #cbd5e1 !important; }
+.resumen-lista-puntos li { background: #ffffff !important; border: 1px solid #e2e8f0 !important; padding: 12px 16px !important; border-radius: 10px !important; font-size: 13px !important; color: #334155 !important; margin-bottom: 12px !important; display: block !important; position: relative !important; }
+.resumen-lista-puntos li::before { content: '' !important; position: absolute !important; left: -20px !important; top: 50% !important; transform: translateY(-50%) !important; width: 12px !important; height: 12px !important; border-radius: 50% !important; background: #94a3b8 !important; border: 3px solid #ffffff !important; box-shadow: 0 0 0 2px #94a3b8 !important; }
+.resumen-lista-puntos li.hito-completado::before { background: #1e8e3e !important; box-shadow: 0 0 0 2px #1e8e3e !important; }
+.resumen-lista-puntos li.hito-alerta::before { background: #d97706 !important; box-shadow: 0 0 0 2px #d97706 !important; }
+
+/* CONTROLES SUPERIORES */
+.bunker-controles-superiores { background: #004b93; padding: 16px 24px; border-radius: 14px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+.grupo-filtros-estados { display: flex !important; gap: 8px !important; }
+.bunker-contador-flota { font-family: 'Lexend', sans-serif; font-size: 11px; font-weight: 800; color: #e6f1fa; background: rgba(0, 35, 68, 0.6); padding: 8px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; }
+#num-flota-total { color: #38bdf8; font-size: 15px; font-weight: 900; }
+.btn-filto-est { border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.1); color: #ffffff !important; padding: 10px 16px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; opacity: 0.65; text-transform: uppercase; }
+.btn-filto-est:hover { opacity: 0.95; background: rgba(255, 255, 255, 0.2); }
+.btn-filto-est.activo { opacity: 1 !important; background: #ffffff !important; color: #004b93 !important; font-weight: 900; box-shadow: 0 0 14px rgba(255, 255, 255, 0.6) !important; border-color: #ffffff !important; }
+.grupo-inputs-predictivos { display: flex; flex-direction: column; gap: 6px; }
+.caja-predictiva-wrapper { position: relative; display: flex; align-items: center; }
+.caja-predictiva-wrapper i { position: absolute; left: 14px; color: #38bdf8; font-size: 13px; z-index: 10; }
+.input-predictivo-pro { font-family: 'Lexend', sans-serif; font-size: 11px; font-weight: 700; padding: 10px 14px 10px 38px; border-radius: 6px; border: 1px solid #003366; width: 190px; color: #ffffff; background-color: #002344; }
+.input-predictivo-pro:focus { outline: none; border-color: #38bdf8; background-color: #001a33; box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+.sat-table-dot { font-size: 16px !important; display: inline-block; margin-right: 5px; vertical-align: middle; }
+.sat-table-dot.dot-verde { color: #16a34a !important; }
+.sat-table-dot.dot-mostaza { color: #eab308 !important; }
+.sat-table-dot.dot-rojo { color: #d93025 !important; }
+.sat-badge-table { padding: 4px 8px !important; border-radius: 4px !important; font-size: 11px !important; font-weight: bold !important; display: inline-block; }
+.sat-badge-table.st-completado { background: #dcfce7 !important; color: #16803d !important; }
+.sat-badge-table.st-pendiente { background: #f1f5f9 !important; color: #475569 !important; }
+.sat-badge-table.st-omitido { background: #fee2e2 !important; color: #b91c1c !important; }
