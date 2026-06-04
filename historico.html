@@ -210,38 +210,59 @@
             return;
         }
 
-        const filtroFecha = document.getElementById("filtro-fecha-historico").value; // Formato del input: "2026-06-04"
+        const filtroFecha = document.getElementById("filtro-fecha-historico").value; // Formato del input HTML5: "2026-06-03"
         const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
         const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
+
+        // Mapeo inverso de meses en inglés para normalización ISO
+        const mesesDiccionario = {
+            "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04", "MAY": "05", "JUN": "06",
+            "JUL": "07", "AUG": "08", "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12"
+        };
 
         let viajesFiltrados = listaViajesMaster.filter(v => {
             
             // ==========================================
-            // 📅 MOTOR DE FILTRADO DE FECHA INMUNE (FORMATO GOOGLE STRING)
+            // 📅 MOTOR DE FECHA INTEGRAL INMUNE A ZONAS HORARIAS
             // ==========================================
             if (filtroFecha !== "") {
-                let pF = filtroFecha.split("-"); // ["2026", "06", "04"]
-                let anioFiltro = parseInt(pF[0], 10);
-                let mesFiltro = parseInt(pF[1], 10);
-                let diaFiltro = parseInt(pF[2], 10);
+                let textoCelda = (v.etdOrigen || "").toString().trim(); // "Wed Jun 03 2026 21:07:57 GMT-0500"
+                if (!textoCelda || textoCelda === "---") return false;
 
-                if (!v.etdOrigen || v.etdOrigen === "---") return false;
+                let fechaNormalizadaCelda = "";
 
-                // Convertimos el string nativo ("Wed Jun 03 2026...") a un objeto Date real de JS
-                let fechaObjetoCelda = new Date(v.etdOrigen);
-
-                // Si la conversión es válida, extraemos sus componentes numéricos nativos
-                if (!isNaN(fechaObjetoCelda.getTime())) {
-                    let diaCelda = fechaObjetoCelda.getDate();
-                    let mesCelda = fechaObjetoCelda.getMonth() + 1; // Enero es 0
-                    let anioCelda = fechaObjetoCelda.getFullYear();
-
-                    // Comparación matemática estricta libre de errores de texto o idiomas
-                    if (diaCelda !== diaFiltro || mesCelda !== mesFiltro || anioCelda !== anioFiltro) {
-                        return false;
+                // CASO 1: Formato largo de Google (ej: "Wed Jun 03 2026 21:07:57 GMT-0500")
+                if (textoCelda.indexOf(" ") > -1 && isNaN(textoCelda.charAt(0))) {
+                    let partes = textoCelda.split(/\s+/); 
+                    // partes[0]="Wed", partes[1]="Jun", partes[2]="03", partes[3]="2026"
+                    if (partes.length >= 4) {
+                        let mesKey = partes[1].toUpperCase();
+                        let m = mesesDiccionario[mesKey] || "00";
+                        let d = partes[2].padStart(2, '0');
+                        let a = partes[3];
+                        fechaNormalizadaCelda = `${a}-${m}-${d}`; // Reconstruye: "2026-06-03"
                     }
-                } else {
-                    return false; // Si no se puede parsear la fecha, la descarta
+                } 
+                // CASO 2: Formato ISO plano del Sheet (ej: "2026-06-03 21:07:57")
+                else if (textoCelda.indexOf("-") > -1) {
+                    let partesGuion = textoCelda.split(" ")[0].split("-");
+                    let a = partesGuion[0];
+                    let m = partesGuion[1].padStart(2, '0');
+                    let d = partesGuion[2].padStart(2, '0');
+                    fechaNormalizadaCelda = `${a}-${m}-${d}`;
+                }
+                // CASO 3: Formato Latino Standard (ej: "03/06/2026")
+                else if (textoCelda.indexOf("/") > -1) {
+                    let partesBarra = textoCelda.split(" ")[0].split("/");
+                    let d = partesBarra[0].padStart(2, '0');
+                    let m = partesBarra[1].padStart(2, '0');
+                    let a = partesBarra[2];
+                    fechaNormalizadaCelda = `${a}-${m}-${d}`;
+                }
+
+                // Comparación directa de strings planos normalizados en formato ISO
+                if (fechaNormalizadaCelda !== filtroFecha) {
+                    return false;
                 }
             }
 
@@ -261,7 +282,7 @@
         if (contenedorContador) contenedorContador.innerText = viajesFiltrados.length;
         
         if (viajesFiltrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro en esta fecha coincide con los criterios aplicados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro en esta fecha coincide con los criterios filtrados.</td></tr>';
             return;
         }
 
@@ -270,16 +291,14 @@
         viajesFiltrados.forEach(v => {
             window._cacheItinerariosCompleto[v.idViaje] = v.itinerarioFull || "[]";
 
-            // Formateamos la visualización de la fecha de salida para que no salga el string largo en la tabla
-            let fechaSalidaVisual = "---";
-            if (v.etdOrigen && v.etdOrigen !== "---") {
-                let fObj = new Date(v.etdOrigen);
-                if (!isNaN(fObj.getTime())) {
-                    let hrs = fObj.getHours();
-                    let mins = fObj.getMinutes();
-                    fechaSalidaVisual = `${fObj.getDate()}/${fObj.getMonth()+1}/${fObj.getFullYear()} ${hrs < 10 ? "0" + hrs : hrs}:${mins < 10 ? "0" + mins : mins}`;
-                } else {
-                    fechaSalidaVisual = v.etdOrigen;
+            // Formateo visual limpio de la fecha de salida para la grilla del operador
+            let fechaSalidaVisual = v.etdOrigen;
+            if (v.etdOrigen && v.etdOrigen.toString().indexOf(" ") > -1 && isNaN(v.etdOrigen.toString().charAt(0))) {
+                let partes = v.etdOrigen.toString().split(/\s+/);
+                if (partes.length >= 5) {
+                    let mesNum = mesesDiccionario[partes[1].toUpperCase()] || "00";
+                    let horaLimpia = partes[4].substring(0, 5); // Extrae "21:07"
+                    fechaSalidaVisual = `${partes[2]}/${mesNum}/${partes[3]} ${horaLimpia}`;
                 }
             }
 
@@ -313,9 +332,7 @@
                 <td>${badgeColor}</td>
                 <td><small style="font-weight:600; color:#334155;">${v.ruta}</small></td>
                 <td style="font-size:12px; color:#334155;">📍 ${v.origen}<br>🏁 ${v.destino}</td>
-                
                 <td style="color:#475569; font-weight:600; font-size:12px;">${fechaSalidaVisual}</td>
-                
                 <td style="color:#0f172a; font-weight:700; font-size:12px;">${v.salidaReal}</td>
                 <td style="font-weight:700; font-size:12px; color:#004b93;">${v.fechaFin}</td>
                 <td>
