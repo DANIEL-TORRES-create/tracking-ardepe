@@ -596,21 +596,26 @@
                 if (plan.deteccion === "SI" || plan.deteccion === "FORZADO") ultimoIndiceCompletado = idx;
             });
 
-            // Solicitamos a la API de Geotab la geometría de las zonas para calcular centroides
-            geotab.addin.seguimientoHistorico().api.call("Get", {
-                typeName: "Zone",
-                search: { zoneTypeIds: ["b4A3"] }
-            }, function(zonasGeotab) {
-                construirGraficosYTablaPasiva(zonasGeotab);
-            }, function(err) {
+            // 🚀 SOLUCIÓN: Usamos la API global ya inicializada de forma directa y segura
+            if (apiGlobal) {
+                apiGlobal.call("Get", {
+                    typeName: "Zone",
+                    search: { zoneTypeIds: ["b4A3"] }
+                }, function(zonasGeotab) {
+                    construirGraficosYTablaPasiva(zonasGeotab);
+                }, function(err) {
+                    construirGraficosYTablaPasiva([]);
+                });
+            } else {
+                // Respaldo de seguridad si abre en entorno local de pruebas sin la shell de Geotab
                 construirGraficosYTablaPasiva([]);
-            });
+            }
 
             function construirGraficosYTablaPasiva(zonasGeotab) {
                 let secuenciaCorrelativa = 1;
 
                 itinerarioPlan.forEach((plan, index) => {
-                    let real = datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                    let real = datosSeguimiento ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     
@@ -627,7 +632,6 @@
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
                     let odometroAcumulado = real ? parseFloat(real.km_acumulado || 0) : 0;
 
-                    // Alimentación de la grilla de datos inferior del modal
                     _satCacheDatosRows.push({
                         st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
                         sec: numSecuencia, punto: plan.punto, conductor: real ? real.conductor : "---", tipo: tipoRegistro, 
@@ -636,7 +640,6 @@
                         difKm: 0, pernoctePlan: pernoctePlan, pernocteReal: pernocteReal, realSalida: horaRealSalida
                     });
 
-                    // 🗺️ CÁLCULO DEL CENTROIDE PARA EL TRAZADO DEL MAPA PASIVO
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     let centroideLatLng = null;
 
@@ -664,12 +667,10 @@
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
-                        // Encolamos la coordenada para trazar los hilos de carretera
                         puntosParaRutaOSRM.push({ coordenada: centroideLatLng, esGris: esOmitido || (!esCompletado) });
                     }
                 });
 
-                // Trazado de carreteras OSRM uniendo los centroides secuencialmente
                 puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
                     if (idx >= puntosParaRutaOSRM.length - 1) return;
                     let puntoDestino = puntosParaRutaOSRM[idx + 1];
@@ -693,13 +694,12 @@
                         }).catch(e => console.error("Error carretera OSRM pasivo:", e));
                 });
 
-                // Auto-centrado de cámara en el hito origen para encuadrar la visual
                 if (puntosParaRutaOSRM.length > 0) {
                     _satMapa.setView(puntosParaRutaOSRM[0].coordenada, 8);
                 }
 
                 _satMapa.invalidateSize(true);
-                filtrarTablaSatelital('historico_ver_todos'); // Llama al gatillo de renderizado local
+                filtrarTablaSatelital('historial'); 
                 delete window[nombreCallbackTemporal];
             }
         };
@@ -748,6 +748,9 @@
     geotab.addin.seguimientoHistorico = () => {
         return {
             initialize(api, state, callback) {
+                // 🚀 INYECCIÓN CRÍTICA: Guardamos la instancia de telemetría en la variable global
+                apiGlobal = api; 
+
                 const inputF = document.getElementById('filtro-fecha-historico');
                 if (inputF) {
                     const hoyLocal = new Date();
@@ -775,11 +778,10 @@
                     });
                 });
 
-                // 🚀 CARGA INICIAL AL ABRIR LA PANTALLA
+                // Carga inicial al enganchar MyGeotab
                 actualizar();
 
-                // ⏱️ RELOJ DE AUTOMATIZACIÓN: Consulta a Apps Script cada 60 segundos (60000 ms)
-                // Si hay un viaje recién cerrado en el Sheet, aparecerá solo en la grilla
+                // Reloj de automatización de fondo (Cada 60 segundos)
                 setInterval(actualizar, 60000); 
 
                 callback();
