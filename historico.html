@@ -156,14 +156,15 @@
 </div>
 
 <script>
+    // 🚀 ENLACE OFICIAL DE TU WEB APP HISTÓRICA INDEPENDIENTE
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNiLU063QEua2YTtal-N17jky4JEwKomUoBkzpqCrVyOD39ILSvkqufCL4TAY1iu4A/exec"; 
     
-    let listaViajesMaster = [];       // Respeta el "molde" original de la base de datos de Apps Script
-    let estadoFiltroActivo = "TODOS"; // Filtro de botones de estados
-    let busquedaEjecutada = false;    // Bandera para bloquear la tabla hasta que den clic en BUSCAR
+    let listaViajesMaster = [];       // Almacén "Molde" máster traído de fondo
+    let estadoFiltroActivo = "TODOS"; // Estado de la botonera Navisaf
+    let busquedaEjecutada = false;    // Bandera de control para congelar la carga
     window._cacheItinerariosCompleto = {};
 
-    // 🚀 1. CARGA EN SILENCIO: Se ejecuta una sola vez de fondo para alimentar los predictivos
+    // 📡 1. SE COMPORTA EN SILENCIO: Jala el histórico entero de fondo al inicializar
     function actualizar() {
         const script = document.createElement('script');
         script.src = WEB_APP_URL + "?read=historicos&callback=renderizar&nocache=" + new Date().getTime();
@@ -185,61 +186,79 @@
             dlRutas.innerHTML = rutasUnicas.map(r => `<option value="${r}"></option>`).join("");
         }
 
-        // Si el operador ya le dio clic al botón Buscar, refrescamos la tabla con la nueva data
+        // Si el operador ya presionó Buscar, refrescamos la grilla local de inmediato
         if (busquedaEjecutada) {
             filtrarYMostrarTabla();
         }
     };
 
-    // 🚀 2. ACCIÓN DEL BOTÓN: Al dar clic, activa la bandera y pinta la pantalla
+    // 🔍 2. ACCIÓN DEL BOTÓN: Rompe el cartel de espera y procesa los datos
     function realizarBusquedaPorFecha() {
         busquedaEjecutada = true;
         const tbody = document.getElementById('lista-viajes');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px; color:#004b93; font-weight:bold;"><i class="fas fa-spinner fa-spin"></i> Filtrando registros del archivo pasivo...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px; color:#004b93; font-weight:bold;"><i class="fas fa-spinner fa-spin"></i> Desfragmentando registros del archivo pasivo...</td></tr>';
         }
-        // Procesamos la tabla de inmediato con los datos en memoria
-        filtrarYMostrarTabla();
+        setTimeout(filtrarYMostrarTabla, 300); // Dar aire al spinner para renderizar
     }
 
-    // 🧠 3. MOTOR LOCAL DE FILTRADO (Solo actúa si busquedaEjecutada es TRUE)
+    // 🧠 3. MOTOR DE FILTRADO LOCAL INMUNE A FORMATOS DE TEXTO
     function filtrarYMostrarTabla() {
         const tbody = document.getElementById('lista-viajes');
         if (!tbody) return;
 
-        // Si no han presionado el botón Buscar, la pantalla se queda congelada en modo espera de forma limpia
+        // Si no ha dado clic en Buscar, el búnker se queda en espera estática limpia
         if (!busquedaEjecutada) {
             tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px; color:#475569; font-weight:bold;">Seleccione una fecha de consulta y presione Buscar...</td></tr>';
             return;
         }
 
-        const filtroFecha = document.getElementById("filtro-fecha-historico").value; 
+        const filtroFecha = document.getElementById("filtro-fecha-historico").value; // "2026-06-03"
         const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
         const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
 
         let viajesFiltrados = listaViajesMaster.filter(v => {
-            // 📅 Filtrado estricto por la fecha seleccionada
+            
+            // 📅 FILTRO DE FECHA NATIVO: Compara Día, Mes y Año reales sin importar guiones o comas
             if (filtroFecha !== "") {
-                let partesF = filtroFecha.split("-"); 
-                let anioF = partesF[0];
-                let mesF = parseInt(partesF[1], 10).toString();
-                let diaF = parseInt(partesF[2], 10).toString();
-                
-                let formato1 = `${diaF}/${mesF}/${anioF}`; 
-                let formato2 = `${diaF.padStart(2,'0')}/${mesF.padStart(2,'0')}/${anioF}`; 
-                
-                let fechaCeldaLimpia = (v.fechaInicio || "").replace(/,/g, "").trim();
-                
-                if (!fechaCeldaLimpia.includes(formato1) && !fechaCeldaLinter.includes(formato2)) {
-                    return false;
+                let pF = filtroFecha.split("-"); // [Año, Mes, Dia] -> ["2026", "06", "03"]
+                let dFiltro = parseInt(pF[2], 10);
+                let mFiltro = parseInt(pF[1], 10);
+                let aFiltro = parseInt(pF[0], 10);
+
+                // Desfragmentamos la fecha que vino de la celda de Google Sheets
+                let textoCelda = (v.fechaInicio || "").toString().replace("'", "").trim();
+                let pC = textoCelda.split(/[^\d]+/); // Rompe por cualquier caracter que no sea número
+
+                if (pC.length >= 3) {
+                    let dCelda, mCelda, aCelda;
+                    // Si la celda empieza por Año (Formato ISO: 2026-04-17)
+                    if (textoCelda.indexOf("-") > -1 && textoCelda.indexOf("-") < 5) {
+                        aCelda = parseInt(pC[0], 10);
+                        mCelda = parseInt(pC[1], 10);
+                        dCelda = parseInt(pC[2], 10);
+                    } else { // Formato Latino Regular (17/04/2026)
+                        dCelda = parseInt(pC[0], 10);
+                        mCelda = parseInt(pC[1], 10);
+                        aCelda = parseInt(pC[2], 10);
+                    }
+
+                    // Si el día, mes o año no cuadran, se descarta la fila
+                    if (dCelda !== dFiltro || mCelda !== mFiltro || aCelda !== aFiltro) {
+                        return false;
+                    }
+                } else {
+                    return false; // Celda vacía o dañada no pasa el filtro
                 }
             }
 
-            // Filtro local por estados
+            // Filtro local 2: Botonera Navisaf (FINALIZADO / NO EJECUTADO)
             if (estadoFiltroActivo !== "TODOS" && v.estadoVisual !== estadoFiltroActivo) return false;
-            // Filtro local por placa
+            
+            // Filtro local 3: Placas predictivas
             if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
-            // Filtro local por ruta
+            
+            // Filtro local 4: Rutas predictivas
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
             
             return true;
@@ -249,7 +268,7 @@
         if (contenedorContador) contenedorContador.innerText = viajesFiltrados.length;
         
         if (viajesFiltrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro en esta fecha coincide con los criterios aplicados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro en la fecha seleccionada coincide con los criterios aplicados.</td></tr>';
             return;
         }
 
@@ -484,7 +503,7 @@
         });
     };
 
-    // 🤖 4. INTEGRACIÓN OFICIAL CON EL CALLBACK DE GEOTAB (Desbloqueo definitivo)
+    // Inicializador de Entorno Geotab Pasivo
     geotab.addin.seguimientoHistorico = () => {
         return {
             initialize(api, state, callback) {
@@ -493,20 +512,18 @@
                     const hoyLocal = new Date();
                     const offset = hoyLocal.getTimezoneOffset();
                     const fechaAjustada = new Date(hoyLocal.getTime() - (offset * 60 * 1000));
+                    
+                    // Seteamos la fecha de HOY por defecto
                     inputF.value = fechaAjustada.toISOString().split('T')[0];
                     
-                    // Al cambiar la fecha en el calendario se limpia el tablero hasta presionar Buscar
                     inputF.addEventListener("change", function() {
                         busquedaEjecutada = false;
                         filtrarYMostrarTabla();
                     });
                 }
 
-                // Enrutamos los predictivos de texto para que re-filtren de inmediato lo que está en pantalla
                 document.getElementById("txt-filtro-placa").addEventListener("input", filtrarYMostrarTabla);
                 document.getElementById("txt-filtro-ruta").addEventListener("input", filtrarYMostrarTabla);
-
-                // Enganchamos el clic físico al botón de Buscar
                 document.getElementById("btn-buscar-fecha").addEventListener("click", realizarBusquedaPorFecha);
 
                 const botones = document.querySelectorAll(".btn-filto-est");
@@ -519,15 +536,11 @@
                     });
                 });
 
-                // 🎯 ARRANCAMOS LA CONSULTA EN SILENCIO Y SOLTAMOS EL CALLBACK AL INSTANTE PARA QUE GEOTAB NO SE SQUEEZE COMODO
                 actualizar();
                 callback();
             }
         };
     };
-
-    // Respaldo de arranque para pruebas en navegadores puros
-    actualizar();
 </script>
 </body>
 </html>
