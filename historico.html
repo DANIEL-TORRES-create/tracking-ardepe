@@ -213,10 +213,9 @@
         const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
         const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
 
-        // Mapeo local de meses en inglés para convertidores de respaldo
-        const mesesIngles = { "JAN":0, "FEB":1, "MAR":2, "APR":3, "MAY":4, "JUN":5, "JUL":6, "AUG":7, "SEP":8, "OCT":9, "NOV":10, "DEC":11 };
+        const mesesIngles = { "JAN":"01", "FEB":"02", "MAR":"03", "APR":"04", "MAY":"05", "JUN":"06", "JUL":"07", "AUG":"08", "SEP":"09", "OCT":"10", "NOV":"11", "DEC":"12" };
 
-        // 🚀 BYPASS: Mantenemos el filtro de fecha apagado por tu instrucción para ver la data directo
+        // 🚀 BYPASS: El filtro de fecha se mantiene inactivo temporalmente para pintar todo lo que llegó
         let viajesFiltrados = listaViajesMaster.filter(v => {
             if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
@@ -231,12 +230,12 @@
             return;
         }
 
-        tbody.innerHTML = ""; // Limpiamos la grilla antes de renderizar
+        tbody.innerHTML = ""; 
 
         viajesFiltrados.forEach(v => {
             window._cacheItinerariosCompleto[v.idViaje] = v.itinerarioFull || "[]";
 
-            // 🧠 CLASIFICACIÓN DE ESTADO VISUAL COPIADO DEL BACKEND
+            // 🧠 Clasificador de estado visual
             let textoEstadoVisual = "AUTOMÁTICO";
             let estiloBadge = 'background-color: #dcfce7; color: #15803d; border:1px solid #86efac;';
             let iconBadge = '<i class="fas fa-robot"></i>';
@@ -253,65 +252,65 @@
             
             let badgeColor = `<span style="${estiloBadge} padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block;">${iconBadge} ${textoEstadoVisual}</span>`;
 
-            // Helper interno para transformar los strings de Google ("Wed Jun 03...") a formato "DD/MM/YYYY, HH:MM:SS"
-            let formatearFechaLatina = (strFecha) => {
-                if (!strFecha || strFecha === "---") return "---";
-                let texto = strFecha.toString().replace("'", "").trim();
+            // Helper de formateo numérico latino: Transforma "Wed Jun 03 2026 21:15:58..." a "03/06/2026, 21:15:58"
+            let normalizarFormatoLatino = (strFecha) => {
+                if (!strFecha || strFecha === "---" || strFecha.trim() === "") return "---";
+                let t = strFecha.toString().replace("'", "").trim();
                 
-                // Si es el formato largo en inglés de Google
-                if (texto.indexOf(" ") > -1 && isNaN(texto.charAt(0))) {
-                    let p = texto.split(/\s+/);
+                // Formato de cadena larga de Google
+                if (t.indexOf(" ") > -1 && isNaN(t.charAt(0))) {
+                    let p = t.split(/\s+/);
                     if (p.length >= 5) {
-                        let mesNum = (mesesIngles[p[1].toUpperCase()] + 1).toString().padStart(2, '0');
-                        let diaNum = p[2].padStart(2, '0');
-                        let anioNum = p[3];
-                        let horaCompleta = p[4]; // "21:15:58"
-                        return `${diaNum}/${mesNum}/${anioNum}, ${horaCompleta}`;
+                        let m = mesesIngles[p[1].toUpperCase()] || "00";
+                        let d = p[2].padStart(2, '0');
+                        let a = p[3];
+                        let h = p[4];
+                        return `${parseInt(d,10)}/${parseInt(m,10)}/${a}, ${h}`;
                     }
                 }
-                // Si ya viene formateado con guiones ISO (2026-04-17 08:00:00)
-                if (texto.indexOf("-") > -1 && texto.indexOf("-") < 5) {
-                    let partesT = texto.split(" ");
-                    let f = partesT[0].split("-");
-                    let h = partesT[1] || "00:00:00";
-                    return `${f[2].padStart(2,'0')}/${f[1].padStart(2,'0')}/${f[0]}, ${h}`;
+                // Formato ISO (2026-04-17 08:00:00)
+                if (t.indexOf("-") > -1 && t.indexOf("-") < 5) {
+                    let partes = t.split(" ");
+                    let f = partes[0].split("-");
+                    let h = partes[1] || "00:00:00";
+                    return `${parseInt(f[2],10)}/${parseInt(f[1],10)}/${f[0]}, ${h}`;
                 }
-                return texto; // Si viene regular lo devuelve intacto
+                return t;
             };
 
-            // 🎯 1. FORMATEO COLUMNA: SALIDA PLAN
-            let salidaPlanVisual = formatearFechaLatina(v.etdOrigen);
+            // 🎯 1. FORMATO: SALIDA PLAN (ETD del Itinerario Columna J)
+            let salidaPlanVisual = normalizarFormatoLatino(v.salidaPlan);
 
-            // 🎯 2. FORMATEO COLUMNA: SALIDA REAL
-            let salidaRealVisual = formatearFechaLatina(v.salidaReal);
+            // 🎯 2. FORMATO: SALIDA REAL (Si fue VENCIDO fuerza un guion "-")
+            let salidaRealVisual = "---";
+            if (textoEstadoVisual === "VENCIDO") {
+                salidaRealVisual = "-";
+            } else {
+                salidaRealVisual = normalizarFormatoLatino(v.salidaReal);
+            }
 
-            // 🎯 3. FORMATEO COLUMNA: LLEGADA REAL (Si es VENCIDO fuerza un guion "-")
+            // 🎯 3. FORMATO: LLEGADA REAL (Replicado de la Columna F, si es VENCIDO es "-")
             let llegadaRealVisual = "---";
             if (textoEstadoVisual === "VENCIDO") {
                 llegadaRealVisual = "-";
-            } else if (v.fechaFin && v.fechaFin !== "---") {
-                llegadaRealVisual = formatearFechaLatina(v.fechaFin);
+            } else {
+                llegadaRealVisual = normalizarFormatoLatino(v.llegadaReal);
             }
 
-            // 🎯 4. FORMATEO COLUMNA: PROGRESO (Jala directo el valor neto de la columna G)
+            // 🎯 4. FORMATO: PROGRESO (Heredado de la Columna G de forma directa)
             let porcentajeProgreso = parseInt(v.progreso, 10) || 0;
 
-            // 🎯 5. FORMATEO COLUMNA: DIFERENCIA TIEMPO (Jala el string crudo H y remueve milisegundos)
+            // 🎯 5. FORMATO: DIFERENCIA TIEMPO (Columna H cruda sin milisegundos)
             let desvVisualFila = "---";
             if (textoEstadoVisual === "VENCIDO") {
                 desvVisualFila = "---";
-            } else if (v.auditoriaLog && v.auditoriaLog.toUpperCase().includes("BARRIDO")) {
-                desvVisualFila = "---";
             } else {
-                // Recuperamos el campo de desviación que el backend procesa de la columna H
-                // Si viene con milisegundos como "-2259:34:00.000", cortamos en el punto "."
-                let desvRaw = (v.desviacion || "00:00").toString().split(".")[0];
-                
-                // Evaluamos el color del semáforo Navisaf por el signo
+                let desvRaw = (v.desviacion || "0:00:00").toString().split(".")[0].trim();
                 let semafD = "verde";
                 if (desvRaw.indexOf("-") > -1) {
-                    let minExtraido = parseInt(desvRaw.split(":")[1], 10) || 0;
-                    semafD = minExtraido > 20 ? "rojo" : "mostaza";
+                    semafD = "rojo"; // Marcador negativo Navisaf
+                } else if (desvRaw !== "0:00:00" && desvRaw !== "00:00:00") {
+                    semafD = "mostaza";
                 }
                 desvVisualFila = `<span class="sat-table-dot dot-${semafD}">●</span> ${desvRaw}`;
             }
@@ -322,20 +321,16 @@
                 <td>${badgeColor}</td>
                 <td><small style="font-weight:600; color:#334155;">${v.ruta}</small></td>
                 <td style="font-size:12px; color:#334155;">📍 ${v.origen}<br>🏁 ${v.destino}</td>
-                
                 <td style="color:#475569; font-weight:600; font-size:12px;">${salidaPlanVisual}</td>
                 <td style="color:#004b93; font-weight:700; font-size:12px;">${salidaRealVisual}</td>
                 <td style="font-weight:700; font-size:12px; color:#0f172a;">${llegadaRealVisual}</td>
-                
                 <td>
                     <div class="segment-bar">
                         ${Array.from({length:10}, (_,i) => `<div class="segment ${i < (porcentajeProgreso/10) ? 'active' : ''}"></div>`).join('')}
                     </div>
                     <small style="font-size:10px; font-weight:bold; color:var(--primary)">${porcentajeProgreso}% completado</small>
                 </td>
-                
                 <td style="text-align:center; font-weight:700; font-size:12px;">${desvVisualFila}</td>
-                
                 <td class="vistas-cell">
                     <div style="display:flex; gap:4px; justify-content:center;">
                         <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">📋</button>
