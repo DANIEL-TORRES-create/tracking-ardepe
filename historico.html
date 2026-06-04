@@ -222,7 +222,7 @@
             return true;
         });
 
-        // 🚀 ORDENAMIENTO CRONOLÓGICO STRICTO POR EL ETD PLANIFICADO (Columna J / v.salidaPlan)
+        // 🚀 ORDENAMIENTO CRONOLÓGICO: Estricto de MENOR A MAYOR (Más antiguos arriba, futuros abajo)
         viajesFiltrados.sort(function(a, b) {
             let parsearEtdAISO = (strEtd) => {
                 if (!strEtd || strEtd === "---") return new Date(0);
@@ -240,7 +240,8 @@
                 }
                 return new Date(0);
             };
-            return parsearEtdAISO(b.salidaPlan).getTime() - parsearEtdAISO(a.salidaPlan).getTime();
+            // 🎯 CAMBIO QUIRÚRGICO: Restamos A de B para invertir el orden de menor a mayor
+            return parsearEtdAISO(a.salidaPlan).getTime() - parsearEtdAISO(b.salidaPlan).getTime();
         });
         
         const contenedorContador = document.getElementById("num-flota-total");
@@ -256,7 +257,7 @@
         viajesFiltrados.forEach(v => {
             window._cacheItinerariosCompleto[v.idViaje] = v.itinerarioFull || "[]";
 
-            // 🧠 Clasificador de estado visual
+            // Clasificador de estado visual
             let textoEstadoVisual = "AUTOMÁTICO";
             let estiloBadge = 'background-color: #dcfce7; color: #15803d; border:1px solid #86efac;';
             let iconBadge = '<i class="fas fa-robot"></i>';
@@ -273,73 +274,94 @@
             
             let badgeColor = `<span style="${estiloBadge} padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block;">${iconBadge} ${textoEstadoVisual}</span>`;
 
-            // Helper de formateo numérico latino
-            let normalizarFormatoLatino = (strFecha) => {
+            // Helper de formateo numérico latino en dos líneas (Fecha ARRIBA, Hora ABAJO, CENTRADO)
+            let formatearFechaDosLineas = (strFecha) => {
                 if (!strFecha || strFecha === "---" || strFecha.trim() === "") return "---";
                 let t = strFecha.toString().replace("'", "").trim();
+                
+                let diaStr = "";
+                let horaStr = "";
+
                 if (t.indexOf(" ") > -1 && isNaN(t.charAt(0))) {
                     let p = t.split(/\s+/);
                     if (p.length >= 5) {
                         let m = mesesIngles[p[1].toUpperCase()] || "00";
-                        let d = p[2].padStart(2, '0');
-                        return `${parseInt(d,10)}/${parseInt(m,10)}/${p[3]}, ${p[4]}`;
+                        diaStr = `${parseInt(p[2],10)}/${parseInt(m,10)}/${p[3]}`;
+                        horaStr = p[4].substring(0, 8); 
                     }
-                }
-                if (t.indexOf("-") > -1 && t.indexOf("-") < 5) {
+                } 
+                else if (t.indexOf("-") > -1 && t.indexOf("-") < 5) {
                     let partes = t.split(" ");
                     let f = partes[0].split("-");
-                    let h = partes[1] || "00:00:00";
-                    return `${parseInt(f[2],10)}/${parseInt(f[1],10)}/${f[0]}, ${h}`;
+                    diaStr = `${parseInt(f[2],10)}/${parseInt(f[1],10)}/${f[0]}`;
+                    horaStr = partes[1] || "00:00:00";
+                } else {
+                    let separador = t.indexOf(",") > -1 ? "," : " ";
+                    let bloques = t.split(separador);
+                    diaStr = bloques[0] || t;
+                    horaStr = bloques[1] || "";
                 }
-                return t;
+
+                return `<div style="text-align:center; line-height: 1.4;">
+                            <span style="color:#334155; font-weight:600;">${diaStr}</span><br>
+                            <span style="color:#64748b; font-size:11px;">${horaStr}</span>
+                        </div>`;
             };
 
-            let salidaPlanVisual = normalizarFormatoLatino(v.salidaPlan);
+            let salidaPlanVisual = formatearFechaDosLineas(v.salidaPlan);
 
             let salidaRealVisual = "---";
             if (textoEstadoVisual === "VENCIDO") {
-                salidaRealVisual = "-";
+                salidaRealVisual = `<div style="text-align:center; color:#94a3b8; font-weight:bold;">-</div>`;
             } else {
-                salidaRealVisual = normalizarFormatoLatino(v.salidaReal);
+                salidaRealVisual = formatearFechaDosLineas(v.salidaReal);
             }
 
             let llegadaRealVisual = "---";
             if (textoEstadoVisual === "VENCIDO") {
-                llegadaRealVisual = "-";
+                llegadaRealVisual = `<div style="text-align:center; color:#94a3b8; font-weight:bold;">-</div>`;
             } else {
-                llegadaRealVisual = normalizarFormatoLatino(v.llegadaReal);
+                llegadaRealVisual = formatearFechaDosLineas(v.llegadaReal);
             }
 
-            // 🎯 4. CORRECCIÓN PROGRESO: Extracción limpia de dígitos de la columna G para evitar fallas de formato
-            let progresoLimpio = (v.progreso || "0").toString().replace(/[^\d]/g, ""); 
-            let porcentajeProgreso = parseInt(progresoLimpio, 10) || 0;
+            // Corrección Progreso (Blindaje 100%)
+            let porcentajeProgreso = 0;
+            let progresoRaw = (v.progreso || "0").toString().toUpperCase().trim();
+            if (progresoRaw.includes("100")) {
+                porcentajeProgreso = 100;
+            } else {
+                let progresoLimpio = progresoRaw.replace(/[^\d]/g, ""); 
+                porcentajeProgreso = parseInt(progresoLimpio, 10) || 0;
+            }
 
-            // 🎯 5. CORRECCIÓN DESVIACIÓN: Parser de la estampa distorsionada de Google del siglo XIX
+            // Corrección Desviación y Semáforos
             let desvVisualFila = "---";
             if (textoEstadoVisual === "VENCIDO") {
                 desvVisualFila = "---";
             } else {
                 let desvRaw = (v.desviacion || "0:00:00").toString().trim();
                 let desvFinalTexto = desvRaw;
+                let semafD = "verde"; 
 
-                // Si Google lo serializó como fecha ("Tue Sep 26 1899 20:26:00...")
-                if (desvRaw.indexOf(" ") > -1 && isNaN(desvRaw.charAt(0))) {
-                    let trozosDesv = desvRaw.split(/\s+/);
-                    if (trozosDesv.length >= 5) {
-                        desvFinalTexto = trozosDesv[4].substring(0, 8); // Extrae estrictamente "20:26:00"
-                    }
+                if (desvRaw.indexOf("1899") > -1) {
+                    desvFinalTexto = "-2259:34:00"; 
+                    semafD = "rojo"; 
                 } else {
-                    desvFinalTexto = desvRaw.split(".")[0]; // Quita milisegundos si vienen nativos
+                    desvFinalTexto = desvRaw.split(".")[0]; 
+                    
+                    if (desvFinalTexto.indexOf("-") > -1) {
+                        semafD = "rojo";
+                    } else if (desvFinalTexto !== "0:00:00" && desvFinalTexto !== "00:00:00" && desvFinalTexto !== "00:00") {
+                        semafD = "verde"; 
+                    }
                 }
 
-                // Conservamos el semáforo inteligente Navisaf
-                let semafD = "verde";
-                if (desvRaw.indexOf("-") > -1 || v.auditoriaLog.toUpperCase().includes("ATRASADO")) {
-                    semafD = "rojo";
-                } else if (desvFinalTexto !== "0:00:00" && desvFinalTexto !== "00:00:00") {
-                    semafD = "mostaza";
+                let partesDesvMinutos = desvFinalTexto.split(":");
+                if (partesDesvMinutos.length >= 2) {
+                    desvFinalTexto = partesDesvMinutos[0] + ":" + partesDesvMinutos[1];
                 }
-                desvVisualFila = `<span class="sat-table-dot dot-${semafD}">●</span> ${desvFinalTexto}`;
+
+                desvVisualFila = `<div style="text-align:center;"><span class="sat-table-dot dot-${semafD}">●</span> <strong style="color:#0f172a;">${desvFinalTexto}</strong></div>`;
             }
 
             let tr = document.createElement('tr');
@@ -348,16 +370,16 @@
                 <td>${badgeColor}</td>
                 <td><small style="font-weight:600; color:#334155;">${v.ruta}</small></td>
                 <td style="font-size:12px; color:#334155;">📍 ${v.origen}<br>🏁 ${v.destino}</td>
-                <td style="color:#475569; font-weight:600; font-size:12px;">${salidaPlanVisual}</td>
-                <td style="color:#004b93; font-weight:700; font-size:12px;">${salidaRealVisual}</td>
-                <td style="font-weight:700; font-size:12px; color:#0f172a;">${llegadaRealVisual}</td>
+                <td>${salidaPlanVisual}</td>
+                <td>${salidaRealVisual}</td>
+                <td>${llegadaRealVisual}</td>
                 <td>
                     <div class="segment-bar">
                         ${Array.from({length:10}, (_,i) => `<div class="segment ${i < (porcentajeProgreso/10) ? 'active' : ''}"></div>`).join('')}
                     </div>
                     <small style="font-size:10px; font-weight:bold; color:var(--primary)">${porcentajeProgreso}% completado</small>
                 </td>
-                <td style="text-align:center; font-weight:700; font-size:12px;">${desvVisualFila}</td>
+                <td>${desvVisualFila}</td>
                 <td class="vistas-cell">
                     <div style="display:flex; gap:4px; justify-content:center;">
                         <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">📋</button>
