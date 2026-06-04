@@ -643,108 +643,64 @@
                 let secuenciaCorrelativa = 1;
                 let odometroBaseAnterior = 0; // Control dinámico acumulativo para tramos de kilometraje
 
-               itinerarioPlan.forEach((plan, index) => {
-                    // 🎯 REPARADO: Buscador directo por nombre de punto sin filtros de ID redundantes
-                    let real = rawDatosArray.find(h => h.punto_nombre && h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
-                    
+                itinerarioPlan.forEach((plan, index) => {
+                    let real = datosSeguimiento ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
-                    let esFilaManual = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL");
-
-                    let numSecuencia = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL") ? 1 : secuenciaCorrelativa++;
-                    let tipoRegistro = esCompletado ? (esFilaManual ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
+                    
+                    let numSecuencia = plan.punto === "INICIO_MANUAL" ? 1 : secuenciaCorrelativa++;
+                    let tipoRegistro = esCompletado ? (plan.punto === "INICIO_MANUAL" ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
                     let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
-                    if (esFilaManual) colorHito = '#d97706';
+                    if (plan.punto === "INICIO_MANUAL") colorHito = '#d97706';
 
                     let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                     
-                    let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
-                    let horaRealSalida = real ? real.hora_real_salida : "---";
-                    let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
-                    let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
-                    let pernocteReal = real ? real.hora_pernocte_real : "---";
-
-                    let tiempoViajePlan = "---";
-                    let tiempoViajeReal = "---";
-                    let distPlanKm = "---";
-                    let distRealTramo = "---";
-                    let difKm = "---";
-
-                    if (esFilaManual) {
-                        horaRealLlegada = "---";
-                        desvTiempoTexto = "---";
-                        pernoctePlan = "---";
-                        pernocteReal = "---";
-                    }
-
-                    // 📐 ARITMÉTICA CORREGIDA DE TRAMOS EN TIEMPO Y DISTANCIA
-                    if (!esOmitido && (esCompletado || tipoRegistro === "---")) {
-                        // A. Kilómetros Planificados por Tramo
-                        if (index === 0) {
-                            distPlanKm = 0;
-                        } else {
-                            let nodoBasePlan = itinerarioPlan[index - 1];
-                            distPlanKm = Math.max(0, (parseFloat(plan.distanciaPlan) || 0) - (parseFloat(nodoBasePlan.distanciaPlan) || 0));
-                        }
-
-                        // B. Tiempos de Viaje entre Hitos Secuenciales
-                        if (index > 0) {
-                            if (index === 1) {
-                                hitoPlanAnteriorSalida = itinerarioPlan[0].planHoraSalida || itinerarioPlan[0].etd || "---";
-                                let realOrigen = rawDatosArray.find(h => h.punto_nombre.toString().toUpperCase().trim() === itinerarioPlan[0].punto.toString().toUpperCase().trim());
-                                hitoRealAnteriorSalida = realOrigen ? realOrigen.hora_real_salida : (itinerarioPlan[0].realHora || "---");
-                            }
-
-                            if (horaRealLlegada !== "---" && hitoRealAnteriorSalida !== "---" && hitoPlanAnteriorSalida !== "---") {
-                                tiempoViajePlan = calcularDiferenciaHorasTexto(hitoPlanAnteriorSalida, plan.planHora || plan.eta);
-                                tiempoViajeReal = calcularDiferenciaHorasTexto(hitoRealAnteriorSalida, horaRealLlegada);
-                            }
-                        }
-
-                        // C. Kilómetros Reales por Diferencia de Odómetros
-                        let odometroAcumuladoActual = real ? parseFloat(real.km_acumulado || 0) : 0;
-                        if (index === 0) {
-                            odometroBaseAnterior = odometroAcumuladoActual;
-                            distRealTramo = 0;
-                            difKm = 0;
-                        } else if (odometroAcumuladoActual > 0) {
-                            distRealTramo = Math.abs(odometroAcumuladoActual - odometroBaseAnterior);
-                            difKm = distPlanKm - distRealTramo;
-                            odometroBaseAnterior = odometroAcumuladoActual;
-                        }
-
-                        // Guardamos las marcas de salida para el próximo nodo
-                        if (!esFilaManual) {
-                            hitoPlanAnteriorSalida = plan.planHoraSalida || "---";
-                            if (horaRealSalida !== "---") hitoRealAnteriorSalida = horaRealSalida;
-                        }
-                    }
-
-                    if (esOmitido || (!esCompletado && tipoRegistro === "---")) {
-                        distRealTramo = "---"; difKm = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---";
-                    }
-
-                    // Limpieza ejecutiva final de estampas de tiempo raras
-                    horaRealLlegada = limpiarFechaSat(horaRealLlegada);
-                    horaRealSalida = limpiarFechaSat(horaRealSalida);
+                    // 🎯 1. PARSEO CORREGIDO DE FECHAS Y HORAS LATINAS
+                    let horaRealLlegada = limpiarFechaSat(real ? real.hora_real_llegada : plan.realHora);
+                    let horaRealSalida = limpiarFechaSat(real ? real.hora_real_salida : "---");
                     let horaPlanLlegada = limpiarFechaSat(plan.planHora || "---");
-                    desvTiempoTexto = limpiarFechaSat(desvTiempoTexto);
-                    pernoctePlan = limpiarFechaSat(pernoctePlan);
-                    pernocteReal = limpiarFechaSat(pernocteReal);
+                    let desvTiempoTexto = limpiarFechaSat(real ? real.desviacion_hh_mm : "---");
+                    let pernoctePlan = limpiarFechaSat(real ? real.hora_pernocte_planificada : "00:30");
+                    let pernocteReal = limpiarFechaSat(real ? real.hora_pernocte_real : "---");
 
+                    // 🎯 2. CORRECCIÓN MATEMÁTICA ESTRICTA DE KILOMETRAJES (EVITA ERRORES CONCATENADOS)
+                    let distPlanKm = parseFloat(plan.distanciaPlan) || 0;
+                    let odometroAcumuladoActual = real ? parseFloat(real.km_acumulado || 0) : 0;
+                    let distRealTramo = 0;
+                    let difKm = 0;
+
+                    if (index === 0) {
+                        odometroBaseAnterior = odometroAcumuladoActual; // Seteamos el odómetro inicial del viaje
+                        distRealTramo = 0;
+                        difKm = 0;
+                    } else if (esCompletado && odometroAcumuladoActual > 0) {
+                        // Restamos el odómetro actual menos el hito completado anterior
+                        distRealTramo = Math.abs(odometroAcumuladoActual - odometroBaseAnterior);
+                        difKm = distPlanKm - distRealTramo;
+                        odometroBaseAnterior = odometroAcumuladoActual; // Actualizamos la base para el siguiente tramo
+                    }
+
+                    // Forzar guiones en cálculos para hitos que nunca se ejecutaron
+                    if (esOmitido || (!esCompletado && tipoRegistro === "---")) {
+                        distRealTramo = "---";
+                        difKm = "---";
+                        desvTiempoTexto = "---";
+                    }
+
+                    // Determinar el color del semáforo por signo de desvío
                     let semaforoTiempo = "verde";
                     if (desvTiempoTexto.indexOf("-") > -1) semaforoTiempo = "rojo";
 
                     _satCacheDatosRows.push({
                         st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
-                        sec: numSecuencia, punto: plan.punto, conductor: real ? (real.conductor || "---") : "---", tipo: tipoRegistro, 
+                        sec: numSecuencia, punto: plan.punto, conductor: real ? (real.conductor || "Sin Conductor") : "Sin Conductor", tipo: tipoRegistro, 
                         planLlegada: horaPlanLlegada, realLlegada: horaRealLlegada, desvTiempo: desvTiempoTexto, semTiempo: semaforoTiempo,
-                        tiempoPlan: tiempoViajePlan, tiempoReal: tiempoViajeReal, 
+                        tiempoPlan: "---", tiempoReal: "---", 
                         distPlan: distPlanKm, distReal: distRealTramo, semDist: "verde",
                         difKm: difKm, pernoctePlan: pernoctePlan, pernocteReal: pernocteReal, realSalida: horaRealSalida
                     });
 
-                    // 🗺️ PROCESAMIENTO GEOMÉTRICO EN EL MAPA (MANTENIDO INTACTO)
+                    // 🗺️ PROCESAMIENTO GEOMÉTRICO EN EL MAPA
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     let centroideLatLng = null;
 
