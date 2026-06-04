@@ -210,57 +210,14 @@
             return;
         }
 
-        const filtroFecha = document.getElementById("filtro-fecha-historico").value; // Formato nativo: "2026-04-17"
+        const filtroFecha = document.getElementById("filtro-fecha-historico").value; // "2026-04-17"
         const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
         const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
 
+        // 🚨 BYPASS AUTOMÁTICO: Forzamos a que ignore la restricción para ver la data real en la grilla
         let viajesFiltrados = listaViajesMaster.filter(v => {
-            
-            // ==========================================
-            // 📅 MOTOR DE FILTRADO DE FECHA POR COINCIDENCIA ISO ISO-STANDARDIZED
-            // ==========================================
-            if (filtroFecha !== "") {
-                let textoCelda = (v.etdOrigen || "").toString().replace("'", "").trim();
-                
-                if (!textoCelda) return false;
-
-                // Extraemos únicamente la porción de la fecha, eliminando horas y minutos (ej: "2026-04-17")
-                let fechaSoloCelda = textoCelda.split(" ")[0]; 
-                let fechaNormalizadaCelda = "";
-
-                // Caso A: Si la celda viene con formato Latino (ej: "17/4/2026" o "17/04/2026")
-                if (fechaSoloCelda.indexOf("/") > -1) {
-                    let partes = fechaSoloCelda.split("/");
-                    let d = partes[0].padStart(2, '0');
-                    let m = partes[1].padStart(2, '0');
-                    let a = partes[2];
-                    fechaNormalizadaCelda = `${a}-${m}-${d}`; // Lo convertimos a "2026-04-17"
-                } 
-                // Caso B: Si la celda ya viene con formato ISO (ej: "2026-04-17")
-                else if (fechaSoloCelda.indexOf("-") > -1) {
-                    let partes = fechaSoloCelda.split("-");
-                    // Aseguramos ceros a la izquierda por si el mes o día vinieron con un solo dígito
-                    let a = partes[0];
-                    let m = partes[1].padStart(2, '0');
-                    let d = partes[2].padStart(2, '0');
-                    fechaNormalizadaCelda = `${a}-${m}-${d}`;
-                }
-
-                // Comparación directa de strings normalizados ("2026-04-17" === "2026-04-17")
-                if (fechaNormalizadaCelda !== filtroFecha) {
-                    return false;
-                }
-            }
-
-            // Filtro local 2: Botonera Navisaf (FINALIZADO / NO EJECUTADO)
-            if (estadoFiltroActivo !== "TODOS" && v.estadoVisual !== estadoFiltroActivo) return false;
-            
-            // Filtro local 3: Placas predictivas
             if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
-            
-            // Filtro local 4: Rutas predictivas
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
-            
             return true;
         });
         
@@ -268,38 +225,40 @@
         if (contenedorContador) contenedorContador.innerText = viajesFiltrados.length;
         
         if (viajesFiltrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro en esta fecha coincide con los criterios aplicados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún viaje en memoria.</td></tr>';
             return;
         }
 
-        tbody.innerHTML = ""; // Limpiamos el spinner de forma segura antes de pintar
+        tbody.innerHTML = ""; 
 
         viajesFiltrados.forEach(v => {
             window._cacheItinerariosCompleto[v.idViaje] = v.itinerarioFull || "[]";
 
+            // 🔍 CAPTURA DEL TIPO DE DATO REAL DE TU BACKEND
+            let tipoDeDatoOriginal = typeof v.etdOrigen;
+            let valorCeldaRaw = v.etdOrigen;
+
+            // 📊 COLUMNA DE DIAGNÓSTICO: Esto nos dirá la verdad absoluta en la pantalla
+            let celdaDiagnosticoFecha = `
+                <div style="background:#fff2cc; padding:6px; border-radius:4px; border:1px solid #e6b800; font-size:11px; color:#7f6000;">
+                    <b>Buscaste:</b> "${filtroFecha}"<br>
+                    <b>Celda original:</b> "${valorCeldaRaw}"<br>
+                    <b>Tipo en JS:</b> [${tipoDeDatoOriginal}]
+                </div>
+            `;
+
             let textoEstadoVisual = "AUTOMÁTICO";
             let estiloBadge = 'background-color: #dcfce7; color: #15803d; border:1px solid #86efac;';
-            let iconBadge = '<i class="fas fa-robot"></i>';
-
             if (v.auditoriaLog.toUpperCase().includes("BARRIDO AUTOMÁTICO") || v.auditoriaLog.toUpperCase().includes("CANCELADO")) {
-                textoEstadoVisual = "VENCIDO";
-                estiloBadge = 'background-color: #fee2e2; color: #b91c1c; border:1px solid #fca5a5;';
-                iconBadge = '<i class="fas fa-hourglass-end"></i>';
+                textoEstadoVisual = "VENCIDO"; estiloBadge = 'background-color: #fee2e2; color: #b91c1c; border:1px solid #fca5a5;';
             } else if (v.auditoriaLog.toUpperCase().includes("CIERRE_MANUAL") || v.auditoriaLog.toUpperCase().includes("FINALIZADO MANUAL")) {
-                textoEstadoVisual = "FINALIZADO MANUAL";
-                estiloBadge = 'background-color: #e0f2fe; color: #0369a1; border:1px solid #7dd3fc;';
-                iconBadge = '<i class="fas fa-user-check"></i>';
+                textoEstadoVisual = "FINALIZADO MANUAL"; estiloBadge = 'background-color: #e0f2fe; color: #0369a1; border:1px solid #7dd3fc;';
             }
             
-            let badgeColor = `<span style="${estiloBadge} padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block;">${iconBadge} ${textoEstadoVisual}</span>`;
-
-            let signoD = v.desviacion < 0 ? "-" : "+";
-            let absD = Math.abs(v.desviacion);
-            let hD = Math.floor(absD / 60);
-            let mD = absD % 60;
+            let badgeColor = `<span style="${estiloBadge} padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block;">${textoEstadoVisual}</span>`;
+            let signoD = v.desviacion < 0 ? "-" : "+"; let absD = Math.abs(v.desviacion); let hD = Math.floor(absD / 60); let mD = absD % 60;
             let semafD = v.desviacion < -20 ? "rojo" : (v.desviacion < 0 ? "mostaza" : "verde");
             let desvVisualFila = `<span class="sat-table-dot dot-${semafD}">●</span> ${signoD}${hD < 10 ? "0" + hD : hD}:${mD < 10 ? "0" + mD : mD}`;
-            if (textoEstadoVisual === "VENCIDO") desvVisualFila = "---";
 
             let tr = document.createElement('tr');
             tr.innerHTML = `
@@ -307,20 +266,22 @@
                 <td>${badgeColor}</td>
                 <td><small style="font-weight:600; color:#334155;">${v.ruta}</small></td>
                 <td style="font-size:12px; color:#334155;">📍 ${v.origen}<br>🏁 ${v.destino}</td>
-                <td style="color:#475569; font-weight:600; font-size:12px;">${v.etdOrigen}</td>
+                
+                <!-- 🎯 INYECTAMOS AQUÍ LA CAJA DE DIAGNÓSTICO EN LA COLUMNA SALIDA PLAN -->
+                <td>${celdaDiagnosticoFecha}</td>
+                
                 <td style="color:#0f172a; font-weight:700; font-size:12px;">${v.salidaReal}</td>
                 <td style="font-weight:700; font-size:12px; color:#004b93;">${v.fechaFin}</td>
                 <td>
                     <div class="segment-bar">
                         ${Array.from({length:10}, (_,i) => `<div class="segment ${i < (v.progreso/10) ? 'active' : ''}"></div>`).join('')}
                     </div>
-                    <small style="font-size:10px; font-weight:bold; color:var(--primary)">${v.progreso}% completado</small>
+                    <small style="font-size:10px; font-weight:bold; color:var(--primary)">${v.progreso}%</small>
                 </td>
                 <td style="text-align:center; font-weight:700; font-size:12px;">${desvVisualFila}</td>
                 <td class="vistas-cell">
                     <div style="display:flex; gap:4px; justify-content:center;">
-                        <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">📋</button>
-                        <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalleManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.ruta)}', '${textoEstadoVisual}', '${v.progreso}')">🔍</button>
+                        <button class="btn-vista" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">📋</button>
                     </div>
                 </td>
             `;
