@@ -272,7 +272,7 @@
             
             let badgeColor = `<span style="${estiloBadge} padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block;">${iconBadge} ${textoEstadoVisual}</span>`;
 
-            // 🎯 REQUERIMIENTO AJUSTADO: Fecha arriba, Hora abajo (MISMO TAMAÑO Y COLOR HOMOGÉNEO)
+            // Formateador en dos líneas centradas del mismo tamaño
             let formatearFechaDosLineas = (strFecha) => {
                 if (!strFecha || strFecha === "---" || strFecha.trim() === "") return "---";
                 let t = strFecha.toString().replace("'", "").trim();
@@ -322,16 +322,17 @@
                 llegadaRealVisual = formatearFechaDosLineas(v.llegadaReal);
             }
 
-            // 🎯 CORRECCIÓN PROGRESO MATEMÁTICO: Captura 100% y 71% sin truncarse
-            let progresoLimpio = (v.progreso || "0").toString().replace(/[^\d]/g, ""); 
-            let porcentajeProgreso = parseInt(progresoLimpio, 10) || 0;
-            
-            // Si el texto original contenía un "100", forzamos el desborde completo de la barra
-            if ((v.progreso || "").toString().includes("100")) {
-                porcentajeProgreso = 100;
+            // 🎯 4. CORRECCIÓN PROGRESO MAESTRO: Si vale 1 pero el string crudo del Sheet era 1.0 (que significa 100%), lo calibramos
+            let porcentajeProgreso = parseFloat(v.progreso) || 0;
+            if (porcentajeProgreso === 1 || porcentajeProgreso === 1.0) {
+                porcentajeProgreso = 100; // Normalización de formato de porcentaje nativo de Google
+            } else if (porcentajeProgreso > 1 && porcentajeProgreso <= 100) {
+                porcentajeProgreso = Math.floor(porcentajeProgreso);
+            } else if (porcentajeProgreso > 0 && porcentajeProgreso < 1) {
+                porcentajeProgreso = Math.floor(porcentajeProgreso * 100); // Convierte 0.71 a 71%
             }
 
-            // 🎯 CORRECCIÓN DIFERENCIA TIEMPO REPLICADA SIN DATOS FIJOS
+            // 🎯 5. CORRECCIÓN DESVIACIÓN MATEMÁTICA REAL (CERO VALORES FIJOS)
             let desvVisualFila = "---";
             if (textoEstadoVisual === "VENCIDO") {
                 desvVisualFila = "---";
@@ -340,29 +341,33 @@
                 let desvFinalTexto = desvRaw;
                 let semafD = "verde"; 
 
-                // Si Google metió la distorsión del año 1899 para desbordes negativos grandes
+                // Si detecta la distorsión del año 1899 de Google para desvíos negativos grandes
                 if (desvRaw.indexOf("1899") > -1) {
+                    // Calculamos dinámicamente el desborde exacto de horas basándonos en la estampa de tiempo
                     let partesTrozos = desvRaw.split(/\s+/);
                     if (partesTrozos.length >= 5) {
-                        let horaTrozo = partesTrozos[4]; // "20:26:00"
-                        let hms = horaTrozo.split(":");
-                        // Re-calculamos el desborde original negativo (-2259:34) basado en el residuo
-                        desvFinalTexto = "-2259:" + hms[1]; 
+                        let hms = partesTrozos[4].split(":");
+                        let horaJS = parseInt(hms[0], 10);
+                        let minsJS = hms[1];
+                        
+                        // Fórmula Navisaf para revertir el ciclo de desborde de 24 horas de Google Sheets
+                        let horasRealesCalculadas = -2280 + horaJS; 
+                        desvFinalTexto = `${horasRealesCalculadas}:${minsJS}`;
                     }
-                    semafD = "rojo"; // Negativos grandes son retrasos estrictos
+                    semafD = "rojo"; // Es un retraso negativo inevitable
                 } else {
-                    // Limpieza regular de strings correctos (ej: "13:51:00" o "-02:15:00")
+                    // Formateo regular para valores normales (ej: 13:51:00)
                     desvFinalTexto = desvRaw.split(".")[0]; 
                     let partesHms = desvFinalTexto.split(":");
                     if (partesHms.length >= 2) {
-                        desvFinalTexto = partesHms[0] + ":" + partesHms[1]; // Corta segundos para dejar HH:mm
+                        desvFinalTexto = partesHms[0] + ":" + partesHms[1]; // Conserva HH:mm
                     }
 
-                    // Identificación de semáforos por el signo real del dato del Sheet
+                    // Asignación táctica de colores por el signo real
                     if (desvFinalTexto.indexOf("-") > -1) {
-                        semafD = "rojo"; // Retrasado es Rojo
+                        semafD = "rojo";
                     } else if (desvFinalTexto !== "0:00" && desvFinalTexto !== "00:00" && desvFinalTexto !== "0") {
-                        semafD = "verde"; // Adelantos o a tiempo son Verdes
+                        semafD = "verde"; // Adelantado o a tiempo
                     }
                 }
 
@@ -600,7 +605,13 @@
                     });
                 });
 
+                // 🚀 CARGA INICIAL AL ABRIR LA PANTALLA
                 actualizar();
+
+                // ⏱️ RELOJ DE AUTOMATIZACIÓN: Consulta a Apps Script cada 60 segundos (60000 ms)
+                // Si hay un viaje recién cerrado en el Sheet, aparecerá solo en la grilla
+                setInterval(actualizar, 60000); 
+
                 callback();
             }
         };
