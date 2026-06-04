@@ -224,23 +224,34 @@
 
         // Ordenamiento Cronológico de Menor a Mayor por ETD Planificado
         viajesFiltrados.sort(function(a, b) {
-            let parsearEtdAISO = (strEtd) => {
-                if (!strEtd || strEtd === "---") return new Date(0);
+            let extraerHoraMilitar = (strEtd) => {
+                if (!strEtd || strEtd === "---") return "00:00:00";
                 let txt = strEtd.toString().replace("'", "").trim();
+                
+                // Si viene en formato largo de fecha de Google ("Tue Sep 26 1899 08:00:00")
                 if (txt.indexOf(" ") > -1 && isNaN(txt.charAt(0))) {
-                    let p = txt.split(/\s+/);
-                    if (p.length >= 4) {
-                        let m = mesesIngles[p[1].toUpperCase()] || "00";
-                        let d = p[2].padStart(2, '0');
-                        return new Date(`${p[3]}-${m}-${d}T${p[4] || '00:00:00'}`);
-                    }
+                    let partes = txt.split(/\s+/);
+                    if (partes.length >= 5 && partes[4].includes(":")) return partes[4];
                 }
-                if (txt.indexOf("-") > -1 && txt.indexOf("-") < 5) {
-                    return new Date(txt.replace(" ", "T"));
+                
+                // Si viene como "17/4/2026 08:00:00" o "08:00:00, 17/4/2026"
+                let coincidenciaHora = txt.match(/(\d{1,2}):(\d{2}):?(\d{2})?/);
+                if (coincidenciaHora) {
+                    let hh = coincidenciaHora[1].padStart(2, '0');
+                    let mm = coincidenciaHora[2].padStart(2, '0');
+                    let ss = coincidenciaHora[3] ? coincidenciaHora[3].padStart(2, '0') : "00";
+                    return `${hh}:${mm}:${ss}`;
                 }
-                return new Date(0);
+                return "00:00:00";
             };
-            return parsearEtdAISO(a.salidaPlan).getTime() - parsearEtdAISO(b.salidaPlan).getTime();
+
+            let horaA = extraerHoraMilitar(a.salidaPlan);
+            let horaB = extraerHoraMilitar(b.salidaPlan);
+            
+            // Comparamos los textos de las horas de forma alfabética/militar directa (Menor a Mayor)
+            if (horaA < horaB) return -1;
+            if (horaA > horaB) return 1;
+            return 0;
         });
         
         const contenedorContador = document.getElementById("num-flota-total");
