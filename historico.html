@@ -210,95 +210,28 @@
             return;
         }
 
-        const filtroFecha = document.getElementById("filtro-fecha-historico").value; // Formato del input HTML5: "2026-06-03"
-        const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
-        const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
-
-        // Mapeo inverso de meses en inglés para normalización ISO
-        const mesesDiccionario = {
-            "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04", "MAY": "05", "JUN": "06",
-            "JUL": "07", "AUG": "08", "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12"
-        };
-
-        let viajesFiltrados = listaViajesMaster.filter(v => {
-            
-            // ==========================================
-            // 📅 MOTOR DE FECHA INTEGRAL INMUNE A ZONAS HORARIAS
-            // ==========================================
-            if (filtroFecha !== "") {
-                let textoCelda = (v.etdOrigen || "").toString().trim(); // "Wed Jun 03 2026 21:07:57 GMT-0500"
-                if (!textoCelda || textoCelda === "---") return false;
-
-                let fechaNormalizadaCelda = "";
-
-                // CASO 1: Formato largo de Google (ej: "Wed Jun 03 2026 21:07:57 GMT-0500")
-                if (textoCelda.indexOf(" ") > -1 && isNaN(textoCelda.charAt(0))) {
-                    let partes = textoCelda.split(/\s+/); 
-                    // partes[0]="Wed", partes[1]="Jun", partes[2]="03", partes[3]="2026"
-                    if (partes.length >= 4) {
-                        let mesKey = partes[1].toUpperCase();
-                        let m = mesesDiccionario[mesKey] || "00";
-                        let d = partes[2].padStart(2, '0');
-                        let a = partes[3];
-                        fechaNormalizadaCelda = `${a}-${m}-${d}`; // Reconstruye: "2026-06-03"
-                    }
-                } 
-                // CASO 2: Formato ISO plano del Sheet (ej: "2026-06-03 21:07:57")
-                else if (textoCelda.indexOf("-") > -1) {
-                    let partesGuion = textoCelda.split(" ")[0].split("-");
-                    let a = partesGuion[0];
-                    let m = partesGuion[1].padStart(2, '0');
-                    let d = partesGuion[2].padStart(2, '0');
-                    fechaNormalizadaCelda = `${a}-${m}-${d}`;
-                }
-                // CASO 3: Formato Latino Standard (ej: "03/06/2026")
-                else if (textoCelda.indexOf("/") > -1) {
-                    let partesBarra = textoCelda.split(" ")[0].split("/");
-                    let d = partesBarra[0].padStart(2, '0');
-                    let m = partesBarra[1].padStart(2, '0');
-                    let a = partesBarra[2];
-                    fechaNormalizadaCelda = `${a}-${m}-${d}`;
-                }
-
-                // Comparación directa de strings planos normalizados en formato ISO
-                if (fechaNormalizadaCelda !== filtroFecha) {
-                    return false;
-                }
-            }
-
-            // Filtro local 2: Botonera Navisaf (FINALIZADO / NO EJECUTADO)
-            if (estadoFiltroActivo !== "TODOS" && v.estadoVisual !== estadoFiltroActivo) return false;
-            
-            // Filtro local 3: Placas predictivas
-            if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
-            
-            // Filtro local 4: Rutas predictivas
-            if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
-            
-            return true;
-        });
+        // 🎯 OMITIMOS LOS FILTROS: Dejamos pasar el 100% de los viajes que llegaron del servidor
+        let viajesFiltrados = listaViajesMaster; 
         
         const contenedorContador = document.getElementById("num-flota-total");
         if (contenedorContador) contenedorContador.innerText = viajesFiltrados.length;
         
         if (viajesFiltrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro en esta fecha coincide con los criterios filtrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro cargado en la memoria del Add-In.</td></tr>';
             return;
         }
 
-        tbody.innerHTML = ""; // Limpiamos la pantalla de forma segura antes de pintar
+        tbody.innerHTML = ""; // Limpiamos el mensaje de espera
 
         viajesFiltrados.forEach(v => {
             window._cacheItinerariosCompleto[v.idViaje] = v.itinerarioFull || "[]";
 
-            // Formateo visual limpio de la fecha de salida para la grilla del operador
+            // Formateo visual rápido para que la fecha larga de Google no descuadre la tabla
             let fechaSalidaVisual = v.etdOrigen;
             if (v.etdOrigen && v.etdOrigen.toString().indexOf(" ") > -1 && isNaN(v.etdOrigen.toString().charAt(0))) {
                 let partes = v.etdOrigen.toString().split(/\s+/);
-                if (partes.length >= 5) {
-                    let mesNum = mesesDiccionario[partes[1].toUpperCase()] || "00";
-                    let horaLimpia = partes[4].substring(0, 5); // Extrae "21:07"
-                    fechaSalidaVisual = `${partes[2]}/${mesNum}/${partes[3]} ${horaLimpia}`;
+                if (partes.length >= 4) {
+                    fechaSalidaVisual = `${partes[2]} ${partes[1]} ${partes[3]}`; // Ejemplo: "03 Jun 2026"
                 }
             }
 
