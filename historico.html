@@ -318,14 +318,14 @@
             let salidaPlanVisual = formatearFechaDosLineas(v.salidaPlan);
 
             let salidaRealVisual = "---";
-            if (textoEstadoVisual === "VENCIDO") {
+            if (textoEstadoVisual === "VENCIDO" || textoEstadoVisual === "CANCELADO") {
                 salidaRealVisual = `<div style="text-align:center; color:#94a3b8; font-weight:bold;">-</div>`;
             } else {
                 salidaRealVisual = formatearFechaDosLineas(v.salidaReal);
             }
 
             let llegadaRealVisual = "---";
-            if (textoEstadoVisual === "VENCIDO") {
+            if (textoEstadoVisual === "VENCIDO" || textoEstadoVisual === "CANCELADO") {
                 llegadaRealVisual = `<div style="text-align:center; color:#94a3b8; font-weight:bold;">-</div>`;
             } else {
                 llegadaRealVisual = formatearFechaDosLineas(v.llegadaReal);
@@ -343,7 +343,7 @@
 
             // 🎯 5. CORRECCIÓN DESVIACIÓN MATEMÁTICA REAL (CERO VALORES FIJOS)
             let desvVisualFila = "---";
-            if (textoEstadoVisual === "VENCIDO") {
+            if (textoEstadoVisual === "VENCIDO" || textoEstadoVisual === "CANCELADO") {
                 desvVisualFila = "---";
             } else {
                 let desvRaw = (v.desviacion || "0:00:00").toString().trim();
