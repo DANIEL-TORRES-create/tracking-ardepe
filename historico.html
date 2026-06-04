@@ -579,6 +579,7 @@
         const tbody = document.getElementById('sat-tbody-rows');
         if (tbody) tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:30px; color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Reconstruyendo traza de hilos...</td></tr>';
 
+        // Limpieza de capas previas en el mapa estático del historial
         if (window._satMarcadoresHitosGrupo) _satMapa.removeLayer(window._satMarcadoresHitosGrupo);
         window._satMarcadoresHitosGrupo = L.layerGroup().addTo(_satMapa);
 
@@ -588,39 +589,119 @@
         window[nombreCallbackTemporal] = function(datosSeguimiento) {
             _satCacheDatosRows = [];
             let ultimoIndiceCompletado = -1;
+            let puntosParaRutaOSRM = [];
 
+            // Evaluamos cuál fue el último hito completado de la traza para pintar omitidos
             itinerarioPlan.forEach((plan, idx) => {
                 if (plan.deteccion === "SI" || plan.deteccion === "FORZADO") ultimoIndiceCompletado = idx;
             });
 
-            let secuenciaCorrelativa = 1;
-            itinerarioPlan.forEach((plan, index) => {
-                let real = datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
-                let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
-                let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
-                
-                let numSecuencia = plan.punto === "INICIO_MANUAL" ? 1 : secuenciaCorrelativa++;
-                let tipoRegistro = esCompletado ? (plan.punto === "INICIO_MANUAL" ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
-                
-                let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
-                let horaRealSalida = real ? real.hora_real_salida : "---";
-                let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
-                let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
-                let pernocteReal = real ? real.hora_pernocte_real : "---";
-                let odometroAcumulado = real ? parseFloat(real.km_acumulado || 0) : 0;
-
-                _satCacheDatosRows.push({
-                    st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
-                    sec: numSecuencia, punto: plan.punto, conductor: real ? real.conductor : "---", tipo: tipoRegistro, 
-                    planLlegada: plan.planHora || "---", realLlegada: horaRealLlegada, desvTiempo: desvTiempoTexto, semTiempo: "verde",
-                    tiempoPlan: "---", tiempoReal: "---", distPlan: plan.distanciaPlan || 0, distReal: odometroAcumulado, semDist: "verde",
-                    difKm: 0, pernoctePlan: pernoctePlan, pernocteReal: pernocteReal, realSalida: horaRealSalida
-                });
+            // Solicitamos a la API de Geotab la geometría de las zonas para calcular centroides
+            geotab.addin.seguimientoHistorico().api.call("Get", {
+                typeName: "Zone",
+                search: { zoneTypeIds: ["b4A3"] }
+            }, function(zonasGeotab) {
+                construirGraficosYTablaPasiva(zonasGeotab);
+            }, function(err) {
+                construirGraficosYTablaPasiva([]);
             });
 
-            _satMapa.invalidateSize(true);
-            filtrarTablaSatelital('historial');
-            delete window[nombreCallbackTemporal];
+            function construirGraficosYTablaPasiva(zonasGeotab) {
+                let secuenciaCorrelativa = 1;
+
+                itinerarioPlan.forEach((plan, index) => {
+                    let real = datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                    let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
+                    let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
+                    
+                    let numSecuencia = plan.punto === "INICIO_MANUAL" ? 1 : secuenciaCorrelativa++;
+                    let tipoRegistro = esCompletado ? (plan.punto === "INICIO_MANUAL" ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
+                    let colorHito = esCompletado ? '#16a34a' : (esOmitido ? '#d93025' : '#64748b');
+                    if (plan.punto === "INICIO_MANUAL") colorHito = '#d97706';
+
+                    let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
+                    let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
+                    let horaRealSalida = real ? real.hora_real_salida : "---";
+                    let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
+                    let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
+                    let pernocteReal = real ? real.hora_pernocte_real : "---";
+                    let odometroAcumulado = real ? parseFloat(real.km_acumulado || 0) : 0;
+
+                    // Alimentación de la grilla de datos inferior del modal
+                    _satCacheDatosRows.push({
+                        st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
+                        sec: numSecuencia, punto: plan.punto, conductor: real ? real.conductor : "---", tipo: tipoRegistro, 
+                        planLlegada: plan.planHora || "---", realLlegada: horaRealLlegada, desvTiempo: desvTiempoTexto, semTiempo: "verde",
+                        tiempoPlan: "---", tiempoReal: "---", distPlan: plan.distanciaPlan || 0, distReal: odometroAcumulado, semDist: "verde",
+                        difKm: 0, pernoctePlan: pernoctePlan, pernocteReal: pernocteReal, realSalida: horaRealSalida
+                    });
+
+                    // 🗺️ CÁLCULO DEL CENTROIDE PARA EL TRAZADO DEL MAPA PASIVO
+                    let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                    let centroideLatLng = null;
+
+                    if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                        let sumaLat = 0, sumaLng = 0;
+                        zonaMatch.points.forEach(pt => { sumaLat += pt.y; sumaLng += pt.x; });
+                        centroideLatLng = [sumaLat / zonaMatch.points.length, sumaLng / zonaMatch.points.length];
+                    } else if (zonaMatch) {
+                        if (zonaMatch.center) centroideLatLng = [zonaMatch.center.y, zonaMatch.center.x];
+                        else if (zonaMatch.y) centroideLatLng = [zonaMatch.y, zonaMatch.x];
+                    }
+
+                    if (centroideLatLng) {
+                        let geocercaVisual = null;
+                        if (plan.punto === "INICIO_MANUAL") {
+                            geocercaVisual = L.circle(centroideLatLng, { radius: 40, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
+                        } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                            let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
+                            geocercaVisual = L.polygon(verticesLeaflet, { color: colorHito, fillColor: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
+                        } else {
+                            geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
+                        }
+
+                        let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
+                        centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
+                        geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
+
+                        // Encolamos la coordenada para trazar los hilos de carretera
+                        puntosParaRutaOSRM.push({ coordenada: centroideLatLng, esGris: esOmitido || (!esCompletado) });
+                    }
+                });
+
+                // Trazado de carreteras OSRM uniendo los centroides secuencialmente
+                puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
+                    if (idx >= puntosParaRutaOSRM.length - 1) return;
+                    let puntoDestino = puntosParaRutaOSRM[idx + 1];
+
+                    let coordInicio = puntoOrigen.coordenada;
+                    let coordFin = puntoDestino.coordenada;
+                    let esTramoGris = puntoDestino.esGris;
+
+                    fetch(`https://router.project-osrm.org/route/v1/driving/${coordInicio[1]},${coordInicio[0]};${coordFin[1]},${coordFin[0]}?overview=full&geometries=geojson`)
+                        .then(r => r.json())
+                        .then(jsonRoute => {
+                            if (jsonRoute.routes && jsonRoute.routes.length > 0) {
+                                let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                                let colorLinea = esTramoGris ? '#94a3b8' : '#004b93'; 
+                                let estiloLinea = esTramoGris ? 
+                                    { color: colorLinea, weight: 4, opacity: 0.6, dashArray: '5, 10' } : 
+                                    { color: colorLinea, weight: 5, opacity: 0.85 };
+
+                                L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
+                            }
+                        }).catch(e => console.error("Error carretera OSRM pasivo:", e));
+                });
+
+                // Auto-centrado de cámara en el hito origen para encuadrar la visual
+                if (puntosParaRutaOSRM.length > 0) {
+                    _satMapa.setView(puntosParaRutaOSRM[0].coordenada, 8);
+                }
+
+                _satMapa.invalidateSize(true);
+                filtrarTablaSatelital('historico_ver_todos'); // Llama al gatillo de renderizado local
+                delete window[nombreCallbackTemporal];
+            }
         };
 
         const script = document.createElement('script');
