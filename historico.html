@@ -429,8 +429,11 @@
 
     function abrirResumen(data, placa, logAuditoria) {
         document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
-        if (typeof event !== 'undefined' && event.currentTarget && event.currentTarget.closest('tr')) {
-            event.currentTarget.closest('tr').classList.add('fila-activa');
+        if (typeof event !== 'undefined' && event.currentTarget) {
+            const botonActivo = event.currentTarget;
+            if (botonActivo.closest('tr')) {
+                botonActivo.closest('tr').classList.add('fila-activa');
+            }
         }
 
         let puntos = JSON.parse(decodeURIComponent(data));
@@ -439,29 +442,99 @@
         const timeline = document.getElementById('timeline-v');
         timeline.innerHTML = "";
         
-        if (rawLog && rawLog.trim() !== "" && rawLog !== "null") {
+        if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
             let logsHtml = `<div class="auditoria-panel-box">`;
-            rawLog.split(" / ").forEach(log => {
-                let icono = log.includes("BARRIDO") || log.includes("CANCELADO") ? "fa-ban" : "fa-flag-checkered";
-                logsHtml += `<p style="margin:4px 0;"><i class="fas ${icono}" style="margin-right:6px;"></i> <b>Log:</b> ${log}</p>`;
+            let partesLog = rawLog.split(" / ");
+            partesLog.forEach(log => {
+                if (log.includes("INICIO")) {
+                    logsHtml += `<p style="margin:4px 0; color:#b58105;"><i class="fas fa-play" style="margin-right:6px;"></i> <b>Auditoría Inicio:</b> ${log}</p>`;
+                } else if (log.includes("FIN") || log.includes("CANCELADO")) {
+                    let icono = log.includes("CANCELADO") ? "fa-ban" : "fa-flag-checkered";
+                    let etiqueta = log.includes("CANCELADO") ? "Auditoría Cancelar:" : "Auditoría Fin:";
+                    logsHtml += `<p style="margin:4px 0; color:#004b93;"><i class="fas ${icono}" style="margin-right:6px;"></i> <b>${etiqueta}</b> ${log}</p>`;
+                } else {
+                    logsHtml += `<p style="margin:4px 0;"><i class="fas fa-user-edit" style="margin-right:6px;"></i> <b>Nota:</b> ${log}</p>`;
+                }
             });
             logsHtml += `</div>`;
             timeline.innerHTML += logsHtml;
         }
 
+        // 🧠 RE-ORDENAMIENTO LOGÍSTICO: Insertar INICIO_MANUAL en la posición 2 y CIERRE_MANUAL/CANCELADO al final real
+        let indiceInicioManual = puntos.findIndex(p => p.punto === "INICIO_MANUAL");
+        if (indiceInicioManual > -1) {
+            let [inicioManualNode] = puntos.splice(indiceInicioManual, 1); 
+            puntos.splice(1, 0, inicioManualNode); // Lo ubica inmediatamente después del Origen
+        }
+        
+        let indiceCierreManual = puntos.findIndex(p => p.punto === "CIERRE_MANUAL" || p.punto === "CANCELADO_MANUAL");
+        if (indiceCierreManual > -1) {
+            let [cierreManualNode] = puntos.splice(indiceCierreManual, 1);
+            puntos.push(cierreManualNode); // Forzar que sea el hito final de cierre
+        }
+
+        // Helper interno para limpiar y formatear las fechas largas a formato Latino "DD/MM/YYYY, HH:MM:SS"
+        let limpiarFechaTimeline = (strFecha) => {
+            if (!strFecha || strFecha === "---" || strFecha === "--:--" || strFecha.trim() === "") return "---";
+            let t = strFecha.toString().replace("'", "").trim();
+            const mesesMap = { "JAN":"01", "FEB":"02", "MAR":"03", "APR":"04", "MAY":"05", "JUN":"06", "JUL":"07", "AUG":"08", "SEP":"09", "OCT":"10", "NOV":"11", "DEC":"12" };
+
+            if (t.indexOf(" ") > -1 && isNaN(t.charAt(0))) {
+                let p = t.split(/\s+/);
+                if (p.length >= 5) {
+                    let m = mesesMap[p[1].toUpperCase()] || "00";
+                    return `${parseInt(p[2],10)}/${parseInt(m,10)}/${p[3]}, ${p[4].substring(0,8)}`;
+                }
+            }
+            if (t.indexOf("-") > -1 && t.indexOf("-") < 5) {
+                let partes = t.split(" ");
+                let f = partes[0].split("-");
+                let h = partes[1] || "00:00:00";
+                return `${parseInt(f[2],10)}/${parseInt(f[1],10)}/${f[0]}, ${h.substring(0,8)}`;
+            }
+            return t;
+        };
+
         let containerHtml = `<ul class="resumen-lista-puntos">`;
         puntos.forEach((p, index) => {
-            let claseEstado = p.deteccion === "SI" ? "hito-completado" : (p.deteccion === "FORZADO" || p.punto === "INICIO_MANUAL" ? "hito-alerta" : "hito-pendiente");
-            let marcaVisual = index === 0 ? "🏠 [ORIGEN] " : (index === puntos.length - 1 ? "🏁 [DESTINO] " : "📍 ");
+            let claseEstado = "hito-pendiente";
+            if (p.deteccion === "SI") claseEstado = "hito-completado";
+            if (p.deteccion === "FORZADO" || p.punto === "INICIO_MANUAL" || p.punto === "CIERRE_MANUAL") claseEstado = "hito-alerta";
+
+            let marcaVisual = "";
+            if (index === 0) {
+                marcaVisual = `<span style="color:#d93025; font-weight:bold; margin-right:6px;">🏠 [ORIGEN]</span> `;
+            } else if (index === puntos.length - 1) {
+                marcaVisual = `<span style="color:#004b93; font-weight:bold; margin-right:6px;">🏁 [DESTINO]</span> `;
+            } else if (p.punto === "INICIO_MANUAL" || p.punto === "CIERRE_MANUAL") {
+                marcaVisual = `<span style="color:#d97706; font-weight:bold; margin-right:6px;">⚡ [INTERVENCIÓN]</span> `;
+            } else {
+                marcaVisual = `<span style="color:#94a3b8; margin-right:6px;">📍</span> `;
+            }
+
+            // Normalización de tiempos planificados y reales del hito
+            let planificadoLimpio = limpiarFechaTimeline(p.planHora);
+            let realLimpio = limpiarFechaTimeline(p.realHora);
+
             containerHtml += `
                 <li class="${claseEstado}">
-                    <div><strong style="color: #0f172a; font-size: 13px;">${marcaVisual}${p.punto}</strong></div>
-                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                        <div>Horario Planificado: <b>${p.planHora}</b></div>
-                        <div style="color:#0f172a;">Paso Real Histórico: <b>${p.realHora || '---'}</b></div>
+                    <div>
+                        <strong style="color: #0f172a; font-size: 13.5px;">
+                            ${marcaVisual}${p.punto}
+                        </strong>
                     </div>
-                </li>`;
+                    <div style="font-size: 11.5px; color: #64748b; margin-top: 5px; font-family: sans-serif; line-height: 1.5;">
+                        <div style="margin-bottom: 2px;">
+                            <i class="far fa-clock" style="width: 14px;"></i> Horario Planificado: <b style="color: #334155;">${planificadoLimpio}</b>
+                        </div>
+                        <div style="color: #0f172a;">
+                            <i class="fas fa-satellite-dish" style="width: 14px; color: var(--primary);"></i> Paso Real: <b style="font-size: 12px; font-weight: 700;">${realLimpio}</b>
+                        </div>
+                    </div>
+                </li>
+            `;
         });
+
         containerHtml += `</ul>`;
         timeline.innerHTML += containerHtml;
         document.getElementById('side-panel').classList.add('open');
