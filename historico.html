@@ -16,8 +16,6 @@
     </div>
 </div>
 
-<div
-
 <div class="dashboard">
 
     <div class="bunker-controles-superiores">
@@ -28,8 +26,9 @@
             <button type="button" class="btn-filto-est" data-estado="NO EJECUTADO">🚫 No Ejecutados</button>
         </div>
 
-        <div class="caja-predictiva-wrapper">
-            <input type="date" id="filtro-fecha-historico" class="input-predictivo-pro" style="padding-left: 14px; width: 160px; text-transform: uppercase;">
+        <div class="caja-predictiva-wrapper" style="display: flex; gap: 8px; align-items: center;">
+            <input type="date" id="filtro-fecha-historico" class="input-predictivo-pro" style="padding-left: 14px; width: 140px; text-transform: uppercase;">
+            <button type="button" id="btn-buscar-fecha" class="btn-filto-est" style="opacity: 1; background: #38bdf8; color: #002244 !important; border-color: #38bdf8; box-shadow: 0 0 10px rgba(56,189,248,0.4);">🔍 Buscar</button>
         </div>
 
         <div class="bunker-contador-flota">
@@ -67,7 +66,7 @@
             </tr>
         </thead>
         <tbody id="lista-viajes">
-            <tr><td colspan="10" style="text-align:center; padding:40px; color:#475569; font-weight:bold;">Sincronizando archivo histórico pasivo...</td></tr>
+            <tr><td colspan="10" style="text-align:center; padding:40px; color:#475569; font-weight:bold;">Seleccione una fecha de consulta y presione Buscar...</td></tr>
         </tbody>
     </table>
 </div>
@@ -157,14 +156,20 @@
 </div>
 
 <script>
-    // 🚀 LA NUEVA URL DEDICADA DE TU IMPLEMENTACIÓN HISTÓRICA INDEPENDIENTE
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNiLU063QEua2YTtal-N17jky4JEwKomUoBkzpqCrVyOD39ILSvkqufCL4TAY1iu4A/exec"; 
     
-    let listaViajesGlobal = [];
-    let estadoFiltroActivo = "TODOS";
+    let listaViajesGlobal = [];       // Contenedor "Molde" maestro de la fecha buscada
+    let estadoFiltroActivo = "TODOS"; // Filtro local por estados
     window._cacheItinerariosCompleto = {};
 
-    function actualizar() {
+    // 🚀 NUEVA LÓGICA: Esta función solo se activa al presionar físicamente el botón "Buscar"
+    function realizarBusquedaPorFecha() {
+        const tbody = document.getElementById('lista-viajes');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px; color:#004b93; font-weight:bold;"><i class="fas fa-spinner fa-spin"></i> Consultando base de datos histórica...</td></tr>';
+        }
+        
+        // Ejecuta la llamada al script histórico (.gs)
         const script = document.createElement('script');
         script.src = WEB_APP_URL + "?read=historicos&callback=renderizar&nocache=" + new Date().getTime();
         document.body.appendChild(script);
@@ -184,33 +189,32 @@
             dlPlacas.innerHTML = placasUnicas.map(p => `<option value="${p}"></option>`).join("");
             dlRutas.innerHTML = rutasUnicas.map(r => `<option value="${r}"></option>`).join("");
         }
+        
+        // Procesa y corta de forma inmediata sobre lo que se cargó
         filtrarYMostrarTabla();
     };
 
+    // 🧠 MOTOR LOCAL DE FILTRADO TRIPLE (Se basa estrictamente en la fecha que ya se buscó)
     function filtrarYMostrarTabla() {
         const tbody = document.getElementById('lista-viajes');
         if (!tbody) return;
         tbody.innerHTML = "";
 
-        const filtroFecha = document.getElementById("filtro-fecha-historico").value; // Formato: YYYY-MM-DD
+        const filtroFecha = document.getElementById("filtro-fecha-historico").value; // YYYY-MM-DD
         const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
         const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
 
         let viajesFiltrados = listaViajesGlobal.filter(v => {
-            // ==========================================
-            // 📅 MOTOR DE FILTRADO DE FECHA HISTÓRICA CORREGIDO
-            // ==========================================
+            // 📅 1. Validación de Fecha sobre el molde cargado en memoria (v.fechaInicio)
             if (filtroFecha !== "") {
-                let partesF = filtroFecha.split("-"); // ["2026", "06", "03"]
+                let partesF = filtroFecha.split("-");
                 let anioF = partesF[0];
                 let mesF = parseInt(partesF[1], 10).toString();
                 let diaF = parseInt(partesF[2], 10).toString();
                 
-                // Formatos latinos estandarizados de las celdas
-                let formato1 = `${diaF}/${mesF}/${anioF}`; // "3/6/2026"
-                let formato2 = `${diaF.padStart(2,'0')}/${mesF.padStart(2,'0')}/${anioF}`; // "03/06/2026"
+                let formato1 = `${diaF}/${mesF}/${anioF}`;
+                let formato2 = `${diaF.padStart(2,'0')}/${mesF.padStart(2,'0')}/${anioF}`;
                 
-                // 🎯 CORRECCIÓN CLAVE: Buscamos sobre v.fechaInicio que es la propiedad real del histórico
                 let fechaCeldaLimpia = (v.fechaInicio || "").replace(/,/g, "").trim();
                 
                 if (!fechaCeldaLimpia.includes(formato1) && !fechaCeldaLimpia.includes(formato2)) {
@@ -218,13 +222,13 @@
                 }
             }
 
-            // Filtro 2: Botonera de Estados (FINALIZADO / NO EJECUTADO)
+            // 🎛️ 2. Filtro Botonera de Estados
             if (estadoFiltroActivo !== "TODOS" && v.estadoVisual !== estadoFiltroActivo) return false;
             
-            // Filtro 3: Placas
+            // 🔍 3. Filtro Predictivo Placa
             if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
             
-            // Filtro 4: Rutas
+            // 🔍 4. Filtro Predictivo Ruta
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
             
             return true;
@@ -234,7 +238,7 @@
         if (contenedorContador) contenedorContador.innerText = viajesFiltrados.length;
         
         if (viajesFiltrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro en el archivo coincide con los criterios filtrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro en esta fecha coincide con los criterios aplicados.</td></tr>';
             return;
         }
 
@@ -339,8 +343,6 @@
         });
         containerHtml += `</ul>`;
         timeline.innerHTML += containerHtml;
-        
-        // 🚀 CORRECCIÓN: Tenías .add('open') lo cual arrojaba error. Cambiado a classList.add
         document.getElementById('side-panel').classList.add('open');
     }
 
@@ -350,7 +352,7 @@
     }
 
     // ====================================================================
-    // MOTOR DE AUDITORÍA MAPA SATELITAL PASIVO (SÍNDROME DIGITAL ADD-IN 4)
+    // MOTOR DE AUDITORÍA MAPA SATELITAL PASIVO
     // ====================================================================
     let _satMapa = null;
     let _satCacheDatosRows = []; 
@@ -394,7 +396,6 @@
 
         window[nombreCallbackTemporal] = function(datosSeguimiento) {
             _satCacheDatosRows = [];
-            let puntosParaRutaOSRM = []; 
             let ultimoIndiceCompletado = -1;
 
             itinerarioPlan.forEach((plan, idx) => {
@@ -472,7 +473,7 @@
         });
     };
 
-    // Inicializador del Entorno Geotab Pasivo
+    // Inicializador de Entorno Geotab Pasivo
     geotab.addin.seguimientoHistorico = () => {
         return {
             initialize(api, state, callback) {
@@ -482,13 +483,16 @@
                     const offset = hoyLocal.getTimezoneOffset();
                     const fechaAjustada = new Date(hoyLocal.getTime() - (offset * 60 * 1000));
                     
-                    // Clava el día de HOY por defecto
+                    // Clava el día de HOY por defecto al arrancar
                     inputF.value = fechaAjustada.toISOString().split('T')[0];
-                    inputF.addEventListener("change", filtrarYMostrarTabla);
                 }
 
-                document.getElementById("txt-filtro-placa").addEventListener("input", filtrarYMostrarTabla);
-                document.getElementById("txt-filtro-ruta").addEventListener("input", filtrarYMostrarTabla);
+                // 🎯 CAMBIO MAESTRO: Enlazamos los predictivos locales para que re-filtren la vista de inmediato
+                document.getElementById("txt-filter-placa" || "txt-filtro-placa").addEventListener("input", filtrarYMostrarTabla);
+                document.getElementById("txt-filter-ruta" || "txt-filtro-ruta").addEventListener("input", filtrarYMostrarTabla);
+
+                // 🎯 ASIGNACIÓN DE CLIC AL NUEVO BOTÓN BUSCAR FECHA COCO A COCO
+                document.getElementById("btn-buscar-fecha").addEventListener("click", realizarBusquedaPorFecha);
 
                 const botones = document.querySelectorAll(".btn-filto-est");
                 botones.forEach(btn => {
@@ -496,17 +500,17 @@
                         botones.forEach(b => b.classList.remove("activo"));
                         this.classList.add("activo");
                         estadoFiltroActivo = this.getAttribute("data-estado");
+                        
+                        // Corta localmente el estado sobre el molde existente
                         filtrarYMostrarTabla();
                     });
                 });
 
-                actualizar();
+                // NO disparamos "actualizar();" en automático. Esperamos pasivamente la orden del búnker.
                 callback();
             }
         };
     };
-
-    actualizar();
 </script>
 </body>
 </html>
