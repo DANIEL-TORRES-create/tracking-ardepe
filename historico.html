@@ -171,6 +171,13 @@
     }
 
     window.renderizar = function(viajes) {
+        // 🚨 BYPASS DE DIAGNÓSTICO EN VIVO
+        if (!viajes || viajes.length === 0) {
+            alert("⚠️ ALERTA DEL BÚNKER: La Web App respondió, pero el array de viajes llegó COMPLETAMENTE VACÍO ([]). Revisa si hay filas en DB_HISTORICO.");
+        } else {
+            alert("✅ ¡DATA ENCONTRADA!: El script trajo " + viajes.length + " viajes del histórico. Ejemplo del primer viaje ID: " + viajes[0].idViaje + " | Placa: " + viajes[0].placa + " | Fecha: " + viajes[0].fechaInicio);
+        }
+
         listaViajesMaster = viajes || [];
         
         const dlPlacas = document.getElementById("dl-placas-activas");
