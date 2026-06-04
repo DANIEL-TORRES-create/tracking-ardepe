@@ -614,6 +614,7 @@
             _satCacheDatosRows = [];
             let ultimoIndiceCompletado = -1;
             let puntosParaRutaOSRM = [];
+            let rawDatosArray = datosSeguimiento || [];
 
             itinerarioPlan.forEach((plan, idx) => {
                 if (plan.deteccion === "SI" || plan.deteccion === "FORZADO") ultimoIndiceCompletado = idx;
@@ -634,15 +635,17 @@
 
             function construirGraficosYTablaPasiva(zonasGeotab) {
                 let secuenciaCorrelativa = 1;
-                
-                // 🚀 ARRANQUE DE CONTROLES MATEMÁTICOS DE RECORRIDO (SEGUIMIENTO CLONE)
                 let odometroBaseAnterior = 0; 
                 let ultimoHitoRealValido = null;
                 let ultimoHitoRealValidoPlan = null;
-                let tieneHitoManualActivo = (itinerarioPlan.some(p => p.punto === "INICIO_MANUAL" && p.realHora && p.realHora !== "---"));
+                
+                // Buscador reparado usando mapeo directo por propiedad punto_nombre
+                let tieneHitoManualActivo = itinerarioPlan.some(p => p.punto === "INICIO_MANUAL" && p.realHora && p.realHora !== "---");
 
                 itinerarioPlan.forEach((plan, index) => {
-                    let real = datosSeguimiento ? datosSeguimiento.find(h => h.id_viaje.toString().trim() === idViaje.toString().trim() && h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
+                    // 🎯 CORRECCIÓN AQUÍ: Quitamos el filtro cruzado de ID de viaje para evitar falsos negativos asíncronos
+                    let real = rawDatosArray.find(h => h.punto_nombre && h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                    
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL");
@@ -679,7 +682,7 @@
                         distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; pernoctePlan = "---"; pernocteReal = "---"; horaRealSalida = "---";
                     } 
                     else {
-                        // 🚀 1. RESTA FRAGMENTADA DE DISTANCIA PLANIFICADA (DEJA DE SER EL ODÓMETRO CRUDO)
+                        // Resta fragmentada de distancias planificadas tramo por tramo
                         if (index === 0) {
                             distPlanKm = 0;
                         } else {
@@ -689,13 +692,12 @@
                             distPlanKm = Math.max(0, kmActual - kmAnterior);
                         }
 
-                        // 🚀 2. CAPTURA Y RESTA DINÁMICA DE TIEMPOS DE VIAJE (BASE SALIDA VS LLEGADA ACTUAL)
+                        // Captura de base de tiempos para cálculo de duración de tramos
                         let baseSalidaHora = null; 
                         let basePlanHoraSalida = null;
 
                         if (ultimoHitoRealValido) {
                             baseSalidaHora = ultimoHitoRealValido.hora_real_salida;
-                            
                             let idxBusqueda = index - 1;
                             while (idxBusqueda >= 0) {
                                 let hitoPrevio = itinerarioPlan[idxBusqueda];
@@ -715,7 +717,7 @@
                             tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
                         }
 
-                        // 🚀 3. RESTA FRAGMENTADA DE KILOMETRAJE REAL POR TRAMO
+                        // Resta fragmentada de kilometraje real
                         if (index === 0) {
                             odometroBaseAnterior = odometroAcumuladoActual;
                             distRealTramo = 0;
@@ -727,7 +729,7 @@
                         }
                     }
 
-                    // Formatear tiempos finales del hito
+                    // Pasar textos por el purificador latino
                     horaRealLlegada = limpiarFechaSat(horaRealLlegada);
                     horaRealSalida = limpiarFechaSat(horaRealSalida);
                     let horaPlanLlegada = limpiarFechaSat(plan.planHora || "---");
@@ -737,6 +739,7 @@
 
                     if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) semaforoTiempo = "rojo";
 
+                    let placaActual = document.getElementById('lbl-sat-placa').innerText;
                     _satCacheDatosRows.push({
                         st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
                         sec: numSecuencia, punto: plan.punto, conductor: real ? (real.conductor || "Sin Conductor") : "Sin Conductor", tipo: tipoRegistro, 
@@ -751,7 +754,7 @@
                         ultimoHitoRealValidoPlan = plan;
                     }
 
-                    // [DIBUJO GEOMÉTRICO MAPA: Mantenido Intacto por tu instrucción]
+                    // [Estructura del Mapa: Mantenida Intacta]
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     let centroideLatLng = null;
                     if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
@@ -779,7 +782,6 @@
                     }
                 });
 
-                // Conectar OSRM
                 puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
                     if (idx >= puntosParaRutaOSRM.length - 1) return;
                     let puntoDestino = puntosParaRutaOSRM[idx + 1];
