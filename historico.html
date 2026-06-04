@@ -210,57 +210,55 @@
             return;
         }
 
-        const filtroFecha = document.getElementById("filtro-fecha-historico").value; 
+        const filtroFecha = document.getElementById("filtro-fecha-historico").value; // Formato nativo: "2026-04-17"
         const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
         const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
 
         let viajesFiltrados = listaViajesMaster.filter(v => {
             
-            // 📅 Filtro de Fecha por Integros
+            // ==========================================
+            // 📅 MOTOR DE FILTRADO DE FECHA POR COINCIDENCIA ISO ISO-STANDARDIZED
+            // ==========================================
             if (filtroFecha !== "") {
-                let pF = filtroFecha.split("-"); // ["2026", "04", "17"]
-                let anioFiltro = parseInt(pF[0], 10);
-                let mesFiltro = parseInt(pF[1], 10);
-                let diaFiltro = parseInt(pF[2], 10);
-
-                // 🎯 CORRECCIÓN INTEGRAL: Leemos de etdOrigen que es la propiedad real del backend
-                let textoCelda = "";
-                if (v.etdOrigen) {
-                    if (v.etdOrigen instanceof Date) {
-                        let d = v.etdOrigen.getDate();
-                        let m = v.etdOrigen.getMonth() + 1;
-                        let a = v.etdOrigen.getFullYear();
-                        textoCelda = `${d}/${m}/${a}`; 
-                    } else {
-                        textoCelda = v.etdOrigen.toString().replace("'", "").trim();
-                    }
-                }
+                let textoCelda = (v.etdOrigen || "").toString().replace("'", "").trim();
                 
-                let pC = textoCelda.split(/[^\d]+/); // Extrae los números puros
+                if (!textoCelda) return false;
 
-                if (pC.length >= 3) {
-                    let dCelda, mCelda, aCelda;
-                    
-                    if (textoCelda.indexOf("-") > -1 && textoCelda.indexOf("-") < 5) {
-                        aCelda = parseInt(pC[0], 10);
-                        mCelda = parseInt(pC[1], 10);
-                        dCelda = parseInt(pC[2], 10);
-                    } else { 
-                        dCelda = parseInt(pC[0], 10);
-                        mCelda = parseInt(pC[1], 10);
-                        aCelda = parseInt(pC[2], 10);
-                    }
+                // Extraemos únicamente la porción de la fecha, eliminando horas y minutos (ej: "2026-04-17")
+                let fechaSoloCelda = textoCelda.split(" ")[0]; 
+                let fechaNormalizadaCelda = "";
 
-                    if (dCelda !== diaFiltro || mCelda !== mesFiltro || aCelda !== anioFiltro) {
-                        return false;
-                    }
-                } else {
-                    return false; 
+                // Caso A: Si la celda viene con formato Latino (ej: "17/4/2026" o "17/04/2026")
+                if (fechaSoloCelda.indexOf("/") > -1) {
+                    let partes = fechaSoloCelda.split("/");
+                    let d = partes[0].padStart(2, '0');
+                    let m = partes[1].padStart(2, '0');
+                    let a = partes[2];
+                    fechaNormalizadaCelda = `${a}-${m}-${d}`; // Lo convertimos a "2026-04-17"
+                } 
+                // Caso B: Si la celda ya viene con formato ISO (ej: "2026-04-17")
+                else if (fechaSoloCelda.indexOf("-") > -1) {
+                    let partes = fechaSoloCelda.split("-");
+                    // Aseguramos ceros a la izquierda por si el mes o día vinieron con un solo dígito
+                    let a = partes[0];
+                    let m = partes[1].padStart(2, '0');
+                    let d = partes[2].padStart(2, '0');
+                    fechaNormalizadaCelda = `${a}-${m}-${d}`;
+                }
+
+                // Comparación directa de strings normalizados ("2026-04-17" === "2026-04-17")
+                if (fechaNormalizadaCelda !== filtroFecha) {
+                    return false;
                 }
             }
 
+            // Filtro local 2: Botonera Navisaf (FINALIZADO / NO EJECUTADO)
             if (estadoFiltroActivo !== "TODOS" && v.estadoVisual !== estadoFiltroActivo) return false;
+            
+            // Filtro local 3: Placas predictivas
             if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
+            
+            // Filtro local 4: Rutas predictivas
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
             
             return true;
