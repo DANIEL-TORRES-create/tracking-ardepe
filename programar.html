@@ -265,9 +265,32 @@
             c.innerHTML = "";
             const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(f));
             if (filtrados.length === 0) return c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Sin registros</td></tr>";
+            
             filtrados.forEach(v => {
                 let tr = c.insertRow();
-                tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${v.etdOrigen.toString().replace("'","").replace("T"," ")}</td><td><b>${v.estado}</b></td><td><button onclick='iniciarEdicion(${JSON.stringify(v)})'>✏️</button></td>`;
+                
+                // ⏰ CONVERTIDOR DINÁMICO: Pasa de "2026-06-03 16:30" a "3/6/2026, 16:30:00"
+                let fechaFormateadaHistorial = "---";
+                if (v.etdOrigen && v.etdOrigen !== "---") {
+                    try {
+                        let strEtd = v.etdOrigen.toString().replace("'", "").replace("T", " ").trim();
+                        let partesEspacio = strEtd.split(" ");
+                        let partesFecha = partesEspacio[0].split("-");
+                        let partesHora = partesEspacio[1].split(":");
+                        
+                        let anio = parseInt(partesFecha[0], 10);
+                        let mes = parseInt(partesFecha[1], 10);
+                        let dia = parseInt(partesFecha[2], 10);
+                        let hora = partesHora[0];
+                        let min = partesHora[1];
+                        
+                        fechaFormateadaHistorial = `${dia}/${mes}/${anio}, ${hora}:${min}:00`;
+                    } catch(e) {
+                        fechaFormateadaHistorial = v.etdOrigen.toString().replace("'","").replace("T"," ");
+                    }
+                }
+
+                tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${fechaFormateadaHistorial}</td><td><b>${v.estado}</b></td><td><button onclick='iniciarEdicion(${JSON.stringify(v)})'>✏️</button></td>`;
             });
         } catch(e) { c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error de sincronización</td></tr>"; }
     }
