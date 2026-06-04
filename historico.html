@@ -260,13 +260,22 @@
             let estiloBadge = 'background-color: #dcfce7; color: #15803d; border:1px solid #86efac;';
             let iconBadge = '<i class="fas fa-robot"></i>';
 
-            if (v.auditoriaLog.toUpperCase().includes("BARRIDO AUTOMÁTICO") || v.auditoriaLog.toUpperCase().includes("CANCELADO")) {
+            // 1. Detección de Cancelado por el Operador (Botón Cancelar)
+            if (v.auditoriaLog.toUpperCase().includes("CANCELADO MANUAL") || v.auditoriaLog.toUpperCase().includes("CANCELADO_MANUAL")) {
+                textoEstadoVisual = "CANCELADO";
+                estiloBadge = 'background-color: #f1f5f9; color: #475569; border:1px solid #cbd5e1;'; // Gris Oscuro Corporativo
+                iconBadge = '<i class="fas fa-ban"></i>';
+            } 
+            // 2. Detección de Vencido (Barrido Automático por Exceso de Tiempo)
+            else if (v.auditoriaLog.toUpperCase().includes("BARRIDO AUTOMÁTICO") || v.auditoriaLog.toUpperCase().includes("CANCELADO")) {
                 textoEstadoVisual = "VENCIDO";
-                estiloBadge = 'background-color: #fee2e2; color: #b91c1c; border:1px solid #fca5a5;';
+                estiloBadge = 'background-color: #fee2e2; color: #b91c1c; border:1px solid #fca5a5;'; // Rojo Alerta
                 iconBadge = '<i class="fas fa-hourglass-end"></i>';
-            } else if (v.auditoriaLog.toUpperCase().includes("CIERRE_MANUAL") || v.auditoriaLog.toUpperCase().includes("FINALIZADO MANUAL")) {
+            } 
+            // 3. Detección de Finalizado Manual (Botón Cierre Forzado)
+            else if (v.auditoriaLog.toUpperCase().includes("CIERRE_MANUAL") || v.auditoriaLog.toUpperCase().includes("FINALIZADO MANUAL")) {
                 textoEstadoVisual = "FINALIZADO MANUAL";
-                estiloBadge = 'background-color: #e0f2fe; color: #0369a1; border:1px solid #7dd3fc;';
+                estiloBadge = 'background-color: #e0f2fe; color: #0369a1; border:1px solid #7dd3fc;'; // Azul Intervención
                 iconBadge = '<i class="fas fa-user-check"></i>';
             }
             
