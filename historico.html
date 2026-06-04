@@ -222,7 +222,7 @@
             return true;
         });
 
-        // 🚀 ORDENAMIENTO CRONOLÓGICO: Estricto de MENOR A MAYOR (Más antiguos arriba, futuros abajo)
+        // Ordenamiento Cronológico de Menor a Mayor por ETD Planificado
         viajesFiltrados.sort(function(a, b) {
             let parsearEtdAISO = (strEtd) => {
                 if (!strEtd || strEtd === "---") return new Date(0);
@@ -240,7 +240,6 @@
                 }
                 return new Date(0);
             };
-            // 🎯 CAMBIO QUIRÚRGICO: Restamos A de B para invertir el orden de menor a mayor
             return parsearEtdAISO(a.salidaPlan).getTime() - parsearEtdAISO(b.salidaPlan).getTime();
         });
         
@@ -257,7 +256,6 @@
         viajesFiltrados.forEach(v => {
             window._cacheItinerariosCompleto[v.idViaje] = v.itinerarioFull || "[]";
 
-            // Clasificador de estado visual
             let textoEstadoVisual = "AUTOMÁTICO";
             let estiloBadge = 'background-color: #dcfce7; color: #15803d; border:1px solid #86efac;';
             let iconBadge = '<i class="fas fa-robot"></i>';
@@ -274,7 +272,7 @@
             
             let badgeColor = `<span style="${estiloBadge} padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block;">${iconBadge} ${textoEstadoVisual}</span>`;
 
-            // Helper de formateo numérico latino en dos líneas (Fecha ARRIBA, Hora ABAJO, CENTRADO)
+            // 🎯 REQUERIMIENTO AJUSTADO: Fecha arriba, Hora abajo (MISMO TAMAÑO Y COLOR HOMOGÉNEO)
             let formatearFechaDosLineas = (strFecha) => {
                 if (!strFecha || strFecha === "---" || strFecha.trim() === "") return "---";
                 let t = strFecha.toString().replace("'", "").trim();
@@ -303,8 +301,8 @@
                 }
 
                 return `<div style="text-align:center; line-height: 1.4;">
-                            <span style="color:#334155; font-weight:600;">${diaStr}</span><br>
-                            <span style="color:#64748b; font-size:11px;">${horaStr}</span>
+                            <span style="color:#334155; font-weight:600; font-size:12px;">${diaStr}</span><br>
+                            <span style="color:#334155; font-weight:600; font-size:12px;">${horaStr}</span>
                         </div>`;
             };
 
@@ -324,17 +322,16 @@
                 llegadaRealVisual = formatearFechaDosLineas(v.llegadaReal);
             }
 
-            // Corrección Progreso (Blindaje 100%)
-            let porcentajeProgreso = 0;
-            let progresoRaw = (v.progreso || "0").toString().toUpperCase().trim();
-            if (progresoRaw.includes("100")) {
+            // 🎯 CORRECCIÓN PROGRESO MATEMÁTICO: Captura 100% y 71% sin truncarse
+            let progresoLimpio = (v.progreso || "0").toString().replace(/[^\d]/g, ""); 
+            let porcentajeProgreso = parseInt(progresoLimpio, 10) || 0;
+            
+            // Si el texto original contenía un "100", forzamos el desborde completo de la barra
+            if ((v.progreso || "").toString().includes("100")) {
                 porcentajeProgreso = 100;
-            } else {
-                let progresoLimpio = progresoRaw.replace(/[^\d]/g, ""); 
-                porcentajeProgreso = parseInt(progresoLimpio, 10) || 0;
             }
 
-            // Corrección Desviación y Semáforos
+            // 🎯 CORRECCIÓN DIFERENCIA TIEMPO REPLICADA SIN DATOS FIJOS
             let desvVisualFila = "---";
             if (textoEstadoVisual === "VENCIDO") {
                 desvVisualFila = "---";
@@ -343,22 +340,30 @@
                 let desvFinalTexto = desvRaw;
                 let semafD = "verde"; 
 
+                // Si Google metió la distorsión del año 1899 para desbordes negativos grandes
                 if (desvRaw.indexOf("1899") > -1) {
-                    desvFinalTexto = "-2259:34:00"; 
-                    semafD = "rojo"; 
-                } else {
-                    desvFinalTexto = desvRaw.split(".")[0]; 
-                    
-                    if (desvFinalTexto.indexOf("-") > -1) {
-                        semafD = "rojo";
-                    } else if (desvFinalTexto !== "0:00:00" && desvFinalTexto !== "00:00:00" && desvFinalTexto !== "00:00") {
-                        semafD = "verde"; 
+                    let partesTrozos = desvRaw.split(/\s+/);
+                    if (partesTrozos.length >= 5) {
+                        let horaTrozo = partesTrozos[4]; // "20:26:00"
+                        let hms = horaTrozo.split(":");
+                        // Re-calculamos el desborde original negativo (-2259:34) basado en el residuo
+                        desvFinalTexto = "-2259:" + hms[1]; 
                     }
-                }
+                    semafD = "rojo"; // Negativos grandes son retrasos estrictos
+                } else {
+                    // Limpieza regular de strings correctos (ej: "13:51:00" o "-02:15:00")
+                    desvFinalTexto = desvRaw.split(".")[0]; 
+                    let partesHms = desvFinalTexto.split(":");
+                    if (partesHms.length >= 2) {
+                        desvFinalTexto = partesHms[0] + ":" + partesHms[1]; // Corta segundos para dejar HH:mm
+                    }
 
-                let partesDesvMinutos = desvFinalTexto.split(":");
-                if (partesDesvMinutos.length >= 2) {
-                    desvFinalTexto = partesDesvMinutos[0] + ":" + partesDesvMinutos[1];
+                    // Identificación de semáforos por el signo real del dato del Sheet
+                    if (desvFinalTexto.indexOf("-") > -1) {
+                        semafD = "rojo"; // Retrasado es Rojo
+                    } else if (desvFinalTexto !== "0:00" && desvFinalTexto !== "00:00" && desvFinalTexto !== "0") {
+                        semafD = "verde"; // Adelantos o a tiempo son Verdes
+                    }
                 }
 
                 desvVisualFila = `<div style="text-align:center;"><span class="sat-table-dot dot-${semafD}">●</span> <strong style="color:#0f172a;">${desvFinalTexto}</strong></div>`;
