@@ -662,7 +662,7 @@
                 let hitoPlanAnteriorSalida = "---";
 
                 itinerarioPlan.forEach((plan, index) => {
-                    let real = rawDatosArray.find(h => h.punto_nombre && h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                    let real = datosSeguimiento ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL");
@@ -674,6 +674,7 @@
 
                     let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                     
+                    // 🎯 1. PARSEO CORREGIDO DE FECHAS Y HORAS LATINAS
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
                     let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
@@ -687,11 +688,15 @@
                     let difKm = "---";
 
                     if (esFilaManual) {
-                        horaRealLlegada = "---"; desvTiempoTexto = "---"; pernoctePlan = "---"; pernocteReal = "---";
+                        horaRealLlegada = "---";
+                        desvTiempoTexto = "---";
+                        pernoctePlan = "---";
+                        pernocteReal = "---";
                     }
 
+                    // 📐 MATEMÁTICAS EN CASCADA DIRECTAS DE TRAMOS (SIN VARIABLES EXTERNAS)
                     if (!esOmitido && (esCompletado || tipoRegistro === "---")) {
-                        // A. Segmentación de Distancia Planificada por Tramo
+                        // A. Resta de Kilómetros Planificados por Tramo (Nodo actual menos el anterior)
                         if (index === 0) {
                             distPlanKm = 0;
                         } else {
@@ -699,21 +704,22 @@
                             distPlanKm = Math.max(0, (parseFloat(plan.distanciaPlan) || 0) - (parseFloat(nodoBasePlan.distanciaPlan) || 0));
                         }
 
-                        // B. Segmentación de Duraciones de Tránsito usando la función blindada
+                        // B. Cálculo Dinámico de Tiempos de Viaje entre Hitos Secuenciales
                         if (index > 0) {
                             if (index === 1) {
-                                hitoPlanAnteriorSalida = itinerarioPlan[0].planHoraSalida || "---";
-                                let realOrigen = rawDatosArray.find(h => h.punto_nombre.toString().toUpperCase().trim() === itinerarioPlan[0].punto.toString().toUpperCase().trim());
+                                hitoPlanAnteriorSalida = itinerarioPlan[0].planHoraSalida || itinerarioPlan[0].etd || "---";
+                                let realOrigen = datosSeguimiento ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === itinerarioPlan[0].punto.toString().toUpperCase().trim()) : null;
                                 hitoRealAnteriorSalida = realOrigen ? realOrigen.hora_real_salida : (itinerarioPlan[0].realHora || "---");
                             }
 
                             if (horaRealLlegada !== "---" && hitoRealAnteriorSalida !== "---" && hitoPlanAnteriorSalida !== "---") {
-                                tiempoViajePlan = diffHorasPasivo(limpiarFechaSat(hitoPlanAnteriorSalida), limpiarFechaSat(plan.planHora));
-                                tiempoViajeReal = diffHorasPasivo(limpiarFechaSat(hitoRealAnteriorSalida), limpiarFechaSat(horaRealLlegada));
+                                // Ejecuta la función nativa calcularDiferenciaHorasTexto que ya existe abajo en tu código
+                                tiempoViajePlan = calcularDiferenciaHorasTexto(hitoPlanAnteriorSalida, plan.planHora);
+                                tiempoViajeReal = calcularDiferenciaHorasTexto(hitoRealAnteriorSalida, horaRealLlegada);
                             }
                         }
 
-                        // C. Segmentación de Kilómetros Reales Recorridos
+                        // C. Resta de Kilómetros Reales por Odómetro Acumulado
                         let odometroAcumuladoActual = real ? parseFloat(real.km_acumulado || 0) : 0;
                         if (index === 0) {
                             odometroBaseAnterior = odometroAcumuladoActual;
@@ -725,6 +731,7 @@
                             odometroBaseAnterior = odometroAcumuladoActual;
                         }
 
+                        // Guardamos las salidas para usarlas de base en el siguiente hito de la lista
                         if (!esFilaManual) {
                             hitoPlanAnteriorSalida = plan.planHoraSalida || "---";
                             if (horaRealSalida !== "---") hitoRealAnteriorSalida = horaRealSalida;
@@ -735,6 +742,7 @@
                         distRealTramo = "---"; difKm = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---";
                     }
 
+                    // Limpieza final de formatos raras del año 1899 antes de armar la tabla
                     horaRealLlegada = limpiarFechaSat(horaRealLlegada);
                     horaRealSalida = limpiarFechaSat(horaRealSalida);
                     let horaPlanLlegada = limpiarFechaSat(plan.planHora || "---");
