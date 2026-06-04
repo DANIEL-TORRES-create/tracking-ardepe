@@ -215,11 +215,32 @@
 
         const mesesIngles = { "JAN":"01", "FEB":"02", "MAR":"03", "APR":"04", "MAY":"05", "JUN":"06", "JUL":"07", "AUG":"08", "SEP":"09", "OCT":"10", "NOV":"11", "DEC":"12" };
 
-        // 🚀 BYPASS: El filtro de fecha se mantiene inactivo temporalmente para pintar todo lo que llegó
+        // 🚀 BYPASS: Mantenemos el filtro de fecha apagado por tu instrucción para ver la data directo
         let viajesFiltrados = listaViajesMaster.filter(v => {
             if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
             return true;
+        });
+
+        // 🚀 ORDENAMIENTO CRONOLÓGICO STRICTO POR EL ETD PLANIFICADO (Columna J / v.salidaPlan)
+        viajesFiltrados.sort(function(a, b) {
+            let parsearEtdAISO = (strEtd) => {
+                if (!strEtd || strEtd === "---") return new Date(0);
+                let txt = strEtd.toString().replace("'", "").trim();
+                if (txt.indexOf(" ") > -1 && isNaN(txt.charAt(0))) {
+                    let p = txt.split(/\s+/);
+                    if (p.length >= 4) {
+                        let m = mesesIngles[p[1].toUpperCase()] || "00";
+                        let d = p[2].padStart(2, '0');
+                        return new Date(`${p[3]}-${m}-${d}T${p[4] || '00:00:00'}`);
+                    }
+                }
+                if (txt.indexOf("-") > -1 && txt.indexOf("-") < 5) {
+                    return new Date(txt.replace(" ", "T"));
+                }
+                return new Date(0);
+            };
+            return parsearEtdAISO(b.salidaPlan).getTime() - parsearEtdAISO(a.salidaPlan).getTime();
         });
         
         const contenedorContador = document.getElementById("num-flota-total");
@@ -252,23 +273,18 @@
             
             let badgeColor = `<span style="${estiloBadge} padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block;">${iconBadge} ${textoEstadoVisual}</span>`;
 
-            // Helper de formateo numérico latino: Transforma "Wed Jun 03 2026 21:15:58..." a "03/06/2026, 21:15:58"
+            // Helper de formateo numérico latino
             let normalizarFormatoLatino = (strFecha) => {
                 if (!strFecha || strFecha === "---" || strFecha.trim() === "") return "---";
                 let t = strFecha.toString().replace("'", "").trim();
-                
-                // Formato de cadena larga de Google
                 if (t.indexOf(" ") > -1 && isNaN(t.charAt(0))) {
                     let p = t.split(/\s+/);
                     if (p.length >= 5) {
                         let m = mesesIngles[p[1].toUpperCase()] || "00";
                         let d = p[2].padStart(2, '0');
-                        let a = p[3];
-                        let h = p[4];
-                        return `${parseInt(d,10)}/${parseInt(m,10)}/${a}, ${h}`;
+                        return `${parseInt(d,10)}/${parseInt(m,10)}/${p[3]}, ${p[4]}`;
                     }
                 }
-                // Formato ISO (2026-04-17 08:00:00)
                 if (t.indexOf("-") > -1 && t.indexOf("-") < 5) {
                     let partes = t.split(" ");
                     let f = partes[0].split("-");
@@ -278,10 +294,8 @@
                 return t;
             };
 
-            // 🎯 1. FORMATO: SALIDA PLAN (ETD del Itinerario Columna J)
             let salidaPlanVisual = normalizarFormatoLatino(v.salidaPlan);
 
-            // 🎯 2. FORMATO: SALIDA REAL (Si fue VENCIDO fuerza un guion "-")
             let salidaRealVisual = "---";
             if (textoEstadoVisual === "VENCIDO") {
                 salidaRealVisual = "-";
@@ -289,7 +303,6 @@
                 salidaRealVisual = normalizarFormatoLatino(v.salidaReal);
             }
 
-            // 🎯 3. FORMATO: LLEGADA REAL (Replicado de la Columna F, si es VENCIDO es "-")
             let llegadaRealVisual = "---";
             if (textoEstadoVisual === "VENCIDO") {
                 llegadaRealVisual = "-";
@@ -297,22 +310,36 @@
                 llegadaRealVisual = normalizarFormatoLatino(v.llegadaReal);
             }
 
-            // 🎯 4. FORMATO: PROGRESO (Heredado de la Columna G de forma directa)
-            let porcentajeProgreso = parseInt(v.progreso, 10) || 0;
+            // 🎯 4. CORRECCIÓN PROGRESO: Extracción limpia de dígitos de la columna G para evitar fallas de formato
+            let progresoLimpio = (v.progreso || "0").toString().replace(/[^\d]/g, ""); 
+            let porcentajeProgreso = parseInt(progresoLimpio, 10) || 0;
 
-            // 🎯 5. FORMATO: DIFERENCIA TIEMPO (Columna H cruda sin milisegundos)
+            // 🎯 5. CORRECCIÓN DESVIACIÓN: Parser de la estampa distorsionada de Google del siglo XIX
             let desvVisualFila = "---";
             if (textoEstadoVisual === "VENCIDO") {
                 desvVisualFila = "---";
             } else {
-                let desvRaw = (v.desviacion || "0:00:00").toString().split(".")[0].trim();
+                let desvRaw = (v.desviacion || "0:00:00").toString().trim();
+                let desvFinalTexto = desvRaw;
+
+                // Si Google lo serializó como fecha ("Tue Sep 26 1899 20:26:00...")
+                if (desvRaw.indexOf(" ") > -1 && isNaN(desvRaw.charAt(0))) {
+                    let trozosDesv = desvRaw.split(/\s+/);
+                    if (trozosDesv.length >= 5) {
+                        desvFinalTexto = trozosDesv[4].substring(0, 8); // Extrae estrictamente "20:26:00"
+                    }
+                } else {
+                    desvFinalTexto = desvRaw.split(".")[0]; // Quita milisegundos si vienen nativos
+                }
+
+                // Conservamos el semáforo inteligente Navisaf
                 let semafD = "verde";
-                if (desvRaw.indexOf("-") > -1) {
-                    semafD = "rojo"; // Marcador negativo Navisaf
-                } else if (desvRaw !== "0:00:00" && desvRaw !== "00:00:00") {
+                if (desvRaw.indexOf("-") > -1 || v.auditoriaLog.toUpperCase().includes("ATRASADO")) {
+                    semafD = "rojo";
+                } else if (desvFinalTexto !== "0:00:00" && desvFinalTexto !== "00:00:00") {
                     semafD = "mostaza";
                 }
-                desvVisualFila = `<span class="sat-table-dot dot-${semafD}">●</span> ${desvRaw}`;
+                desvVisualFila = `<span class="sat-table-dot dot-${semafD}">●</span> ${desvFinalTexto}`;
             }
 
             let tr = document.createElement('tr');
