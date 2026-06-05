@@ -1061,7 +1061,18 @@
                     btn.addEventListener("click", function() {
                         botones.forEach(b => b.classList.remove("activo"));
                         this.classList.add("activo");
+                        
                         estadoFiltroActivo = this.getAttribute("data-estado");
+
+                        // 🚀 REQUERIMIENTO: Si se pulsa el botón "TODOS", limpiamos Placa y Ruta, manteniendo la Fecha intacta
+                        if (estadoFiltroActivo === "TODOS") {
+                            const inputPlaca = document.getElementById("txt-filtro-placa");
+                            const inputRuta = document.getElementById("txt-filtro-ruta");
+                            if (inputPlaca) inputPlaca.value = "";
+                            if (inputRuta) inputRuta.value = "";
+                        }
+
+                        // Re-renderiza la tabla maestra con los campos limpios y la fecha seleccionada
                         filtrarYMostrarTabla();
                     });
                 });
