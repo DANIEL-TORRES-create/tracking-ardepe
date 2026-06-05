@@ -1185,12 +1185,19 @@
                 callback();
             },
             focus(api, state) {
-                // 🟢 Al entrar a la pestaña: Refrescamos e iniciamos el temporizador en vivo
-                actualizar();
-                window.idRelojSatelital = setInterval(actualizar, 60000);
+                // 🚀 FORZADO DE CACHÉ: Despierta la API de Geotab y obliga al fetch a actualizar en vivo
+                if (api && api.call) {
+                    api.call("Get", { typeName: "User", search: { id: "0" } }, () => {}, () => {});
+                }
+                
+                // Limpiamos cualquier reloj fantasma viejo por seguridad antes de encender el nuevo
+                if (window.idRelojSatelital) clearInterval(window.idRelojSatelital);
+                
+                actualizar(); // Refresco inmediato al entrar
+                window.idRelojSatelital = setInterval(actualizar, 60000); // Enciende el vivo de 60 segundos
             },
             blur(api, state) {
-                // 🛑 Al salir de la pestaña: Matamos el reloj para que NO consuma memoria ni congele la app
+                // 🛑 Freno de mano total al salir de la pestaña
                 if (window.idRelojSatelital) {
                     clearInterval(window.idRelojSatelital);
                     window.idRelojSatelital = null;
