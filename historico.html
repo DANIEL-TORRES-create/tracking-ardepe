@@ -887,45 +887,66 @@
                     if (centroideLatLng) {
                         let geocercaVisual = null;
                         
-                        // Determinar el color exacto del borde y relleno según el estado del hito
-                        let colorCirculo = colorHito; 
-                        if (plan.punto === "INICIO_MANUAL") colorCirculo = '#d97706'; // Naranja
-                        else if (esOmitido) colorCirculo = '#d93025'; // Rojo puro
-
-                        // 🎯 HOMOLOGACIÓN TOTAL: Todos los hitos se dibujan como círculos estrictos de 15 metros
-                        geocercaVisual = L.circle(centroideLatLng, { 
-                            radius: 15, 
-                            color: colorCirculo, 
-                            fillColor: colorCirculo, 
-                            weight: 3, 
-                            fillOpacity: 0.45 
-                        }).addTo(window._satMarcadoresHitosGrupo);
+                        // 🟩 DIBUJAR LA GEOCERCA REAL DE GEOTAB (Su forma original con opacidad suave)
+                        if (plan.punto === "INICIO_MANUAL") {
+                            geocercaVisual = L.circle(centroideLatLng, { radius: 40, color: '#d97706', fillColor: '#d97706', weight: 2, fillOpacity: 0.25 }).addTo(window._satMarcadoresHitosGrupo);
+                        } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
+                            let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
+                            geocercaVisual = L.polygon(verticesLeaflet, { color: colorHito, fillColor: colorHito, weight: 2, fillOpacity: 0.20 }).addTo(window._satMarcadoresHitosGrupo);
+                        } else {
+                            geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.20 }).addTo(window._satMarcadoresHitosGrupo);
+                        }
 
                         // Texto flotante fijado estrictamente en el centro geométrico de la zona
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
                         
-                        puntosParaRutaOSRM.push({ coordenada: centroideLatLng, esGris: esOmitido || (!esCompletado) });
+                        // 🚀 Inyección de datos completa para que el bloque 2 sepa cómo pintar la traza
+                        puntosParaRutaOSRM.push({ 
+                            coordenada: centroideLatLng, 
+                            esGris: esOmitido || (!esCompletado),
+                            esManual: plan.punto === "INICIO_MANUAL",
+                            esCompletado: esCompletado
+                        });
                     }
                 });
 
                 puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
+                    // Dibujamos el nodo de origen del tramo en el mapa para que se ensarte en la línea
+                    let colorNodo = puntoOrigen.esGris ? '#64748b' : '#ef4444'; // Gris si es omitido, Rojo vivo si es real
+                    if (puntoOrigen.esManual) colorNodo = '#d97706'; // Naranja si es manual
+
+                    L.circle(puntoOrigen.coordenada, {
+                        radius: 5,
+                        color: colorNodo,
+                        fillColor: colorNodo,
+                        weight: 2,
+                        fillOpacity: 0.95
+                    }).addTo(window._satMarcadoresHitosGrupo);
+
                     if (idx >= puntosParaRutaOSRM.length - 1) return;
                     let puntoDestino = puntosParaRutaOSRM[idx + 1];
+
                     let coordInicio = puntoOrigen.coordenada;
                     let coordFin = puntoDestino.coordenada;
                     let esTramoGris = puntoDestino.esGris;
+
                     fetch(`https://router.project-osrm.org/route/v1/driving/${coordInicio[1]},${coordInicio[0]};${coordFin[1]},${coordFin[0]}?overview=full&geometries=geojson`)
                         .then(r => r.json())
                         .then(jsonRoute => {
                             if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                 let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                 let colorLinea = esTramoGris ? '#94a3b8' : '#004b93'; 
-                                let estiloLinea = esTramoGris ? { color: colorLinea, weight: 4, opacity: 0.6, dashArray: '5, 10' } : { color: colorLinea, weight: 5, opacity: 0.85 };
+                                
+                                // 🎯 DISEÑO NAVISAF: Línea continua para real, discontinua (dashArray) para omitido
+                                let estiloLinea = esTramoGris ? 
+                                    { color: colorLinea, weight: 4, opacity: 0.65, dashArray: '6, 12' } : // ─── ─── (Omitido)
+                                    { color: colorLinea, weight: 5, opacity: 0.85 };                      // ─────── (Real)
+
                                 L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
                             }
-                        }).catch(e => console.error("Error OSRM Pasivo:", e));
+                        }).catch(e => console.error("Error carretera OSRM pasivo:", e));
                 });
 
                 if (puntosParaRutaOSRM.length > 0) _satMapa.setView(puntosParaRutaOSRM[0].coordenada, 8);
