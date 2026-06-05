@@ -939,8 +939,8 @@
                 }
 
                 puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
-                    // 🔴 PUNTO ROJO TAL CUAL EL HISTÓRICO: Dibuja el nodo en cada geocerca recorrida
-                    let colorNodo = puntoOrigen.esOmitido ? '#64748b' : '#ef4444'; // Rojo vivo si pasó
+                    // 🔴 PUNTOS ROJOS ESTILO HISTÓRICO
+                    let colorNodo = (puntoOrigen.esOmitido || puntoOrigen.esGris) ? '#64748b' : '#ef4444'; 
                     if (puntoOrigen.esManual) colorNodo = '#d97706'; 
 
                     L.circle(puntoOrigen.coordenada, {
@@ -954,11 +954,11 @@
                     if (idx >= puntosParaRutaOSRM.length - 1) return;
                     let puntoDestino = puntosParaRutaOSRM[idx + 1];
 
-                    if ((puntoOrigen.esCompletado || puntoOrigen.esManual) && (puntoDestino.esCompletado || puntoDestino.esOmitido)) {
+                    // 🎯 CORRECCIÓN: Ahora incluye tramos pendientes (del 6 al 7) en la condición de dibujo
+                    if (puntoOrigen.esCompletado || puntoOrigen.esManual) {
                         let coordInicio = puntoOrigen.coordenada;
                         let coordFin = puntoDestino.coordenada;
-                        let esTramoGris = puntoDestino.esOmitido;
-                        let currentIdx = idx;
+                        let esTramoGris = puntoDestino.esOmitido || puntoDestino.esGris; // Si el destino está omitido o pendiente, va gris
 
                         fetch(`https://router.project-osrm.org/route/v1/driving/${coordInicio[1]},${coordInicio[0]};${coordFin[1]},${coordFin[0]}?overview=full&geometries=geojson`)
                             .then(r => r.json())
@@ -966,14 +966,16 @@
                                 if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                     let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                     
-                                    if (esTramoGris || currentIdx > 1) { 
-                                        caminoCarretera = aplicarDesfaseParalelo(caminoCarretera, 45); 
+                                    // 🛣️ SEPARACIÓN MÍNIMA: Reducido de 45m a solo 8m para que no se salga de la pista
+                                    // Solo se desfasa si el tramo es Gris (Omitido/Pendiente) para evitar distorsiones
+                                    if (esTramoGris) { 
+                                        caminoCarretera = aplicarDesfaseParalelo(caminoCarretera, 8); 
                                     }
 
                                     let colorLinea = esTramoGris ? '#94a3b8' : '#004b93'; 
                                     let estiloLinea = esTramoGris ? 
-                                        { color: colorLinea, weight: 4, opacity: 0.7, dashArray: '5, 10' } : 
-                                        { color: colorLinea, weight: 5, opacity: 0.85 };
+                                        { color: colorLinea, weight: 4, opacity: 0.7, dashArray: '5, 10' } : // ── ── Gris entrecortado (Hito 6 al 7)
+                                        { color: colorLinea, weight: 5, opacity: 0.85 };                     // ─── Azul continuo (Pasado/Real)
 
                                     L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
                                 }
