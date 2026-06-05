@@ -174,3 +174,35 @@ body {
 .sat-badge-table.st-completado { background: #dcfce7 !important; color: #16803d !important; }
 .sat-badge-table.st-pendiente { background: #f1f5f9 !important; color: #475569 !important; }
 .sat-badge-table.st-omitido { background: #fee2e2 !important; color: #b91c1c !important; }
+.sat-badge-table.st-omitido { 
+    background: #fee2e2 !important; 
+    color: #b91c1c !important; 
+}
+
+/* ====================================================================
+   🎯 PEGALO AQUÍ AL FINAL (Debajo de .sat-badge-table.st-omitido)
+   ==================================================================== */
+.input-predictivo-pro {
+    background-color: #ffffff !important;
+    color: #1e293b !important;          
+    border: 1px solid #cbd5e1 !important; 
+}
+
+.input-predictivo-pro:focus {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(0, 75, 147, 0.2) !important;
+}
+
+.input-predictivo-pro::placeholder {
+    color: #64748b !important;          /* Esto hace que "Buscar placa" se vea nítido */
+    opacity: 1 !important;              
+}
+
+.input-predictivo-pro:-ms-input-placeholder {
+    color: #64748b !important;
+}
+.input-predictivo-pro::-ms-input-placeholder {
+    color: #64748b !important;
+}
