@@ -1181,10 +1181,13 @@
                     inputRuta.addEventListener("input", filtrarYMostrarTabla);
                 }
 
-                // Ejecución e intervalos base del Servidor
+                // Ejecución inicial limpia
                 actualizar();
-                setInterval(actualizar, 60000);
                 callback();
+            },
+            focus(api, state) {
+                // 🔄 SE AUTO-REFRESCA EN AUTOMÁTICO CADA VEZ QUE VUELVES A ESTA PESTAÑA
+                actualizar();
             }
         };
     };
