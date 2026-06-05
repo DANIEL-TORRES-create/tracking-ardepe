@@ -834,16 +834,35 @@
                     }
 
                     // Ajuste de semáforos para evitar pintar alertas en hitos de cierre forzado
+                    let desvSemaforoLimpia = (desvTiempoTexto || "").toString().trim();
+
                     if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
                         semaforoTiempo = "verde";
-                    } else if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
-                        let partesDesv = desvTiempoTexto.replace("-", "").split(":");
+                    } 
+                    // Detecta si es un retraso real (si tiene el signo menos '-' o si es el error nativo de Google Sheets de 1899)
+                    else if (desvSemaforoLimpia !== "---" && (desvSemaforoLimpia.includes("-") || desvSemaforoLimpia.indexOf("1899") > -1)) {
+                        let partesDesv = desvSemaforoLimpia.replace("-", "").split(/\s+/);
+                        
+                        // Si viene distorsionado como fecha larga de Google ("Tue Sep 26 1899 20:15:00")
+                        if (desvSemaforoLimpia.indexOf("1899") > -1 && partesDesv.length >= 5) {
+                            partesDesv = partesDesv[4].split(":");
+                        } else {
+                            partesDesv = desvSemaforoLimpia.replace("-", "").split(":");
+                        }
+
                         let hrsDesv = parseInt(partesDesv[0], 10) || 0;
                         let minsDesv = parseInt(partesDesv[1], 10) || 0;
-                        let totalMinsDesv = (hrsDesv * 60) + minsDesv;
-                        if (totalMinsDesv <= 10) semaforoTiempo = "mostaza";
-                        else semaforoTiempo = "rojo";
-                    } else {
+                        
+                        // Si es el bug de 1899 de Google, calculamos sobre el minutero real de la celda
+                        let totalMinsDesv = (desvSemaforoLimpia.indexOf("1899") > -1) ? minsDesv : (hrsDesv * 60) + minsDesv;
+                        
+                        if (totalMinsDesv <= 10) {
+                            semaforoTiempo = "mostaza";
+                        } else {
+                            semaforoTiempo = "rojo";
+                        }
+                    } 
+                    else {
                         semaforoTiempo = "verde";
                     }
 
