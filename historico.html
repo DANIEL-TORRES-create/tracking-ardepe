@@ -38,12 +38,12 @@
         <div class="grupo-inputs-predictivos">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
-                <input type="text" id="txt-filtro-placa" list="dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off">
+                <input type="text" id="sat-search-placa" list="dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off" onkeyup="filtrarTablaSatelital('')">
                 <datalist id="dl-placas-activas"></datalist>
             </div>
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-route"></i>
-                <input type="text" id="txt-filtro-ruta" list="dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off">
+                <input type="text" id="sat-search-ruta" list="dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off" onkeyup="filtrarTablaSatelital('')">
                 <datalist id="dl-rutas-activas"></datalist>
             </div>
         </div>
@@ -966,41 +966,49 @@
         const inputPlaca = document.getElementById('sat-search-placa');
         const inputRuta = document.getElementById('sat-search-ruta');
 
-        // 🎯 REQUERIMIENTO: Si se presiona "Todos" (historial), reseteamos los textos de búsqueda por completo
+        // 🎯 REQUERIMIENTO CRÍTICO: Si se selecciona "Todos", limpiamos los inputs por completo
         if (tipoFiltro === 'historial') {
             if (inputPlaca) inputPlaca.value = "";
             if (inputRuta) inputRuta.value = "";
         }
 
-        // Capturamos lo que el usuario tenga escrito para no romper la combinación de filtros
-        let filtroPlaca = inputPlaca ? inputPlaca.value.toUpperCase().trim() : "";
-        let filtroRuta = inputRuta ? inputRuta.value.toUpperCase().trim() : "";
+        // Capturamos los valores actuales de los buscadores
+        let valorPlaca = inputPlaca ? inputPlaca.value.toUpperCase().trim() : "";
+        let valorRuta = inputRuta ? inputRuta.value.toUpperCase().trim() : "";
 
-        // 📊 FILTRADO MULTI-NIVEL EN MEMORIA SEGURA
+        // 📊 FILTRADO INTELIGENTE MULTI-NIVEL (Cruza Buscadores + Botones Navisaf)
         let registrosFiltrados = _satCacheDatosRows.filter(r => {
             let puntoUpper = String(r.punto || "").toUpperCase().trim();
             let conductorUpper = String(r.conductor || "").toUpperCase().trim();
             let tipoUpper = String(r.tipo || "").toUpperCase().trim();
 
-            // A. Primero validamos si coincide con la búsqueda de texto (si es que hay algo escrito)
-            if (filtroPlaca !== "" && conductorUpper.indexOf(filtroPlaca) === -1) return false;
-            if (filtroRuta !== "" && puntoUpper.indexOf(filtroRuta) === -1) return false;
+            // Paso 1: Validar filtro de texto de Placa (Conductor)
+            if (valorPlaca !== "" && conductorUpper.indexOf(valorPlaca) === -1) return false;
 
-            // B. Segundo evaluamos la acción de los botones Navisaf
+            // Paso 2: Validar filtro de texto de Ruta (Punto)
+            if (valorRuta !== "" && puntoUpper.indexOf(valorRuta) === -1) return false;
+
+            // Paso 3: Validar la acción de los botones de estado
             if (tipoFiltro === 'completados') {
-                // ✔️ Finalizados: Registro OK (✓) o tipo AUTOMÁTICO/MANUAL
+                // ✔️ Finalizados: Estado OK ("✓") o registros que no sean omitidos/vacíos
                 return r.st === "✓" || tipoUpper === "AUTOMÁTICO" || tipoUpper === "MANUAL";
             }
             
             if (tipoFiltro === 'omitidos') {
-                // 🚫 No Ejecutados: Registro Omitido (🚫), CANCELADOS o VENCIDOS
+                // 🚫 No Ejecutados: Estado Omitido ("🚫"), Cancelados o Vencidos
                 return r.st === "🚫" || tipoUpper === "OMITIDO" || puntoUpper.indexOf("CANCELADO") > -1 || puntoUpper.indexOf("VENCIDO") > -1;
             }
 
-            return true; // 'historial' o 'Ver Todos' deja pasar el flujo limpio
+            // Si es 'historial' (Todos), pasa directo tras superar los filtros de texto
+            return true; 
         });
 
-        // 🚀 RENDERIZADO DE LA GRILLA
+        // 🚀 RENDERIZADO FORZADO DE FILAS EN EL DOM
+        if (registrosFiltrados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:20px; color:#64748b;">No se encontraron registros con los filtros seleccionados.</td></tr>';
+            return;
+        }
+
         registrosFiltrados.forEach(r => {
             let tr = document.createElement('tr');
             let badgeEst = r.st === "✓" ? '<span class="sat-badge-table st-completado">✓ OK</span>' : (r.st === "🚫" ? '<span class="sat-badge-table st-omitido">🚫 OMITIDO</span>' : '<span class="sat-badge-table st-pendiente">⏳ PENDIENTE</span>');
