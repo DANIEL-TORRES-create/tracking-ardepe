@@ -181,17 +181,10 @@
 
     // 1. FUNCIÓN DE REFRESCO DE DATOS
     function actualizar() {
-        // Forzamos al recolector de basura a limpiar cualquier residuo en el DOM antes de pedir
-        const scriptsViejos = document.querySelectorAll('script[src*="callback=renderizar"]');
-        scriptsViejos.forEach(s => s.remove());
-
         const script = document.createElement('script');
-        // Usamos un token de tiempo absoluto por milisegundo para romper cualquier bloqueo de red de Geotab
         script.src = WEB_APP_URL + "?read=viajes&callback=renderizar&nocache=" + new Date().getTime();
-        
         document.body.appendChild(script);
         script.onload = function() { script.remove(); };
-        script.onerror = function() { script.remove(); };
     }
 
     let listaViajesGlobal = [];
@@ -1188,21 +1181,10 @@
                     inputRuta.addEventListener("input", filtrarYMostrarTabla);
                 }
 
+                // Ejecución e intervalos base del Servidor
                 actualizar();
+                setInterval(actualizar, 60000);
                 callback();
-            },
-            focus(api, state) {
-                // 🚀 ESTO ES LO QUE VA A HACER QUE CARGUE SIN DAR F5:
-                // Al volver a la pestaña, si la API global está activa, forzamos un pulso eléctrico a Geotab
-                if (apiGlobal && apiGlobal.call) {
-                    apiGlobal.call("Get", { typeName: "User", search: { id: "0" } }, () => {
-                        actualizar(); // Lanza el refresco justo cuando Geotab responde que despertó
-                    }, () => {
-                        actualizar();
-                    });
-                } else {
-                    actualizar();
-                }
             }
         };
     };
