@@ -841,6 +841,7 @@
                     
                     // 🚀 NUEVO BLOQUE INTEGRADO: Semáforo inteligente copiado de seguimiento.html
                     let desvOriginalBunker = v.desviacion ? v.desviacion.toString().trim() : "---";
+                    let semaforoViajeReal = "verde"; // 🌟 SOLUCIÓN: Agregamos esta línea para que no crashee el .push
 
                     if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
                         semaforoTiempo = "verde";
@@ -865,7 +866,7 @@
                         }
                     } 
                     else {
-                        semaforoTiempo = "verde"; // Si no hay "-" es adelanto y se queda en verde limpio
+                        semaforoTiempo = "verde"; 
                     }
                     
                     // 🎯 APLICACIÓN DE LLEGADA PLANIFICADA EN GUIÓN PARA INICIO O CIERRE MANUAL
