@@ -211,13 +211,53 @@
 
         const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
         const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
+        const inputFechaRaw = document.getElementById("filtro-fecha-historico").value; // Formato: YYYY-MM-DD
+
+        // Formateador local para pasar YYYY-MM-DD a D/M/YYYY para hacer el cruce exacto con el Sheet
+        let fechaBuscarLatina = "";
+        if (inputFechaRaw) {
+            let partesF = inputFechaRaw.split("-");
+            fechaBuscarLatina = `${parseInt(partesF[2], 10)}/${parseInt(partesF[1], 10)}/${partesF[0]}`; // Ej: 17/4/2026
+        }
 
         const mesesIngles = { "JAN":"01", "FEB":"02", "MAR":"03", "APR":"04", "MAY":"05", "JUN":"06", "JUL":"07", "AUG":"08", "SEP":"09", "OCT":"10", "NOV":"11", "DEC":"12" };
 
-        // 🚀 BYPASS: Mantenemos el filtro de fecha apagado por tu instrucción para ver la data directo
+        // 🚀 CRUCE INTELIGENTE DE DATOS (Filtra Placa + Ruta + Fecha Obligatoria + Botones de Estado)
         let viajesFiltrados = listaViajesMaster.filter(v => {
             if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
+            
+            // A. Evaluación Estricta de la Fecha de Salida Planificada
+            if (fechaBuscarLatina !== "") {
+                let fechaCeldaRaw = String(v.salidaPlan || "").trim();
+                // Si la celda trae coma o espacio ("17/4/2026 06:30:00"), extraemos solo el primer bloque
+                let fechaCeldaLimpia = fechaCeldaRaw.split(" ")[0].split(",")[0]; 
+                
+                // Si viene en formato largo de Google Sheets ("Tue Sep 26 1899...")
+                if (fechaCeldaRaw.indexOf(" ") > -1 && isNaN(fechaCeldaRaw.charAt(0))) {
+                    let p = fechaCeldaRaw.split(/\s+/);
+                    if (p.length >= 5) {
+                        let m = mesesIngles[p[1].toUpperCase()] || "00";
+                        fechaCeldaLimpia = `${parseInt(p[2],10)}/${parseInt(m,10)}/${p[3]}`;
+                    }
+                }
+                if (fechaCeldaLimpia !== fechaBuscarLatina) return false;
+            }
+
+            // B. Evaluación de los Botones Superiores de Estado (Cruza con auditoriaLog)
+            let logUpper = String(v.auditoriaLog || "").toUpperCase();
+            let esCancelado = logUpper.includes("CANCELADO MANUAL") || logUpper.includes("CANCELADO_MANUAL");
+            let esVencido = logUpper.includes("BARRIDO AUTOMÁTICO") || logUpper.includes("CANCELADO");
+            let esCierreManual = logUpper.includes("CIERRE_MANUAL") || logUpper.includes("FINALIZADO MANUAL");
+
+            if (estadoFiltroActivo === "FINALIZADO") {
+                // Solo muestra viajes exitosos (Cierres manuales o Automáticos limpios)
+                if (esCancelado || esVencido) return false;
+            } else if (estadoFiltroActivo === "NO EJECUTADO") {
+                // Solo muestra caídas (Cancelados o Vencidos por barrido)
+                if (!esCancelado && !esVencido) return false;
+            }
+
             return true;
         });
 
@@ -226,14 +266,10 @@
             let extraerHoraMilitar = (strEtd) => {
                 if (!strEtd || strEtd === "---") return "00:00:00";
                 let txt = strEtd.toString().replace("'", "").trim();
-                
-                // Si viene en formato largo de fecha de Google ("Tue Sep 26 1899 08:00:00")
                 if (txt.indexOf(" ") > -1 && isNaN(txt.charAt(0))) {
                     let partes = txt.split(/\s+/);
                     if (partes.length >= 5 && partes[4].includes(":")) return partes[4];
                 }
-                
-                // Si viene como "17/4/2026 08:00:00" o "08:00:00, 17/4/2026"
                 let coincidenciaHora = txt.match(/(\d{1,2}):(\d{2}):?(\d{2})?/);
                 if (coincidenciaHora) {
                     let hh = coincidenciaHora[1].padStart(2, '0');
@@ -246,18 +282,14 @@
 
             let horaA = extraerHoraMilitar(a.salidaPlan);
             let horaB = extraerHoraMilitar(b.salidaPlan);
-            
-            // Comparamos los textos de las horas de forma alfabética/militar directa (Menor a Mayor)
-            if (horaA < horaB) return -1;
-            if (horaA > horaB) return 1;
-            return 0;
+            return horaA.localeCompare(horaB);
         });
         
         const contenedorContador = document.getElementById("num-flota-total");
         if (contenedorContador) contenedorContador.innerText = viajesFiltrados.length;
         
         if (viajesFiltrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro coincide con los criterios locales aplicados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro coincide con la fecha o filtros aplicados.</td></tr>';
             return;
         }
 
@@ -270,53 +302,45 @@
             let estiloBadge = 'background-color: #dcfce7; color: #15803d; border:1px solid #86efac;';
             let iconBadge = '<i class="fas fa-robot"></i>';
 
-            // 1. Detección de Cancelado por el Operador (Botón Cancelar)
-            if (v.auditoriaLog.toUpperCase().includes("CANCELADO MANUAL") || v.auditoriaLog.toUpperCase().includes("CANCELADO_MANUAL")) {
+            let logLog = String(v.auditoriaLog || "").toUpperCase();
+            if (logLog.includes("CANCELADO MANUAL") || logLog.includes("CANCELADO_MANUAL")) {
                 textoEstadoVisual = "CANCELADO";
-                estiloBadge = 'background-color: #f1f5f9; color: #475569; border:1px solid #cbd5e1;'; // Gris Oscuro Corporativo
+                estiloBadge = 'background-color: #f1f5f9; color: #475569; border:1px solid #cbd5e1;'; 
                 iconBadge = '<i class="fas fa-ban"></i>';
-            } 
-            // 2. Detección de Vencido (Barrido Automático por Exceso de Tiempo)
-            else if (v.auditoriaLog.toUpperCase().includes("BARRIDO AUTOMÁTICO") || v.auditoriaLog.toUpperCase().includes("CANCELADO")) {
+            } else if (logLog.includes("BARRIDO AUTOMÁTICO") || logLog.includes("CANCELADO")) {
                 textoEstadoVisual = "VENCIDO";
-                estiloBadge = 'background-color: #fee2e2; color: #b91c1c; border:1px solid #fca5a5;'; // Rojo Alerta
+                estiloBadge = 'background-color: #fee2e2; color: #b91c1c; border:1px solid #fca5a5;'; 
                 iconBadge = '<i class="fas fa-hourglass-end"></i>';
-            } 
-            // 3. Detección de Finalizado Manual (Botón Cierre Forzado)
-            else if (v.auditoriaLog.toUpperCase().includes("CIERRE_MANUAL") || v.auditoriaLog.toUpperCase().includes("FINALIZADO MANUAL")) {
+            } else if (logLog.includes("CIERRE_MANUAL") || logLog.includes("FINALIZADO MANUAL")) {
                 textoEstadoVisual = "FINALIZADO MANUAL";
-                estiloBadge = 'background-color: #e0f2fe; color: #0369a1; border:1px solid #7dd3fc;'; // Azul Intervención
+                estiloBadge = 'background-color: #e0f2fe; color: #0369a1; border:1px solid #7dd3fc;'; 
                 iconBadge = '<i class="fas fa-user-check"></i>';
             }
             
             let badgeColor = `<span style="${estiloBadge} padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block;">${iconBadge} ${textoEstadoVisual}</span>`;
 
-            // Formateador en dos líneas centradas del mismo tamaño
             let formatearFechaDosLineas = (strFecha) => {
                 if (!strFecha || strFecha === "---" || strFecha.trim() === "") return "---";
                 let t = strFecha.toString().replace("'", "").trim();
-                
-                let diaStr = "";
-                let horaStr = "";
+                let diaStr = ""; let horaStr = "";
 
                 if (t.indexOf(" ") > -1 && isNaN(t.charAt(0))) {
                     let p = t.split(/\s+/);
                     if (p.length >= 5) {
                         let m = mesesIngles[p[1].toUpperCase()] || "00";
                         diaStr = `${parseInt(p[2],10)}/${parseInt(m,10)}/${p[3]}`;
-                        horaStr = p[4].substring(0, 8); 
+                        horaStr = p[4].substring(0, 5); // Eliminados los segundos de la grilla principal
                     }
-                } 
-                else if (t.indexOf("-") > -1 && t.indexOf("-") < 5) {
+                } else if (t.indexOf("-") > -1 && t.indexOf("-") < 5) {
                     let partes = t.split(" ");
                     let f = partes[0].split("-");
                     diaStr = `${parseInt(f[2],10)}/${parseInt(f[1],10)}/${f[0]}`;
-                    horaStr = partes[1] || "00:00:00";
+                    horaStr = partes[1] ? partes[1].substring(0, 5) : "00:00";
                 } else {
                     let separador = t.indexOf(",") > -1 ? "," : " ";
                     let bloques = t.split(separador);
                     diaStr = bloques[0] || t;
-                    horaStr = bloques[1] || "";
+                    horaStr = bloques[1] ? bloques[1].trim().substring(0, 5) : "";
                 }
 
                 return `<div style="text-align:center; line-height: 1.4;">
@@ -326,66 +350,34 @@
             };
 
             let salidaPlanVisual = formatearFechaDosLineas(v.salidaPlan);
+            let salidaRealVisual = (textoEstadoVisual === "VENCIDO" || textoEstadoVisual === "CANCELADO") ? `<div style="text-align:center; color:#94a3b8; font-weight:bold;">-</div>` : formatearFechaDosLineas(v.salidaReal);
+            let llegadaRealVisual = (textoEstadoVisual === "VENCIDO" || textoEstadoVisual === "CANCELADO") ? `<div style="text-align:center; color:#94a3b8; font-weight:bold;">-</div>` : formatearFechaDosLineas(v.llegadaReal);
 
-            let salidaRealVisual = "---";
-            if (textoEstadoVisual === "VENCIDO" || textoEstadoVisual === "CANCELADO") {
-                salidaRealVisual = `<div style="text-align:center; color:#94a3b8; font-weight:bold;">-</div>`;
-            } else {
-                salidaRealVisual = formatearFechaDosLineas(v.salidaReal);
-            }
-
-            let llegadaRealVisual = "---";
-            if (textoEstadoVisual === "VENCIDO" || textoEstadoVisual === "CANCELADO") {
-                llegadaRealVisual = `<div style="text-align:center; color:#94a3b8; font-weight:bold;">-</div>`;
-            } else {
-                llegadaRealVisual = formatearFechaDosLineas(v.llegadaReal);
-            }
-
-            // 🎯 4. CORRECCIÓN PROGRESO MAESTRO: Si vale 1 pero el string crudo del Sheet era 1.0 (que significa 100%), lo calibramos
             let porcentajeProgreso = parseFloat(v.progreso) || 0;
-            if (porcentajeProgreso === 1 || porcentajeProgreso === 1.0) {
-                porcentajeProgreso = 100; // Normalización de formato de porcentaje nativo de Google
-            } else if (porcentajeProgreso > 1 && porcentajeProgreso <= 100) {
-                porcentajeProgreso = Math.floor(porcentajeProgreso);
-            } else if (porcentajeProgreso > 0 && porcentajeProgreso < 1) {
-                porcentajeProgreso = Math.floor(porcentajeProgreso * 100); // Convierte 0.71 a 71%
-            }
+            if (porcentajeProgreso === 1 || porcentajeProgreso === 1.0) porcentajeProgreso = 100;
+            else if (porcentajeProgreso > 1 && porcentajeProgreso <= 100) porcentajeProgreso = Math.floor(porcentajeProgreso);
+            else if (porcentajeProgreso > 0 && porcentajeProgreso < 1) porcentajeProgreso = Math.floor(porcentajeProgreso * 100);
 
-            // 🎯 5. CORRECCIÓN DESVIACIÓN MATEMÁTICA REAL (CERO VALORES FIJOS)
             let desvVisualFila = "---";
-            if (textoEstadoVisual === "VENCIDO" || textoEstadoVisual === "CANCELADO") {
-                desvVisualFila = "---";
-            } else {
+            if (textoEstadoVisual !== "VENCIDO" && textoEstadoVisual !== "CANCELADO") {
                 let desvRaw = (v.desviacion || "0:00:00").toString().trim();
-                let desvFinalTexto = desvRaw;
-                let semafD = "verde"; // Verde por defecto para adelantos positivos
+                let desvFinalTexto = desvRaw; let semafD = "verde";
 
-                // Si Google Sheets lo distorsionó al formato de fecha largo ("Tue Sep 26 1899 20:26:00...")
                 if (desvRaw.indexOf("1899") > -1) {
                     let partesTrozos = desvRaw.split(/\s+/);
                     if (partesTrozos.length >= 5) {
                         let hms = partesTrozos[4].split(":"); 
-                        // El Sheet original guarda los minutos exactos en la posición del minutero (hms[1])
-                        // Replicamos el formato nativo extrayendo el residuo real de tu celda
                         desvFinalTexto = "-2259:" + hms[1]; 
                     }
-                    semafD = "rojo"; // Es un retraso negativo inevitable (-)
+                    semafD = "rojo";
                 } else {
-                    // Si el dato viaja normal como un string limpio de tiempo (ej: "13:51:00" o "-02:15:00")
-                    desvFinalTexto = desvRaw.split(".")[0]; // Limpiamos milisegundos si vinieran
+                    desvFinalTexto = desvRaw.split(".")[0];
                     let partesHms = desvFinalTexto.split(":");
-                    if (partesHms.length >= 2) {
-                        desvFinalTexto = partesHms[0] + ":" + partesHms[1]; // Cortamos segundos, dejamos HH:mm
-                    }
+                    if (partesHms.length >= 2) desvFinalTexto = partesHms[0] + ":" + partesHms[1];
 
-                    // Evaluamos el color del semáforo por presencia del signo menos en tu celda
-                    if (desvFinalTexto.indexOf("-") > -1) {
-                        semafD = "rojo";
-                    } else if (desvFinalTexto !== "0:00" && desvFinalTexto !== "00:00" && desvFinalTexto !== "0") {
-                        semafD = "verde";
-                    }
+                    if (desvFinalTexto.indexOf("-") > -1) semafD = "rojo";
+                    else if (desvFinalTexto !== "0:00" && desvFinalTexto !== "00:00" && desvFinalTexto !== "0") semafD = "verde";
                 }
-
                 desvVisualFila = `<div style="text-align:center;"><span class="sat-table-dot dot-${semafD}">●</span> <strong style="color:#0f172a;">${desvFinalTexto}</strong></div>`;
             }
 
@@ -963,11 +955,10 @@
         const tbody = document.getElementById('sat-tbody-rows');
         if (!tbody) return; tbody.innerHTML = "";
 
-        // 🎯 ADAPTACIÓN: Leemos los IDs originales para que no choque con la carga general
         const inputPlaca = document.getElementById('txt-filtro-placa');
         const inputRuta = document.getElementById('txt-filtro-ruta');
 
-        // Si se selecciona "Todos", limpiamos los inputs por completo y resetea la grilla
+        // ⚡ REQUERIMIENTO CRÍTICO: Si se pulsa "Todos" (historial), limpiamos los cuadros de texto de arriba
         if (tipoFiltro === 'historial') {
             if (inputPlaca) inputPlaca.value = "";
             if (inputRuta) inputRuta.value = "";
@@ -976,28 +967,32 @@
         let valorPlaca = inputPlaca ? inputPlaca.value.toUpperCase().trim() : "";
         let valorRuta = inputRuta ? inputRuta.value.toUpperCase().trim() : "";
 
-        // 📊 FILTRADO MULTI-NIVEL EN MEMORIA
+        // 📊 FILTRADO MULTI-NIVEL EN MEMORIA SEGURA
         let registrosFiltrados = _satCacheDatosRows.filter(r => {
             let puntoUpper = String(r.punto || "").toUpperCase().trim();
             let conductorUpper = String(r.conductor || "").toUpperCase().trim();
             let tipoUpper = String(r.tipo || "").toUpperCase().trim();
 
+            // Respetar las búsquedas actuales por texto si existen
             if (valorPlaca !== "" && conductorUpper.indexOf(valorPlaca) === -1) return false;
             if (valorRuta !== "" && puntoUpper.indexOf(valorRuta) === -1) return false;
 
+            // Segmentación estricta de botones Navisaf
             if (tipoFiltro === 'completados') {
+                // ✔️ Finalizados: Registro con check (✓) o tipo AUTOMÁTICO/MANUAL exitoso
                 return r.st === "✓" || tipoUpper === "AUTOMÁTICO" || tipoUpper === "MANUAL";
             }
             
             if (tipoFiltro === 'omitidos') {
+                // 🚫 No Ejecutados: Registro Omitido (🚫), Cancelados o Vencidos
                 return r.st === "🚫" || tipoUpper === "OMITIDO" || puntoUpper.indexOf("CANCELADO") > -1 || puntoUpper.indexOf("VENCIDO") > -1;
             }
 
-            return true; 
+            return true; // 'historial' (Todos) muestra todo el itinerario sin restricciones
         });
 
         if (registrosFiltrados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:20px; color:#64748b;">No se encontraron registros con los filtros seleccionados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:20px; color:#64748b;">No se encontraron hitos con los criterios seleccionados.</td></tr>';
             return;
         }
 
