@@ -577,7 +577,7 @@
 
     function procesarYConsultarAuditoriaSatelitalPasiva(idViaje, itinerarioDecoded) {
         const tbody = document.getElementById('sat-tbody-rows');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:30px; color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Reconstruyendo traza de hilos...</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:30px; color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Reconstruyendo histórico de viaje...</td></tr>';
 
         if (window._satMarcadoresHitosGrupo) _satMapa.removeLayer(window._satMarcadoresHitosGrupo);
         window._satMarcadoresHitosGrupo = L.layerGroup().addTo(_satMapa);
@@ -703,16 +703,16 @@
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL");
                     
-                    // 🔢 REGLA: NUMERACIÓN SECUENCIAL INTELIGENTE EN INTERVENCIONES
+                    // 🔢 Numeración secuencial inteligente en intervenciones
                     let numSecuencia = secuenciaCorrelativa++;
                     if (plan.punto === "INICIO_MANUAL") {
                         numSecuencia = 1;
-                        secuenciaCorrelativa = 2; // Fuerza a que el hito 2 de carretera sea secuencia 2
+                        secuenciaCorrelativa = 2; 
                     } else if (index === 0 && esOrigenOmitido) {
                         numSecuencia = 0;
-                        secuenciaCorrelativa = 1; // Resetea el contador para que el Manual tome el 1
+                        secuenciaCorrelativa = 1; 
                     } else if (plan.punto === "CIERRE_MANUAL") {
-                        numSecuencia = index; // Toma automáticamente el correlativo siguiente si se omitió el hito anterior
+                        numSecuencia = index; 
                     }
 
                     let tipoRegistro = esCompletado ? (esFilaManual ? "MANUAL" : "AUTOMÁTICO") : (esOmitido ? "OMITIDO" : "---");
@@ -751,21 +751,20 @@
                         
                         // A. Kilómetros Planificados por Tramo
                         if (index === 0 || plan.punto === "CIERRE_MANUAL") {
-                            distPlanKm = "---"; // Cierre manual e hito inicial no computan kilómetros teóricos
+                            distPlanKm = "---"; 
                         } else {
                             let nodoBasePlan = itinerarioPlan[index - 1];
                             distPlanKm = Math.max(0, (parseFloat(plan.distanciaPlan) || 0) - (parseFloat(nodoBasePlan.distanciaPlan) || 0));
                         }
 
                         // B. Tiempos de Viaje con Corrección para Hito 2 (Post-Manual)
-                        if (index > 0) {
+                        if (index > 0 && plan.punto !== "CIERRE_MANUAL") {
                             if (index === 1 || (tieneInicioManualActivo && index === 2 && hitoRealAnteriorSalida === "---")) {
                                 hitoPlanAnteriorSalida = itinerarioPlan[0].planHoraSalida || "---";
                                 let realOrigen = rawDatosArray.find(h => h.punto_nombre.toString().toUpperCase().trim() === itinerarioPlan[0].punto.toString().toUpperCase().trim());
                                 hitoRealAnteriorSalida = realOrigen ? realOrigen.hora_real_salida : (itinerarioPlan[0].realHora || "---");
                             }
 
-                            // ⏱️ CORRECCIÓN HITO 2 POST-MANUAL: Sobrescribe base con la salida real del Inicio Manual
                             if (tieneInicioManualActivo && index === 2) {
                                 let realManualNode = rawDatosArray.find(h => h.punto_nombre.toString().toUpperCase().trim() === "INICIO_MANUAL");
                                 if (realManualNode) {
@@ -792,7 +791,7 @@
                             }
                         }
 
-                        // C. Kilómetros Reales por Odómetro
+                        // C. Resta de Kilómetros Reales por Odómetro (🎯 AJUSTE DE CIERRE MANUAL INCORPORADO)
                         let odometroAcumuladoActual = real ? parseFloat(real.km_acumulado || 0) : 0;
                         if (index === 0) {
                             odometroBaseAnterior = odometroAcumuladoActual;
@@ -800,13 +799,15 @@
                             difKm = "---";
                         } else if (odometroAcumuladoActual > 0) {
                             distRealTramo = Math.abs(odometroAcumuladoActual - odometroBaseAnterior);
-                            difKm = (distPlanKm !== "---" ? distPlanKm : 0) - distRealTramo;
                             odometroBaseAnterior = odometroAcumuladoActual;
 
                             if (plan.punto !== "CIERRE_MANUAL") {
+                                difKm = (distPlanKm !== "---" ? distPlanKm : 0) - distRealTramo;
                                 if (difKm >= 0) semaforoDistancia = "verde";
                                 else if (difKm >= -5) semaforoDistancia = "mostaza";
                                 else semaforoDistancia = "rojo";
+                            } else {
+                                difKm = "---"; // Cierre manual no tiene teóricos, no hay diferencia global
                             }
                         }
 
@@ -816,8 +817,8 @@
                         }
                     }
 
-                    // ⚡ EXCEPCIÓN: PRIMER HITO DE UNA ZONA VÁLIDA O DE ORIGEN OMITIDO POR MANUAL
-                    if (index === 0 || (esOrigenOmitido && index === 0)) {
+                    // ⚡ EXCEPCIÓN: PRIMER HITO DE UNA ZONA VÁLIDA
+                    if (index === 0) {
                         tiempoViajePlan = "---"; tiempoViajeReal = "---"; distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
@@ -826,25 +827,27 @@
                         horaRealLlegada = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
-                    // ⚡ EXCEPCIÓN STRICTA: CIERRE MANUAL
+                    // ⚡ EXCEPCIÓN ESTRICTA: CIERRE MANUAL (BLINDAJE DE COLUMNAS GUION)
                     if (plan.punto === "CIERRE_MANUAL") {
-                        pernoctePlan = "---"; pernocteReal = "---"; horaRealSalida = "---"; distPlanKm = "---"; difKm = "---";
+                        pernoctePlan = "---"; pernocteReal = "---"; horaRealSalida = "---"; distPlanKm = "---"; difKm = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; desvTiempoTexto = "---";
                     }
 
-                    // 🚫 REQUERIMIENTO: LIMPIEZA TOTAL EN HITOS OMITIDOS (FORZADO DE GUIONES A PERNOCTES)
+                    // 🚫 REQUERIMIENTO: LIMPIEZA TOTAL EN HITOS OMITIDOS
                     if (esOmitido || (!esCompletado && tipoRegistro === "---")) {
                         distRealTramo = "---"; difKm = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
-                    if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
+                    if (plan.punto !== "CIERRE_MANUAL" && desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
                         let partesDesv = desvTiempoTexto.replace("-", "").split(":");
                         let hrsDesv = parseInt(partesDesv[0], 10) || 0;
                         let minsDesv = parseInt(partesDesv[1], 10) || 0;
                         let totalMinsDesv = (hrsDesv * 60) + minsDesv;
                         if (totalMinsDesv <= 10) semaforoTiempo = "mostaza";
                         else semaforoTiempo = "rojo";
-                    } else if (desvTiempoTexto !== "---") {
+                    } else if (desvTiempoTexto !== "---" && plan.punto !== "CIERRE_MANUAL") {
                         semaforoTiempo = "verde";
+                    } else {
+                        semaforoTiempo = "verde"; // Cierre manual por defecto limpio
                     }
 
                     horaRealLlegada = normalizarFormatoFechaSinSegundos(horaRealLlegada);
