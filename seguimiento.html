@@ -1181,13 +1181,20 @@
                     inputRuta.addEventListener("input", filtrarYMostrarTabla);
                 }
 
-                // Ejecución inicial limpia
                 actualizar();
                 callback();
             },
             focus(api, state) {
-                // 🔄 SE AUTO-REFRESCA EN AUTOMÁTICO CADA VEZ QUE VUELVES A ESTA PESTAÑA
+                // 🟢 Al entrar a la pestaña: Refrescamos e iniciamos el temporizador en vivo
                 actualizar();
+                window.idRelojSatelital = setInterval(actualizar, 60000);
+            },
+            blur(api, state) {
+                // 🛑 Al salir de la pestaña: Matamos el reloj para que NO consuma memoria ni congele la app
+                if (window.idRelojSatelital) {
+                    clearInterval(window.idRelojSatelital);
+                    window.idRelojSatelital = null;
+                }
             }
         };
     };
