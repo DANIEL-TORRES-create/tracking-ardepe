@@ -979,20 +979,22 @@ textarea {
     font-weight: 700;
     padding: 10px 14px 10px 38px;
     border-radius: 6px;
-    border: 1px solid #003366;
+    border: 1px solid #38bdf8; /* Borde celeste neón para mayor contraste */
     width: 190px;
-    color: #ffffff;
+    color: #ffffff !important; /* Blanco puro cuando el usuario escribe */
     background-color: #002344; /* Fondo azul noche interno para las cajas */
     transition: all 0.2s ease;
 }
 
 .input-predictivo-pro:focus {
     outline: none;
-    border-color: #38bdf8;
+    border-color: #ffffff;
     background-color: #001a33;
-    box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
+/* 🤍 TEXTO BUSCAR PLACA / RUTA EN BLANCO LUMINOSO */
 .input-predictivo-pro::placeholder {
-    color: #6484a6;
+    color: #ffffff !important; 
+    opacity: 0.90 !important; /* Brillo ejecutivo de alto impacto visual */
 }
