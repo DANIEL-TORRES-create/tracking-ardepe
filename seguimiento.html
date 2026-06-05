@@ -1185,19 +1185,12 @@
                 callback();
             },
             focus(api, state) {
-                // 🚀 FORZADO DE CACHÉ: Despierta la API de Geotab y obliga al fetch a actualizar en vivo
-                if (api && api.call) {
-                    api.call("Get", { typeName: "User", search: { id: "0" } }, () => {}, () => {});
-                }
-                
-                // Limpiamos cualquier reloj fantasma viejo por seguridad antes de encender el nuevo
+                // Sincronización secundaria por si Geotab reacciona rápido
+                actualizar(); 
                 if (window.idRelojSatelital) clearInterval(window.idRelojSatelital);
-                
-                actualizar(); // Refresco inmediato al entrar
-                window.idRelojSatelital = setInterval(actualizar, 60000); // Enciende el vivo de 60 segundos
+                window.idRelojSatelital = setInterval(actualizar, 60000);
             },
             blur(api, state) {
-                // 🛑 Freno de mano total al salir de la pestaña
                 if (window.idRelojSatelital) {
                     clearInterval(window.idRelojSatelital);
                     window.idRelojSatelital = null;
@@ -1205,6 +1198,22 @@
             }
         };
     };
+
+    // 🚀 DETECTOR NATIVO DEL NAVEGADOR (SALVACIÓN ANTI-F5)
+    // Fuerza el refresco en vivo al cambiar de pestaña en MyGeotab saltándose sus restricciones
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+            actualizar(); // Refresca la tabla inmediatamente al volver a verla
+            if (window.idRelojSatelital) clearInterval(window.idRelojSatelital);
+            window.idRelojSatelital = setInterval(actualizar, 60000);
+        } else {
+            // Apaga el reloj si el operador se va a otra pestaña o minimiza Chrome
+            if (window.idRelojSatelital) {
+                clearInterval(window.idRelojSatelital);
+                window.idRelojSatelital = null;
+            }
+        }
+    });
 
     // Ejecución inicial de respaldo para entornos de pruebas locales
     actualizar();
