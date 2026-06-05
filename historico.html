@@ -819,10 +819,13 @@
                         horaRealLlegada = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
-                    // ⚡ EXCEPCIÓN ESTRICTA: CIERRE MANUAL (TODOS GUIONES EXCEPTO LLEGADA REAL)
-                    if (plan.punto === "CIERRE_MANUAL") {
+                    // ⚡ EXCEPCIÓN ESTRICTA: HITOS DE CIERRE (CIERRE_MANUAL / CANCELADO_MANUAL)
+                    // 🚫 REQUERIMIENTO: Deja en guión obligatorio Desviación, Teóricos, Tiempos, Distancias y Pernoctes
+                    if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
                         plan.puntoPlanLlegadaForzadoGv = "---"; // Marcador para forzar la llegada planificada en guión
-                        pernoctePlan = "---"; pernocteReal = "---"; horaRealSalida = "---"; distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; desvTiempoTexto = "---";
+                        pernoctePlan = "---"; pernocteReal = "---"; horaRealSalida = "---"; 
+                        distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; 
+                        tiempoViajePlan = "---"; tiempoViajeReal = "---"; desvTiempoTexto = "---";
                     }
 
                     // 🚫 REQUERIMIENTO: LIMPIEZA TOTAL EN HITOS OMITIDOS
@@ -830,7 +833,10 @@
                         distRealTramo = "---"; difKm = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
-                    if (plan.punto !== "CIERRE_MANUAL" && desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
+                    // Ajuste de semáforos para evitar pintar alertas en hitos de cierre forzado
+                    if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
+                        semaforoTiempo = "verde";
+                    } else if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
                         let partesDesv = desvTiempoTexto.replace("-", "").split(":");
                         let hrsDesv = parseInt(partesDesv[0], 10) || 0;
                         let minsDesv = parseInt(partesDesv[1], 10) || 0;
@@ -844,7 +850,7 @@
                     horaRealLlegada = normalizarFormatoFechaSinSegundos(horaRealLlegada);
                     horaRealSalida = normalizarFormatoFechaSinSegundos(horaRealSalida);
                     
-                    // 🎯 APLICACIÓN DE LLEGADA PLANIFCADA EN GUIÓN PARA INICIO O CIERRE MANUAL
+                    // 🎯 APLICACIÓN DE LLEGADA PLANIFICADA EN GUIÓN PARA INICIO O CIERRE MANUAL
                     let horaPlanLlegada = plan.puntoPlanLlegadaForzadoGv === "---" ? "---" : normalizarFormatoFechaSinSegundos(plan.planHora || "---");
                     
                     desvTiempoTexto = limpiarFechaSat(desvTiempoTexto); 
