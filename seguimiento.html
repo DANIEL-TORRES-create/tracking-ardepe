@@ -939,6 +939,18 @@
                 }
 
                 puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
+                    // 🔴 PUNTO ROJO TAL CUAL EL HISTÓRICO: Dibuja el nodo en cada geocerca recorrida
+                    let colorNodo = puntoOrigen.esOmitido ? '#64748b' : '#ef4444'; // Rojo vivo si pasó
+                    if (puntoOrigen.esManual) colorNodo = '#d97706'; 
+
+                    L.circle(puntoOrigen.coordenada, {
+                        radius: 5,
+                        color: colorNodo,
+                        fillColor: colorNodo,
+                        weight: 2,
+                        fillOpacity: 0.95
+                    }).addTo(window._satMarcadoresHitosGrupo);
+
                     if (idx >= puntosParaRutaOSRM.length - 1) return;
                     let puntoDestino = puntosParaRutaOSRM[idx + 1];
 
@@ -954,7 +966,6 @@
                                 if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                     let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                     
-                                    // Separación paralela ancha de 45m si el tramo es omitido o es un hito de retorno
                                     if (esTramoGris || currentIdx > 1) { 
                                         caminoCarretera = aplicarDesfaseParalelo(caminoCarretera, 45); 
                                     }
