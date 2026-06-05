@@ -610,6 +610,28 @@
             return t;
         };
 
+        // 🧠 FUNCIÓN MATEMÁTICA LOCAL (Resta horas evitando depender de otros archivos)
+        let diffHorasPasivo = (horaInicio, horaFin) => {
+            try {
+                if (!horaInicio || !horaFin || horaInicio === "---" || horaFin === "---" || horaInicio === "--:--" || horaFin === "--:--") return "---";
+                let strI = horaInicio.toString().replace(",", "").trim();
+                let strF = horaFin.toString().replace(",", "").trim();
+                
+                let parsearAFecha = (str) => {
+                    let partes = str.split(/\s+/);
+                    let fPartes = partes[0].split("/");
+                    let hPartes = partes[1].split(":");
+                    return new Date(parseInt(fPartes[2],10), parseInt(fPartes[1],10)-1, parseInt(fPartes[0],10), parseInt(hPartes[0],10), parseInt(hPartes[1],10), parseInt(hPartes[2],10)||0);
+                };
+
+                let diffMs = parsearAFecha(strF).getTime() - parsearAFecha(strI).getTime();
+                let totalMins = Math.abs(Math.floor(diffMs / (1000 * 60)));
+                let h = Math.floor(totalMins / 60);
+                let m = totalMins % 60;
+                return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
+            } catch(e) { return "---"; }
+        };
+
         window[nombreCallbackTemporal] = function(datosSeguimiento) {
             _satCacheDatosRows = [];
             let ultimoIndiceCompletado = -1;
@@ -636,8 +658,6 @@
             function construirGraficosYTablaPasiva(zonasGeotab) {
                 let secuenciaCorrelativa = 1;
                 let odometroBaseAnterior = 0; 
-                
-                // 🚀 SOLUCIÓN CRÍTICA: Declaración e inicialización de variables de tramos
                 let hitoRealAnteriorSalida = "---";
                 let hitoPlanAnteriorSalida = "---";
 
@@ -670,9 +690,9 @@
                         horaRealLlegada = "---"; desvTiempoTexto = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
-                    // 📐 ARITMÉTICA PRECISA EN CASCADA POR TRAMO COMPATIBLE CON SEGUIMIENTO
+                    // 📐 ARITMÉTICA POR TRAMOS
                     if (!esOmitido && (esCompletado || tipoRegistro === "---")) {
-                        // A. Resta de Kilómetros Planificados por Tramo (Nodo actual menos el anterior)
+                        // A. Kilómetros Planificados por Tramo
                         if (index === 0) {
                             distPlanKm = 0;
                         } else {
@@ -680,21 +700,21 @@
                             distPlanKm = Math.max(0, (parseFloat(plan.distanciaPlan) || 0) - (parseFloat(nodoBasePlan.distanciaPlan) || 0));
                         }
 
-                        // B. Tiempos de Viaje entre Hitos Secuenciales
+                        // B. Tiempos de Viaje entre Hitos (Usando la función local diffHorasPasivo)
                         if (index > 0) {
                             if (index === 1) {
-                                hitoPlanAnteriorSalida = itinerarioPlan[0].planHoraSalida || itinerarioPlan[0].etd || "---";
+                                hitoPlanAnteriorSalida = itinerarioPlan[0].planHoraSalida || "---";
                                 let realOrigen = rawDatosArray.find(h => h.punto_nombre.toString().toUpperCase().trim() === itinerarioPlan[0].punto.toString().toUpperCase().trim());
                                 hitoRealAnteriorSalida = realOrigen ? realOrigen.hora_real_salida : (itinerarioPlan[0].realHora || "---");
                             }
 
                             if (horaRealLlegada !== "---" && hitoRealAnteriorSalida !== "---" && hitoPlanAnteriorSalida !== "---") {
-                                tiempoViajePlan = calcularDiferenciaHorasTexto(hitoPlanAnteriorSalida, plan.planHora);
-                                tiempoViajeReal = calcularDiferenciaHorasTexto(hitoRealAnteriorSalida, horaRealLlegada);
+                                tiempoViajePlan = diffHorasPasivo(limpiarFechaSat(hitoPlanAnteriorSalida), limpiarFechaSat(plan.planHora));
+                                tiempoViajeReal = diffHorasPasivo(limpiarFechaSat(hitoRealAnteriorSalida), limpiarFechaSat(horaRealLlegada));
                             }
                         }
 
-                        // C. Resta de Kilómetros Reales por Odómetro
+                        // C. Kilómetros Reales Recorridos por Odómetro
                         let odometroAcumuladoActual = real ? parseFloat(real.km_acumulado || 0) : 0;
                         if (index === 0) {
                             odometroBaseAnterior = odometroAcumuladoActual;
@@ -706,7 +726,6 @@
                             odometroBaseAnterior = odometroAcumuladoActual;
                         }
 
-                        // Guardamos las salidas para usarlas de base en el siguiente hito
                         if (!esFilaManual) {
                             hitoPlanAnteriorSalida = plan.planHoraSalida || "---";
                             if (horaRealSalida !== "---") hitoRealAnteriorSalida = horaRealSalida;
@@ -729,14 +748,14 @@
 
                     _satCacheDatosRows.push({
                         st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
-                        sec: numSecuencia, punto: plan.punto, conductor: real ? (real.conductor || "Sin Conductor") : "Sin Conductor", tipo: tipoRegistro, 
+                        sec: numSecuencia, punto: plan.punto, conductor: real ? (real.conductor || "---") : "---", tipo: tipoRegistro, 
                         planLlegada: horaPlanLlegada, realLlegada: horaRealLlegada, desvTiempo: desvTiempoTexto, semTiempo: semaforoTiempo,
                         tiempoPlan: tiempoViajePlan, tiempoReal: tiempoViajeReal, 
                         distPlan: distPlanKm, distReal: distRealTramo, semDist: "verde",
                         difKm: difKm, pernoctePlan: pernoctePlan, pernocteReal: pernocteReal, realSalida: horaRealSalida
                     });
 
-                    // [DIBUJO DEL MAPA LEAFLET - MANTENIDO INTACTO]
+                    // [PROCESAMIENTO MAPA LEAFLET - MANTENIDO INTACTO]
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     let centroideLatLng = null;
                     if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
@@ -779,7 +798,7 @@
                                 let estiloLinea = esTramoGris ? { color: colorLinea, weight: 4, opacity: 0.6, dashArray: '5, 10' } : { color: colorLinea, weight: 5, opacity: 0.85 };
                                 L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
                             }
-                        }).catch(e => console.error("Error OSRM:", e));
+                        }).catch(e => console.error("Error OSRM Pasivo:", e));
                 });
 
                 if (puntosParaRutaOSRM.length > 0) _satMapa.setView(puntosParaRutaOSRM[0].coordenada, 8);
