@@ -1207,6 +1207,11 @@
                 actualizar();
                 setInterval(actualizar, 60000);
                 callback();
+            },
+            blur(api, state) {
+                // ✨ Al salir de Seguimiento, matamos cualquier petición de fondo en vuelo
+                const scriptViejo = document.getElementById('script-satelital-viva');
+                if (scriptViejo) scriptViejo.remove();
             }
         };
     };
