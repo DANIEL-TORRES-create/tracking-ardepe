@@ -913,9 +913,9 @@
                 });
 
                 puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
-                    // 1. Dibujamos el nodo de 5 metros en el centroide promedio
-                    let colorNodo = puntoOrigen.esGris ? '#64748b' : '#ef4444'; 
-                    if (puntoOrigen.esManual) colorNodo = '#d97706'; 
+                    // Dibujamos el nodo de origen del tramo en el mapa para que se ensarte en la línea
+                    let colorNodo = puntoOrigen.esGris ? '#64748b' : '#ef4444'; // Gris si es omitido, Rojo vivo si es real
+                    if (puntoOrigen.esManual) colorNodo = '#d97706'; // Naranja si es manual
 
                     L.circle(puntoOrigen.coordenada, {
                         radius: 5,
@@ -932,36 +932,21 @@
                     let coordFin = puntoDestino.coordenada;
                     let esTramoGris = puntoDestino.esGris;
 
-                    // 🎯 LA MAGIA: Forzamos a OSRM a calcular la ruta pasando estrictamente por el centroide de destino
-                    // En lugar de unir solo Origen;Destino, el API procesará: Origen -> Centroide Destino -> Destino
-                    fetch(`https://router.project-osrm.org/route/v1/driving/${coordInicio[1]},${coordInicio[0]};${coordFin[1]},${coordFin[0]}?overview=full&geometries=geojson&continue_straight=true`)
+                    fetch(`https://router.project-osrm.org/route/v1/driving/${coordInicio[1]},${coordInicio[0]};${coordFin[1]},${coordFin[0]}?overview=full&geometries=geojson`)
                         .then(r => r.json())
                         .then(jsonRoute => {
                             if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                 let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                 let colorLinea = esTramoGris ? '#94a3b8' : '#004b93'; 
                                 
+                                // 🎯 DISEÑO NAVISAF: Línea continua para real, discontinua (dashArray) para omitido
                                 let estiloLinea = esTramoGris ? 
-                                    { color: colorLinea, weight: 4, opacity: 0.65, dashArray: '6, 12' } : 
-                                    { color: colorLinea, weight: 5, opacity: 0.85 };
+                                    { color: colorLinea, weight: 4, opacity: 0.65, dashArray: '6, 12' } : // ─── ─── (Omitido)
+                                    { color: colorLinea, weight: 5, opacity: 0.85 };                      // ─────── (Real)
 
-                                // Pintamos la línea continua o punteada
-                                let lineaTraza = L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
-
-                                // 🚀 FORZADO NAVISAF: Si la carretera pasa muy lejos por geometría de mapa,
-                                // tiramos dos hilos invisibles o tenues de apoyo desde la pista hasta el centroide
-                                // garantizando que el punto jamás quede flotando en el aire.
-                                if (caminoCarretera.length > 0) {
-                                    let puntoMedioPista = caminoCarretera[Math.floor(caminoCarretera.length / 2)];
-                                    L.polyline([puntoMedioPista, coordFin], {
-                                        color: colorLinea,
-                                        weight: estiloLinea.weight - 1,
-                                        opacity: estiloLinea.opacity,
-                                        dashArray: esTramoGris ? '4, 8' : '0'
-                                    }).addTo(window._satMarcadoresHitosGrupo);
-                                }
+                                L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
                             }
-                        }).catch(e => console.error("Error desvío OSRM:", e));
+                        }).catch(e => console.error("Error carretera OSRM pasivo:", e));
                 });
 
                 if (puntosParaRutaOSRM.length > 0) _satMapa.setView(puntosParaRutaOSRM[0].coordenada, 8);
