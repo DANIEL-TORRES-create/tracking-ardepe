@@ -1185,12 +1185,22 @@
                 callback();
             },
             focus(api, state) {
-                // Sincronización secundaria por si Geotab reacciona rápido
-                actualizar(); 
+                // 🚀 TRUCO DE REINICIO DE HILO: Retardamos el fetch 300ms 
+                // para darle tiempo a MyGeotab de despertar el canal de red
+                setTimeout(() => {
+                    if (typeof actualizar === "function") {
+                        actualizar();
+                    }
+                }, 300);
+
+                // Reiniciamos el reloj en vivo seguro de 60 segundos
                 if (window.idRelojSatelital) clearInterval(window.idRelojSatelital);
-                window.idRelojSatelital = setInterval(actualizar, 60000);
+                window.idRelojSatelital = setInterval(() => {
+                    actualizar();
+                }, 60000);
             },
             blur(api, state) {
+                // Frenamos el reloj para que no sature la memoria en segundo plano
                 if (window.idRelojSatelital) {
                     clearInterval(window.idRelojSatelital);
                     window.idRelojSatelital = null;
@@ -1199,19 +1209,14 @@
         };
     };
 
-    // 🚀 DETECTOR NATIVO DEL NAVEGADOR (SALVACIÓN ANTI-F5)
-    // Fuerza el refresco en vivo al cambiar de pestaña en MyGeotab saltándose sus restricciones
-    document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) {
-            actualizar(); // Refresca la tabla inmediatamente al volver a verla
-            if (window.idRelojSatelital) clearInterval(window.idRelojSatelital);
-            window.idRelojSatelital = setInterval(actualizar, 60000);
-        } else {
-            // Apaga el reloj si el operador se va a otra pestaña o minimiza Chrome
-            if (window.idRelojSatelital) {
-                clearInterval(window.idRelojSatelital);
-                window.idRelojSatelital = null;
-            }
+    // 🎯 CONTROL DE RE-ACTIVACIÓN POR EVENTO DEL MOUSE
+    // Si Geotab duerme la pestaña, en el momento en que el usuario hace un clic 
+    // dentro de la ventana de Seguimiento, obligamos a la tabla a recargarse sola.
+    document.body.addEventListener("click", () => {
+        // Ejecuta un refresco pasivo solo si la tabla está vacía o congelada
+        const tabla = document.getElementById("tablaViajesMaster"); // Usa el ID real de tu tabla si es otro
+        if (tabla && tabla.rows.length <= 1) {
+            actualizar();
         }
     });
 
