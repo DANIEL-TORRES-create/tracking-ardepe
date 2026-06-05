@@ -834,18 +834,12 @@
                     }
 
                     // Ajuste de semáforos para evitar pintar alertas en hitos de cierre forzado
-                    let desvSemaforoLimpia = (desvTiempoTexto || "").toString().trim();
-
-                    horaRealLlegada = normalizarFormatoFechaSinSegundos(horaRealLlegada);
-                    horaRealSalida = normalizarFormatoFechaSinSegundos(horaRealSalida);
-                    
-                    // 🚀 NUEVO BLOQUE INTEGRADO: Semáforo inteligente copiado de seguimiento.html
                     let desvOriginalBunker = v.desviacion ? v.desviacion.toString().trim() : "---";
-                    let semaforoViajeReal = "verde"; // 🌟 SOLUCIÓN: Agregamos esta línea para que no crashee el .push
 
                     if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
                         semaforoTiempo = "verde";
                     } 
+                    // Detecta si es un retraso real (contiene el signo menos '-' o el error de Google Sheets de 1899)
                     else if (desvOriginalBunker !== "---" && (desvOriginalBunker.indexOf("-") > -1 || desvOriginalBunker.indexOf("1899") > -1)) {
                         let partesDesv = desvOriginalBunker.replace("-", "").split(/\s+/);
                         
@@ -859,6 +853,7 @@
                         let minsDesv = parseInt(partesDesv[1], 10) || 0;
                         let totalMinsDesv = (desvOriginalBunker.indexOf("1899") > -1) ? minsDesv : (hrsDesv * 60) + minsDesv;
                         
+                        // Rangos de tolerancia: Mostaza hasta 10 min, Rojo si es mayor
                         if (totalMinsDesv <= 10) {
                             semaforoTiempo = "mostaza";
                         } else {
@@ -866,8 +861,12 @@
                         }
                     } 
                     else {
-                        semaforoTiempo = "verde"; 
+                        // Valores mayores o iguales a 0 (Adelantados o A tiempo sin el signo '-') van en VERDE
+                        semaforoTiempo = "verde";
                     }
+
+                    horaRealLlegada = normalizarFormatoFechaSinSegundos(horaRealLlegada);
+                    horaRealSalida = normalizarFormatoFechaSinSegundos(horaRealSalida);
                     
                     // 🎯 APLICACIÓN DE LLEGADA PLANIFICADA EN GUIÓN PARA INICIO O CIERRE MANUAL
                     let horaPlanLlegada = plan.puntoPlanLlegadaForzadoGv === "---" ? "---" : normalizarFormatoFechaSinSegundos(plan.planHora || "---");
