@@ -661,10 +661,10 @@
                 let hitoRealAnteriorSalida = "---";
                 let hitoPlanAnteriorSalida = "---";
 
+                // 🚀 1. INYECCIÓN CRÍTICA DE HITOS MANUALES AL ITINERARIO
                 rawDatosArray.forEach(h => {
                     let pNom = String(h.punto_nombre || "").trim().toUpperCase();
                     if (pNom === "INICIO_MANUAL" || pNom === "CIERRE_MANUAL" || pNom === "CANCELADO_MANUAL") {
-                        // Verificamos si ya existe en el itinerario para no duplicar
                         let existe = itinerarioPlan.some(p => p.punto.toString().toUpperCase().trim() === pNom);
                         if (!existe) {
                             itinerarioPlan.push({
@@ -673,19 +673,23 @@
                                 planHoraSalida: "---",
                                 realHora: h.hora_real_llegada || h.hora_real_salida || "---",
                                 deteccion: "FORZADO",
-                                distanciaPlan: 0 // Las intervenciones no suman kilometraje teórico
+                                distanciaPlan: 0 
                             });
                         }
                     }
                 });
 
-                // Re-ordenamiento rápido para asegurar que Origen sea el primero e Inicio Manual vaya segundo
+                // Re-ordenamiento: Asegurar que INICIO_MANUAL se posicione en index 1 (segundo hito)
                 let idxManual = itinerarioPlan.findIndex(p => p.punto === "INICIO_MANUAL");
                 if (idxManual > -1) {
                     let [nodoManual] = itinerarioPlan.splice(idxManual, 1);
                     itinerarioPlan.splice(1, 0, nodoManual);
                 }
 
+                // Variable de control para saber si el viaje arrancó con intervención manual
+                let tieneInicioManualActivo = itinerarioPlan.some(p => p.punto === "INICIO_MANUAL");
+
+                // 🚀 2. BUCLE PROCESADOR CRONOLÓGICO DE HITOS
                 itinerarioPlan.forEach((plan, index) => {
                     let real = rawDatosArray.find(h => h.punto_nombre && h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
@@ -711,25 +715,35 @@
                     let distRealTramo = "---";
                     let difKm = "---";
 
-                    // 🛑 Inicialización de semáforos por defecto en verde
                     let semaforoTiempo = "verde";
                     let semaforoDistancia = "verde";
                     let semaforoViajeReal = "verde";
 
-                    if (esFilaManual) {
-                        horaRealLlegada = "---"; desvTiempoTexto = "---"; pernoctePlan = "---"; pernocteReal = "---";
-                    }
+                    // Helper local de limpieza estricta de fechas para forzar formato: DD/M/YYYY, HH:mm (Sin segundos)
+                    let normalizarFormatoFechaSinSegundos = (fechaStr) => {
+                        let limpia = limpiarFechaSat(fechaStr);
+                        if (!limpia || limpia === "---") return "---";
+                        // Si trae el formato largo con coma "17/4/2026 07:30:00" o similar, removemos los segundos
+                        let partes = limpia.split(" ");
+                        if (partes.length >= 2) {
+                            let horaMin = partes[1].substring(0, 5);
+                            return `${partes[0].replace(",", "")}, ${horaMin}`;
+                        }
+                        return limpia;
+                    };
 
+                    // 📐 ARITMÉTICA Y REGLAS DE NEGOCIO POR TRAMOS
                     if (!esOmitido && (esCompletado || tipoRegistro === "---")) {
-                        // A. Kilómetros Planificados por Tramo
+                        
+                        // REGLA 1: Kilómetros Planificados por Tramo
                         if (index === 0) {
-                            distPlanKm = 0;
+                            distPlanKm = "---"; // Forzado por regla de primer hito teórico
                         } else {
                             let nodoBasePlan = itinerarioPlan[index - 1];
                             distPlanKm = Math.max(0, (parseFloat(plan.distanciaPlan) || 0) - (parseFloat(nodoBasePlan.distanciaPlan) || 0));
                         }
 
-                        // B. Tiempos de Viaje entre Hitos Secuenciales
+                        // REGLA 2: Tiempos de Viaje entre Hitos
                         if (index > 0) {
                             if (index === 1) {
                                 hitoPlanAnteriorSalida = itinerarioPlan[0].planHoraSalida || "---";
@@ -741,7 +755,7 @@
                                 tiempoViajePlan = diffHorasPasivo(limpiarFechaSat(hitoPlanAnteriorSalida), limpiarFechaSat(plan.planHora));
                                 tiempoViajeReal = diffHorasPasivo(limpiarFechaSat(hitoRealAnteriorSalida), limpiarFechaSat(horaRealLlegada));
                                 
-                                // ⏱️ EVALUACIÓN TIEMPO VIAJE REAL: Plan vs Real tramo
+                                // EVALUACIÓN TIEMPO VIAJE REAL (Tolerancias Navisaf ●)
                                 if (tiempoViajePlan !== "---" && tiempoViajeReal !== "---") {
                                     let [pH, pM] = tiempoViajePlan.split(":").map(Number);
                                     let [rH, rM] = tiempoViajeReal.split(":").map(Number);
@@ -756,34 +770,51 @@
                             }
                         }
 
-                        // C. Kilómetros Reales Recorridos por Odómetro
+                        // REGLA 3: Kilómetros Reales por Odómetro
                         let odometroAcumuladoActual = real ? parseFloat(real.km_acumulado || 0) : 0;
                         if (index === 0) {
                             odometroBaseAnterior = odometroAcumuladoActual;
-                            distRealTramo = 0;
-                            difKm = 0;
+                            distRealTramo = "---"; // Forzado por regla de primer hito teórico
+                            difKm = "---";
                         } else if (odometroAcumuladoActual > 0) {
                             distRealTramo = Math.abs(odometroAcumuladoActual - odometroBaseAnterior);
-                            difKm = distPlanKm - distRealTramo;
+                            difKm = (distPlanKm !== "---" ? distPlanKm : 0) - distRealTramo;
                             odometroBaseAnterior = odometroAcumuladoActual;
 
-                            // 📊 EVALUACIÓN DIFERENCIA KILÓMETROS (Basado en excesos reales: valores negativos)
+                            // EVALUACIÓN DIFERENCIA KILÓMETROS (Tolerancias Navisaf ●)
                             if (difKm >= 0) semaforoDistancia = "verde";
                             else if (difKm >= -5) semaforoDistancia = "mostaza";
                             else semaforoDistancia = "rojo";
                         }
 
+                        // Guardamos las salidas para el siguiente ciclo del bucle
                         if (!esFilaManual) {
                             hitoPlanAnteriorSalida = plan.planHoraSalida || "---";
                             if (horaRealSalida !== "---") hitoRealAnteriorSalida = horaRealSalida;
                         }
                     }
 
+                    // ⚡ EXCEPCIÓN REGLA: SI ES EL PRIMER HITO DE UNA ZONA VÁLIDA (index === 0)
+                    if (index === 0) {
+                        tiempoViajePlan = "---"; tiempoViajeReal = "---";
+                        distPlanKm = "---"; distRealTramo = "---"; difKm = "---";
+                        pernoctePlan = "---"; pernocteReal = "---";
+                    }
+
+                    // ⚡ EXCEPCIÓN REGLA: SI HAY UN INICIO MANUAL Y ES EL SEGUNDO HITO (index === 1)
+                    if (tieneInicioManualActivo && plan.punto === "INICIO_MANUAL") {
+                        horaRealLlegada = "---"; desvTiempoTexto = "---";
+                        tiempoViajePlan = "---"; tiempoViajeReal = "---";
+                        distPlanKm = "---"; distRealTramo = "---"; difKm = "---";
+                        pernoctePlan = "---"; pernocteReal = "---";
+                    }
+
+                    // Forzado general de guiones para hitos omitidos o vacíos
                     if (esOmitido || (!esCompletado && tipoRegistro === "---")) {
                         distRealTramo = "---"; difKm = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---";
                     }
 
-                    // 🕒 EVALUACIÓN DESVIACIÓN TIEMPO HITO (Llegada vs Plan)
+                    // 🕒 EVALUACIÓN DESVIACIÓN TIEMPO (Tolerancias Navisaf ●)
                     if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
                         let partesDesv = desvTiempoTexto.replace("-", "").split(":");
                         let hrsDesv = parseInt(partesDesv[0], 10) || 0;
@@ -793,13 +824,14 @@
                         if (totalMinsDesv <= 10) semaforoTiempo = "mostaza";
                         else semaforoTiempo = "rojo";
                     } else if (desvTiempoTexto !== "---") {
-                        extraSemaforo = "verde";
+                        semaforoTiempo = "verde";
                     }
 
-                    horaRealLlegada = limpiarFechaSat(horaRealLlegada);
-                    horaRealSalida = limpiarFechaSat(horaRealSalida);
-                    let horaPlanLlegada = limpiarFechaSat(plan.planHora || "---");
-                    desvTiempoTexto = limpiarFechaSat(desvTiempoTexto);
+                    // Formateo final limpio sin segundos para las celdas visuales
+                    horaRealLlegada = normalizarFormatoFechaSinSegundos(horaRealLlegada);
+                    horaRealSalida = normalizarFormatoFechaSinSegundos(horaRealSalida);
+                    let horaPlanLlegada = normalizarFormatoFechaSinSegundos(plan.planHora || "---");
+                    desvTiempoTexto = limpiarFechaSat(desvTiempoTexto); // Mantiene formato de duración HH:mm
                     pernoctePlan = limpiarFechaSat(pernoctePlan);
                     pernocteReal = limpiarFechaSat(pernocteReal);
 
