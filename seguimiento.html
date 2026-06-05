@@ -786,7 +786,7 @@
                             tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                             tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
 
-                            // ⏱️ CALIBRACIÓN: Semáforo dedicado para Exceso en Tiempo de Viaje Real
+                            // ⏱️ SEMÁFORO VIAJE REAL: Homologado matemáticamente al histórico (Add-in 4)
                             if (tiempoViajePlan !== "---" && tiempoViajeReal !== "---") {
                                 let [pH, pM] = tiempoViajePlan.split(":").map(Number);
                                 let [rH, rM] = tiempoViajeReal.split(":").map(Number);
@@ -800,13 +800,12 @@
                             }
                         }
 
-                        // B. Cálculos de Diferencias de Kilómetros por Odómetro
                         if (odometroAcumulado > 0 && index > 0) {
                              distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
                              if (distPlanKm !== "---") {
                                  difKm = distPlanKm - distRealTramo;
                                  
-                                 // 🛣️ CALIBRACIÓN: Semáforo de Tolerancia de Kilómetros Navisaf
+                                 // 🛣️ SEMÁFORO KILÓMETROS: Homologado a las tolerancias Navisaf
                                  if (difKm >= 0) semaforoDistancia = "verde";
                                  else if (difKm >= -5) semaforoDistancia = "mostaza";
                                  else semaforoDistancia = "rojo";
@@ -814,14 +813,13 @@
                         }
                     }
 
-                    // 🚨 CALIBRACIÓN: Semáforo de Tolerancia para Desviación de Tiempo General
+                    // 🚨 SEMÁFORO DESVIACIÓN TIEMPO: Con tolerancia exacta de 10 minutos (Evita falsos rojos)
                     if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
-                        let partesDesv = desvTiempoTexto.replace("-", "").split(":");
-                        let hrsDesv = parseInt(partesDesv[0], 10) || 0;
-                        let minsDesv = parseInt(partesDesv[1], 10) || 0;
-                        let totalMinsDesv = (hrsDesv * 60) + minsDesv;
+                        let minsDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[1], 10)) || 0;
+                        let horasDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[0], 10)) || 0;
+                        let totalMins = (horasDesv * 60) + minsDesv;
                         
-                        if (totalMinsDesv <= 10) semaforoTiempo = "mostaza";
+                        if (totalMins <= 10) semaforoTiempo = "mostaza";
                         else semaforoTiempo = "rojo";
                     } else {
                         semaforoTiempo = "verde";
@@ -837,11 +835,11 @@
                     // 🎯 REQUERIMIENTO: Si es Omitido (o el origen está omitido), conductor sale como guión "---"
                     let conductorVisualFila = (esOmitido || (index === 0 && esOrigenOmitido)) ? "---" : (real ? (real.conductor || conductorActual) : conductorActual);
 
-                    // 📝 INYECCIÓN DE PROPIEDADES UNIFICADAS AL ALMACÉN GLOBAL
+                    // 📝 ALMACENAMIENTO SEGURO CON SEMÁFOROS INDEPENDIENTES ACTIVADOS
                     _satCacheDatosRows.push({
                         st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
                         sec: numSecuencia,
-                        punto: plan.punto, 
+                        punto: plan.planHora && plan.planHora.toString().toUpperCase().includes("MANUAL") ? plan.punto : plan.punto, 
                         conductor: conductorVisualFila, 
                         tipo: tipoRegistro, 
                         planLlegada: plan.planHora || "---",
@@ -850,7 +848,7 @@
                         semTiempo: semaforoTiempo,
                         tiempoPlan: tiempoViajePlan, 
                         tiempoReal: tiempoViajeReal, 
-                        semViajeReal: semaforoViajeReal, // Inyectamos el semáforo calculado
+                        semViajeReal: semaforoViajeReal, // Inyección de semáforo independiente
                         distPlan: distPlanKm, 
                         distReal: distRealTramo,
                         semDist: semaforoDistancia, 
@@ -859,7 +857,6 @@
                         pernocteReal: pernocteReal, 
                         realSalida: horaRealSalida
                     });
-
                     if (esCompletado && !esFilaManual) {
                         ultimoHitoRealValido = real || { hora_real_salida: plan.realHora, km_acumulado: odometroAcumulado };
                         ultimoHitoRealValidoPlan = plan;
@@ -1058,7 +1055,7 @@
             if (r.st === "🚫") badgeEst = `<span class="sat-badge-table st-omitido">🚫 OMITIDO</span>`;
 
             let dotTiempo = `<span class="sat-table-dot dot-${r.semTiempo}">●</span>`;
-            let dotViajeReal = `<span class="sat-table-dot dot-${r.semViajeReal}">●</span>`; // 🚀 Punto de color para viaje real
+            let dotViajeReal = `<span class="sat-table-dot dot-${r.semViajeReal}">●</span>`; // Nueva variable de punto
             let dotDist = `<span class="sat-table-dot dot-${r.semDist}">●</span>`;
 
             let desvT = (r.desvTiempo !== "---") ? `${dotTiempo} ${r.desvTiempo}` : "---";
