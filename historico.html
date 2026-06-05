@@ -162,33 +162,11 @@
     let busquedaEjecutada = false;    
     window._cacheItinerariosCompleto = {};
 
-    let abortadorScriptAnterior = null;
-
     function actualizar() {
-        // 1. Si el operador cambió de pestaña rápido, eliminamos el script colgado anterior
-        if (abortadorScriptAnterior) {
-            const scriptViejo = document.getElementById('script-satelital-viva');
-            if (scriptViejo) scriptViejo.remove();
-        }
-
-        // 2. Creamos el nuevo token de petición con ID único y endpoint pasivo
         const script = document.createElement('script');
-        script.id = 'script-satelital-viva';
         script.src = WEB_APP_URL + "?read=historicos&callback=renderizar&nocache=" + new Date().getTime();
-        
-        abortadorScriptAnterior = script;
         document.body.appendChild(script);
-
-        // 3. Limpieza automática inmediata al procesar o si la red falla
-        script.onload = function() { 
-            script.remove(); 
-            abortadorScriptAnterior = null;
-        };
-        
-        script.onerror = function() {
-            script.remove();
-            abortadorScriptAnterior = null;
-        };
+        script.onload = function() { script.remove(); };
     }
 
     window.renderizar = function(viajes) {
@@ -1107,18 +1085,15 @@
 
                 // Carga inicial al enganchar MyGeotab
                 actualizar();
-                setInterval(actualizar, 60000);
+
+                // Reloj de automatización de fondo (Cada 60 segundos)
+                setInterval(actualizar, 60000); 
+
                 callback();
-            },
-            blur(api, state) {
-                // ✨ Al salir de Seguimiento, matamos cualquier petición de fondo en vuelo
-                const scriptViejo = document.getElementById('script-satelital-viva');
-                if (scriptViejo) scriptViejo.remove();
             }
         };
     };
 
-    // Ejecución inicial de respaldo para entornos de pruebas locales
     actualizar();
 </script>
 </body>
