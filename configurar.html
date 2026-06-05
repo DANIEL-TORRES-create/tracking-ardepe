@@ -99,11 +99,24 @@
         return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
 
-    async function cargarRutas() {
+    let abortadorScriptAnterior = null;
+
+    function cargarRutas() {
+        // 1. Si el operador cambió de pestaña rápido, eliminamos el script colgado anterior
+        if (abortadorScriptAnterior) {
+            const scriptViejo = document.getElementById('script-satelital-viva');
+            if (scriptViejo) scriptViejo.remove();
+        }
+
         const listaUI = document.getElementById("listaRutasGuardadas");
-        try {
-            const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime());
-            const data = await res.json();
+        if (!listaUI) return;
+
+        // 2. Creamos el token de petición con ID único reemplazando tu fetch original
+        const script = document.createElement('script');
+        script.id = 'script-satelital-viva';
+        
+        // Mapeamos de forma segura la misma respuesta hacia tu tabla de historial
+        window.cb_temporal_configurar = function(data) {
             listaUI.innerHTML = "";
             data.forEach(r => {
                 const row = listaUI.insertRow();
@@ -115,7 +128,13 @@
                     <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}", "${r.id}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
                 `;
             });
-        } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando con DB_CONFIGURACION...</td></tr>"; }
+            script.remove();
+            abortadorScriptAnterior = null;
+        };
+
+        script.src = WEB_APP_URL + "?callback=cb_temporal_configurar&v=" + new Date().getTime();
+        abortadorScriptAnterior = script;
+        document.body.appendChild(script);
     }
 
     function cargarZonasGeotab(api) {
@@ -216,6 +235,12 @@
             focus(api, state) {
                 cargarZonasGeotab(api);
                 cargarRutas();
+            },
+            blur(api, state) {
+                // ✨ Al salir de Configurar, matamos cualquier petición de fondo en vuelo
+                const scriptViejo = document.getElementById('script-satelital-viva');
+                if (scriptViejo) scriptViejo.remove();
+                if (window.cb_temporal_configurar) delete window.cb_temporal_configurar;
             }
         };
     };
