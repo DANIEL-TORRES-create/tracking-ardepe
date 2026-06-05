@@ -800,6 +800,27 @@
                             }
                         }
 
+                        if (index === 0 || esOmitido) {
+                            tiempoViajePlan = "---";
+                            tiempoViajeReal = "---";
+                        } else {
+                            tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
+                            tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
+
+                            // ⏱️ SEMÁFORO VIAJE REAL (Homologado matemáticamente al histórico)
+                            if (tiempoViajePlan !== "---" && tiempoViajeReal !== "---") {
+                                let [pH, pM] = tiempoViajePlan.split(":").map(Number);
+                                let [rH, rM] = tiempoViajeReal.split(":").map(Number);
+                                let totalMinsPlan = (pH * 60) + pM;
+                                let totalMinsReal = (rH * 60) + rM;
+                                let excesoViaje = totalMinsReal - totalMinsPlan;
+
+                                if (excesoViaje <= 0) semaforoViajeReal = "verde";
+                                else if (excesoViaje <= 10) semaforoViajeReal = "mostaza";
+                                else semaforoViajeReal = "rojo";
+                            }
+                        }
+
                         if (odometroAcumulado > 0 && index > 0) {
                              distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
                              if (distPlanKm !== "---") {
@@ -813,7 +834,7 @@
                         }
                     }
 
-                    // 🚨 SEMÁFORO DESVIACIÓN TIEMPO: Con tolerancia exacta de 10 minutos (Evita falsos rojos)
+                    // 🚨 SEMÁFORO DESVIACIÓN TIEMPO: Con tolerancia exacta de 10 minutos
                     if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
                         let minsDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[1], 10)) || 0;
                         let horasDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[0], 10)) || 0;
