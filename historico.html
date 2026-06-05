@@ -21,8 +21,9 @@
     <div class="bunker-controles-superiores">
         
         <div class="grupo-filtros-estados">
-             <button onclick="filtrarTablaSatelital('historial')" class="sat-btn-filter">🔍 Ver Todos</button>
-             <button onclick="filtrarTablaSatelital('omitidos')" class="sat-btn-filter sat-btn-danger">🚫 Omitidos</button>
+             <button type="button" class="btn-filto-est activo" data-estado="TODOS">🔍 Todos</button>
+            <button type="button" class="btn-filto-est" data-estado="FINALIZADO">✔️ Finalizados</button>
+            <button type="button" class="btn-filto-est" data-estado="NO EJECUTADO">🚫 No Ejecutados</button>
         </div>
 
         <div class="caja-predictiva-wrapper" style="display: flex; gap: 8px; align-items: center;">
@@ -121,10 +122,12 @@
         </div>
 
         <div class="mega-barra-filtros">
-            <button id="sat-btn-historial" class="sat-btn-f activo" onclick="filtrarTablaSatelital('historial')"><i class="fas fa-file-alt"></i> Ver Todos</button>
-            <button id="sat-btn-completados" class="sat-btn-f" onclick="filtrarTablaSatelital('completados')"><i class="fas fa-check-circle"></i> Completados</button>
-            <button id="sat-btn-pendientes" class="sat-btn-f" onclick="filtrarTablaSatelital('pendientes')"><i class="fas fa-clock"></i> Por Completar</button>
-            <button id="sat-btn-desviaciones" class="sat-btn-f" onclick="filtrarTablaSatelital('desviaciones')"><i class="fas fa-exclamation-triangle"></i> Desviaciones</button>
+            <button id="sat-btn-historial" class="sat-btn-f activo" onclick="filtrarTablaSatelital('historial')">
+                <i class="fas fa-file-alt"></i> Ver Todos
+            </button>
+            <button id="sat-btn-omitidos" class="sat-btn-f" style="border-left: 2px solid #ef4444;" onclick="filtrarTablaSatelital('omitidos')">
+                <i class="fas fa-ban" style="color: #ef4444;"></i> Omitidos
+            </button>
         </div>
 
         <div class="mega-bunker-tabla">
@@ -870,6 +873,8 @@
                     // [PROCESAMIENTO MAPA LEAFLET - MANTENIDO INTACTO]
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     let centroideLatLng = null;
+                    
+                    // 🎯 Coordenada promedio: centroide de todos los puntos de la API
                     if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                         let sumaLat = 0, sumaLng = 0;
                         zonaMatch.points.forEach(pt => { sumaLat += pt.y; sumaLng += pt.x; });
@@ -878,19 +883,29 @@
                         if (zonaMatch.center) centroideLatLng = [zonaMatch.center.y, zonaMatch.center.x];
                         else if (zonaMatch.y) centroideLatLng = [zonaMatch.y, zonaMatch.x];
                     }
+
                     if (centroideLatLng) {
                         let geocercaVisual = null;
-                        if (plan.punto === "INICIO_MANUAL") {
-                            geocercaVisual = L.circle(centroideLatLng, { radius: 40, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
-                        } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
-                            let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
-                            geocercaVisual = L.polygon(verticesLeaflet, { color: colorHito, fillColor: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
-                        } else {
-                            geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
-                        }
+                        
+                        // Determinar el color exacto del borde y relleno según el estado del hito
+                        let colorCirculo = colorHito; 
+                        if (plan.punto === "INICIO_MANUAL") colorCirculo = '#d97706'; // Naranja
+                        else if (esOmitido) colorCirculo = '#d93025'; // Rojo puro
+
+                        // 🎯 HOMOLOGACIÓN TOTAL: Todos los hitos se dibujan como círculos estrictos de 15 metros
+                        geocercaVisual = L.circle(centroideLatLng, { 
+                            radius: 15, 
+                            color: colorCirculo, 
+                            fillColor: colorCirculo, 
+                            weight: 3, 
+                            fillOpacity: 0.45 
+                        }).addTo(window._satMarcadoresHitosGrupo);
+
+                        // Texto flotante fijado estrictamente en el centro geométrico de la zona
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
+                        
                         puntosParaRutaOSRM.push({ coordenada: centroideLatLng, esGris: esOmitido || (!esCompletado) });
                     }
                 });
