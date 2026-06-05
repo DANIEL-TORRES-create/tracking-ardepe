@@ -91,7 +91,7 @@
         <div class="mega-cabecera-satelital">
             <div class="mega-cabecera-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <div class="mega-bloque-identidad">
-                    <h2>DETALLE DE VIAJE CRONOLÓGICO</h2>
+                    <h2>DETALLE DE VIAJE HISTÓRICO</h2>
                     <div class="mega-subtitulos">
                         <span class="badge-sat-placa">PLACA: <strong id="lbl-sat-placa">---</strong></span>
                         <span class="badge-sat-ruta">RUTA: <strong id="lbl-sat-ruta">---</strong></span>
@@ -122,12 +122,9 @@
         </div>
 
         <div class="mega-barra-filtros">
-            <button id="sat-btn-historial" class="sat-btn-f activo" onclick="filtrarTablaSatelital('historial')">
-                <i class="fas fa-file-alt"></i> Ver Todos
-            </button>
-            <button id="sat-btn-omitidos" class="sat-btn-f" style="border-left: 2px solid #ef4444;" onclick="filtrarTablaSatelital('omitidos')">
-                <i class="fas fa-ban" style="color: #ef4444;"></i> Omitidos
-            </button>
+            <button id="sat-btn-historial" class="sat-btn-f activo" onclick="filtrarTablaSatelital('historial')"><i class="fas fa-file-alt"></i> Todos</button>
+            <button id="sat-btn-completados" class="sat-btn-f" onclick="filtrarTablaSatelital('completados')"><i class="fas fa-check-circle"></i> Finalizados</button>
+            <button id="sat-btn-omitidos" class="sat-btn-f" onclick="filtrarTablaSatelital('omitidos')"><i class="fas fa-ban"></i> No Ejecutados</button>
         </div>
 
         <div class="mega-bunker-tabla">
@@ -966,12 +963,41 @@
         const tbody = document.getElementById('sat-tbody-rows');
         if (!tbody) return; tbody.innerHTML = "";
 
-        let registrosFiltrados = _satCacheDatosRows.filter(r => {
-            // 🎯 NUEVA REGLA DE FILTRADO EXCLUSIVA NAVISAF
-            if (tipoFiltro === 'omitidos') return r.st === "🚫";
-            return true; // Equivale a 'Ver Todos'
+        // 🎯 REQUERIMIENTO: Si se selecciona "Ver Todos", limpiamos por completo las búsquedas de placa o ruta
+        if (tipoFiltro === 'historial') {
+            const inputPlaca = document.getElementById('sat-search-placa');
+            const inputRuta = document.getElementById('sat-search-ruta');
+            if (inputPlaca) inputPlaca.value = "";
+            if (inputRuta) inputRuta.value = "";
+        }
+
+        // 🎨 REQUERIMIENTO VISUAL: Forzar inputs de Placa y Ruta en blanco puro para que no se pierdan en gris
+        const inputsAClarar = document.querySelectorAll('#sat-search-placa, #sat-search-ruta');
+        inputsAClarar.forEach(inp => {
+            inp.style.backgroundColor = '#ffffff';
+            inp.style.color = '#0f172a';
+            inp.style.border = '1px solid #cbd5e1';
         });
 
+        // 📊 APLICACIÓN DE FILTROS EXACTOS SEGÚN ESTADOS REALES
+        let registrosFiltrados = _satCacheDatosRows.filter(r => {
+            let puntoUpper = String(r.punto || "").toUpperCase().trim();
+            
+            // 1. Botón: ✔️ Finalizados (Muestra AUTOMÁTICO o MANUAL como INICIO_MANUAL o CIERRE_MANUAL)
+            if (tipoFiltro === 'completados') {
+                return r.st === "✓" || r.tipo === "AUTOMÁTICO" || r.tipo === "MANUAL";
+            }
+            
+            // 2. Botón: 🚫 No Ejecutados (Muestra OMITIDOS, CANCELADOS_MANUAL, VENCIDOS u hojas saltadas)
+            if (tipoFiltro === 'omitidos') {
+                return r.st === "🚫" || r.tipo === "OMITIDO" || puntoUpper.indexOf("CANCELADO") > -1 || puntoUpper.indexOf("VENCIDO") > -1;
+            }
+            
+            // Default: 'historial' o cualquier otro muestra "Ver Todos"
+            return true; 
+        });
+
+        // 🚀 RENDERIZADO EXCLUSIVO DE LA GRILLA NAVISAF
         registrosFiltrados.forEach(r => {
             let tr = document.createElement('tr');
             let badgeEst = r.st === "✓" ? '<span class="sat-badge-table st-completado">✓ OK</span>' : (r.st === "🚫" ? '<span class="sat-badge-table st-omitido">🚫 OMITIDO</span>' : '<span class="sat-badge-table st-pendiente">⏳ PENDIENTE</span>');
