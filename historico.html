@@ -869,6 +869,35 @@
                     horaRealLlegada = normalizarFormatoFechaSinSegundos(horaRealLlegada);
                     horaRealSalida = normalizarFormatoFechaSinSegundos(horaRealSalida);
                     
+                    // 🚀 NUEVO BLOQUE INTEGRADO: Semáforo inteligente copiado de seguimiento.html
+                    let desvOriginalBunker = v.desviacion ? v.desviacion.toString().trim() : "---";
+
+                    if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
+                        semaforoTiempo = "verde";
+                    } 
+                    else if (desvOriginalBunker !== "---" && (desvOriginalBunker.indexOf("-") > -1 || desvOriginalBunker.indexOf("1899") > -1)) {
+                        let partesDesv = desvOriginalBunker.replace("-", "").split(/\s+/);
+                        
+                        if (desvOriginalBunker.indexOf("1899") > -1 && partesDesv.length >= 5) {
+                            partesDesv = partesDesv[4].split(":");
+                        } else {
+                            partesDesv = desvOriginalBunker.replace("-", "").split(":");
+                        }
+
+                        let hrsDesv = parseInt(partesDesv[0], 10) || 0;
+                        let minsDesv = parseInt(partesDesv[1], 10) || 0;
+                        let totalMinsDesv = (desvOriginalBunker.indexOf("1899") > -1) ? minsDesv : (hrsDesv * 60) + minsDesv;
+                        
+                        if (totalMinsDesv <= 10) {
+                            semaforoTiempo = "mostaza";
+                        } else {
+                            semaforoTiempo = "rojo";
+                        }
+                    } 
+                    else {
+                        semaforoTiempo = "verde"; // Si no hay "-" es adelanto y se queda en verde limpio
+                    }
+                    
                     // 🎯 APLICACIÓN DE LLEGADA PLANIFICADA EN GUIÓN PARA INICIO O CIERRE MANUAL
                     let horaPlanLlegada = plan.puntoPlanLlegadaForzadoGv === "---" ? "---" : normalizarFormatoFechaSinSegundos(plan.planHora || "---");
                     
