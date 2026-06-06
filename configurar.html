@@ -101,8 +101,11 @@
 
     async function cargarRutas() {
         const listaUI = document.getElementById("listaRutasGuardadas");
+        if (!listaUI) return;
         try {
-            const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime());
+            // 🚀 Generamos un número único por milisegundo para obligar a saltarse la caché del Add-in anterior
+            const tokenDestructorCache = new Date().getTime();
+            const res = await fetch(WEB_APP_URL + "?v=" + tokenDestructorCache);
             const data = await res.json();
             listaUI.innerHTML = "";
             data.forEach(r => {
@@ -115,7 +118,9 @@
                     <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}", "${r.id}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
                 `;
             });
-        } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando con DB_CONFIGURACION...</td></tr>"; }
+        } catch(e) { 
+            listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando con DB_CONFIGURACION...</td></tr>"; 
+        }
     }
 
     function cargarZonasGeotab(api) {
@@ -214,8 +219,11 @@
                 callback();
             },
             focus(api, state) {
-                cargarZonasGeotab(api);
-                cargarRutas();
+                // 🚀 Retardamos la carga 300ms para darle tiempo a MyGeotab de soltar el Add-in anterior
+                setTimeout(() => {
+                    cargarZonasGeotab(api);
+                    cargarRutas();
+                }, 300);
             }
         };
     };
