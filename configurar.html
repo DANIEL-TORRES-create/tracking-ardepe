@@ -101,8 +101,17 @@
 
     async function cargarRutas() {
         const listaUI = document.getElementById("listaRutasGuardadas");
+        if (!listaUI) return;
         try {
-            const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime());
+            // 🚀 CABECERAS DE DESTRUCCIÓN DE CACHÉ A NIVEL DE NAVEGADOR
+            const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime(), {
+                method: "GET",
+                headers: {
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0"
+                }
+            });
             const data = await res.json();
             listaUI.innerHTML = "";
             data.forEach(r => {
@@ -115,7 +124,9 @@
                     <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}", "${r.id}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
                 `;
             });
-        } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando con DB_CONFIGURACION...</td></tr>"; }
+        } catch(e) { 
+            listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando con DB_CONFIGURACION...</td></tr>"; 
+        }
     }
 
     function cargarZonasGeotab(api) {
@@ -214,22 +225,11 @@
                 callback();
             },
             focus(api, state) {
-                // Dejamos la carga original por si Geotab reacciona en algún momento
                 cargarZonasGeotab(api);
                 cargarRutas();
             }
         };
     };
-
-    // 🚀 EL DESPERTADOR INMORTAL (POR CLIC EN PANTALLA)
-    // Si MyGeotab congela el foco, en el instante en que el usuario hace un clic
-    // en cualquier parte de este Add-in, obligamos a la red a despertar y traer la data fresca.
-    document.addEventListener("pointerdown", () => {
-        // Ejecutamos una carga silenciosa de respaldo en segundo plano
-        if (typeof cargarRutas === "function") {
-            cargarRutas();
-        }
-    }, { once: false }); // Se queda escuchando siempre que interactúes con la ventana
 </script>
 </body>
 </html>
