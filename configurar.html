@@ -214,8 +214,19 @@
                 callback();
             },
             focus(api, state) {
+                // 🚀 TRUCO MAESTRO: Si venimos de otro Add-in, forzamos un refresco limpio de inmediato
+                if (localStorage.getItem("necesitaRefrescoConfigurar") === "true") {
+                    localStorage.removeItem("necesitaRefrescoConfigurar");
+                    window.location.reload(); // Un F5 virtual automático e instantáneo
+                    return;
+                }
+                
                 cargarZonasGeotab(api);
                 cargarRutas();
+            },
+            blur(api, state) {
+                // 🚩 Cuando el operador abandona esta pestaña, dejamos la bandera lista para el regreso
+                localStorage.setItem("necesitaRefrescoConfigurar", "true");
             }
         };
     };
