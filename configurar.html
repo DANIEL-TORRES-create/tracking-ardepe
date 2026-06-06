@@ -214,22 +214,22 @@
                 callback();
             },
             focus(api, state) {
-                // 🚀 TRUCO MAESTRO: Si venimos de otro Add-in, forzamos un refresco limpio de inmediato
-                if (localStorage.getItem("necesitaRefrescoConfigurar") === "true") {
-                    localStorage.removeItem("necesitaRefrescoConfigurar");
-                    window.location.reload(); // Un F5 virtual automático e instantáneo
-                    return;
-                }
-                
+                // Dejamos la carga original por si Geotab reacciona en algún momento
                 cargarZonasGeotab(api);
                 cargarRutas();
-            },
-            blur(api, state) {
-                // 🚩 Cuando el operador abandona esta pestaña, dejamos la bandera lista para el regreso
-                localStorage.setItem("necesitaRefrescoConfigurar", "true");
             }
         };
     };
+
+    // 🚀 EL DESPERTADOR INMORTAL (POR CLIC EN PANTALLA)
+    // Si MyGeotab congela el foco, en el instante en que el usuario hace un clic
+    // en cualquier parte de este Add-in, obligamos a la red a despertar y traer la data fresca.
+    document.addEventListener("pointerdown", () => {
+        // Ejecutamos una carga silenciosa de respaldo en segundo plano
+        if (typeof cargarRutas === "function") {
+            cargarRutas();
+        }
+    }, { once: false }); // Se queda escuchando siempre que interactúes con la ventana
 </script>
 </body>
 </html>
