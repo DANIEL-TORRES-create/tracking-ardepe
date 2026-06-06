@@ -102,18 +102,29 @@
     async function cargarRutas() {
         const listaUI = document.getElementById("listaRutasGuardadas");
         if (!listaUI) return;
+        
+        // 🚀 EL SECRETO: Limpiamos la tabla por completo antes de llamar al servidor
+        // Esto obliga a MyGeotab a soltar la referencia muerta de la pestaña anterior
+        listaUI.innerHTML = "<tr><td colspan='4'>🔄 Cargando rutas en tiempo real...</td></tr>";
+        
         try {
-            // 🚀 CABECERAS DE DESTRUCCIÓN DE CACHÉ A NIVEL DE NAVEGADOR
             const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime(), {
                 method: "GET",
                 headers: {
                     "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "Pragma": "no-cache",
-                    "Expires": "0"
+                    "Pragma": "no-cache"
                 }
             });
             const data = await res.json();
+            
+            // Volvemos a limpiar para meter los datos frescos
             listaUI.innerHTML = "";
+            
+            if (!data || data.length === 0) {
+                listaUI.innerHTML = "<tr><td colspan='4'>No se encontraron rutas.</td></tr>";
+                return;
+            }
+
             data.forEach(r => {
                 const row = listaUI.insertRow();
                 let ptsArray = JSON.parse(r.puntos);
@@ -125,7 +136,7 @@
                 `;
             });
         } catch(e) { 
-            listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando con DB_CONFIGURACION...</td></tr>"; 
+            listaUI.innerHTML = "<tr><td colspan='4'>⚠️ Error al sincronizar con DB_CONFIGURACION...</td></tr>"; 
         }
     }
 
@@ -225,8 +236,9 @@
                 callback();
             },
             focus(api, state) {
-                cargarZonasGeotab(api);
-                cargarRutas();
+                // Ejecutamos las funciones directamente al tomar el foco
+                if (typeof cargarZonasGeotab === "function") cargarZonasGeotab(api);
+                if (typeof cargarRutas === "function") cargarRutas();
             }
         };
     };
