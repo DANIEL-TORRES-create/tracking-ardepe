@@ -101,30 +101,10 @@
 
     async function cargarRutas() {
         const listaUI = document.getElementById("listaRutasGuardadas");
-        if (!listaUI) return;
-        
-        // 🚀 EL SECRETO: Limpiamos la tabla por completo antes de llamar al servidor
-        // Esto obliga a MyGeotab a soltar la referencia muerta de la pestaña anterior
-        listaUI.innerHTML = "<tr><td colspan='4'>🔄 Cargando rutas en tiempo real...</td></tr>";
-        
         try {
-            const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime(), {
-                method: "GET",
-                headers: {
-                    "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "Pragma": "no-cache"
-                }
-            });
+            const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime());
             const data = await res.json();
-            
-            // Volvemos a limpiar para meter los datos frescos
             listaUI.innerHTML = "";
-            
-            if (!data || data.length === 0) {
-                listaUI.innerHTML = "<tr><td colspan='4'>No se encontraron rutas.</td></tr>";
-                return;
-            }
-
             data.forEach(r => {
                 const row = listaUI.insertRow();
                 let ptsArray = JSON.parse(r.puntos);
@@ -135,9 +115,7 @@
                     <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}", "${r.id}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
                 `;
             });
-        } catch(e) { 
-            listaUI.innerHTML = "<tr><td colspan='4'>⚠️ Error al sincronizar con DB_CONFIGURACION...</td></tr>"; 
-        }
+        } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando con DB_CONFIGURACION...</td></tr>"; }
     }
 
     function cargarZonasGeotab(api) {
@@ -236,9 +214,8 @@
                 callback();
             },
             focus(api, state) {
-                // Ejecutamos las funciones directamente al tomar el foco
-                if (typeof cargarZonasGeotab === "function") cargarZonasGeotab(api);
-                if (typeof cargarRutas === "function") cargarRutas();
+                cargarZonasGeotab(api);
+                cargarRutas();
             }
         };
     };
