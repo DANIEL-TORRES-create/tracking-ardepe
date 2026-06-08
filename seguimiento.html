@@ -1123,71 +1123,80 @@
 
     // 6. INTEGRACIÓN CON GEOTAB (API)
     geotab.addin.seguimiento = () => {
-        return {
-            initialize(api, state, callback) {
-                apiGlobal = api; 
-                api.getSession(s => { _usuarioLogueado = s.userName; });
-                
-                // ⏰ A. ENTRADA EN TIEMPO REAL: ACTIVACIÓN DEL RELOJ DEL BUNKER
-                const contenedorHora = document.getElementById("bunker-time");
-                if (contenedorHora) {
-                    setInterval(() => {
-                        const ahora = new Date();
-                        let hrs = ahora.getHours();
-                        let mins = ahora.getMinutes();
-                        let segs = ahora.getSeconds();
-                        
-                        hrs = hrs < 10 ? "0" + hrs : hrs;
-                        mins = mins < 10 ? "0" + mins : mins;
-                        segs = segs < 10 ? "0" + segs : segs;
-                        
-                        contenedorHora.innerText = hrs + ":" + mins + ":" + segs;
-                    }, 1000);
-                }
-
-                // 🎛️ B. ENGANCHE TÁCTIL: CLICS EN LA BOTONERA DE ESTADOS NAVISAF
-                const botonesEstado = document.querySelectorAll(".btn-filto-est");
-                botonesEstado.forEach(boton => {
-                    boton.addEventListener("click", function() {
-                        botonesEstado.forEach(b => {
-                            b.classList.remove("activo");
-                            b.style.opacity = "0.65";
-                        });
-                        this.classList.add("activo");
-                        this.style.opacity = "1";
-                        
-                        estadoFiltroActivo = this.getAttribute("data-estado");
-
-                        // 🎯 OPERACIÓN ADICIONAL: Si presiona "Todos", limpia por completo las búsquedas escritas
-                        if (estadoFiltroActivo === "TODOS") {
-                            const txtPlaca = document.getElementById("txt-filtro-placa");
-                            const txtRuta = document.getElementById("txt-filtro-ruta");
-                            if (txtPlaca) txtPlaca.value = "";
-                            if (txtRuta) txtRuta.value = "";
-                        }
-                        
-                        filtrarYMostrarTabla();
-                    });
-                });
-
-                // 🔍 C. FILTRADO DINÁMICO INPUT POR INPUT (PLACAS Y RUTAS)
-                const inputPlaca = document.getElementById("txt-filtro-placa");
-                if (inputPlaca) {
-                    inputPlaca.addEventListener("input", filtrarYMostrarTabla);
-                }
-
-                const inputRuta = document.getElementById("txt-filtro-ruta");
-                if (inputRuta) {
-                    inputRuta.addEventListener("input", filtrarYMostrarTabla);
-                }
-
-                // Ejecución e intervalos base del Servidor
-                actualizar();
-                setInterval(actualizar, 60000);
-                callback();
+    return {
+        initialize(api, state, callback) {
+            apiGlobal = api; 
+            api.getSession(s => { _usuarioLogueado = s.userName; });
+            
+            // ⏰ A. ENTRADA EN TIEMPO REAL: ACTIVACIÓN DEL RELOJ DEL BUNKER
+            const contenedorHora = document.getElementById("bunker-time");
+            if (contenedorHora) {
+                setInterval(() => {
+                    const ahora = new Date();
+                    let hrs = ahora.getHours();
+                    let mins = ahora.getMinutes();
+                    let segs = ahora.getSeconds();
+                    
+                    hrs = hrs < 10 ? "0" + hrs : hrs;
+                    mins = mins < 10 ? "0" + mins : mins;
+                    segs = segs < 10 ? "0" + segs : segs;
+                    
+                    contenedorHora.innerText = hrs + ":" + mins + ":" + segs;
+                }, 1000);
             }
-        };
+
+            // 🎛️ B. ENGANCHE TÁCTIL: CLICS EN LA BOTONERA DE ESTADOS NAVISAF
+            const botonesEstado = document.querySelectorAll(".btn-filto-est");
+            botonesEstado.forEach(boton => {
+                boton.addEventListener("click", function() {
+                    botonesEstado.forEach(b => {
+                        b.classList.remove("activo");
+                        b.style.opacity = "0.65";
+                    });
+                    this.classList.add("activo");
+                    this.style.opacity = "1";
+                    
+                    estadoFiltroActivo = this.getAttribute("data-estado");
+
+                    // 🎯 OPERACIÓN ADICIONAL: Si presiona "Todos", limpia por completo las búsquedas escritas
+                    if (estadoFiltroActivo === "TODOS") {
+                        const txtPlaca = document.getElementById("txt-filtro-placa");
+                        const txtRuta = document.getElementById("txt-filtro-ruta");
+                        if (txtPlaca) txtPlaca.value = "";
+                        if (txtRuta) txtRuta.value = "";
+                    }
+                    
+                    filtrarYMostrarTabla();
+                });
+            });
+
+            // 🔍 C. FILTRADO DINÁMICO INPUT POR INPUT (PLACAS Y RUTAS)
+            const inputPlaca = document.getElementById("txt-filtro-placa");
+            if (inputPlaca) {
+                inputPlaca.addEventListener("input", filtrarYMostrarTabla);
+            }
+
+            const inputRuta = document.getElementById("txt-filtro-ruta");
+            if (inputRuta) {
+                inputRuta.addEventListener("input", filtrarYMostrarTabla);
+            }
+
+            // Ejecución e intervalos base del Servidor
+            actualizar();
+            setInterval(actualizar, 60000);
+            callback();
+        },
+        // 🎯 EL INTERRUPTOR QUE BORRA LA TABLA CONGELADA Y PIDE DATOS NUEVOS AL VOLVER A LA PESTAÑA:
+        focus(api, state) {
+            listaViajesGlobal = [];
+            const tbody = document.getElementById('lista-viajes');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px; color:#475569; font-weight:bold;">Sincronizando viajes en vivo...</td></tr>';
+            document.getElementById("txt-filtro-placa").value = "";
+            document.getElementById("txt-filtro-ruta").value = "";
+            actualizar();
+        }
     };
+};
 
     // Ejecución inicial de respaldo para entornos de pruebas locales
     actualizar();
