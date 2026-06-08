@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Tracking y Rutas - ARDEPE</title>
+    <style>
+        /* 🎨 DISEÑO DE INTERFAZ CORPORATIVA NAVISAF */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            overflow: hidden;
+        }
+
+        /* 📊 BARRA LATERAL NATIVA (SIDEBAR) */
+        .sidebar {
+            width: 260px;
+            background: #004b93; /* El azul oficial de tus proyectos */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 3px 0 10px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #38bdf8; /* Azul cielo para resaltar */
+        }
+
+        .sidebar-header p {
+            margin: 4px 0 0 0;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .menu-group {
+            padding: 15px 0;
+            flex-grow: 1;
+        }
+
+        /* 🎛️ BOTONES DINÁMICOS DEL MENÚ */
+        .menu-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px 24px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .menu-btn:hover {
+            background: #00366b;
+            color: white;
+            padding-left: 28px;
+        }
+
+        .menu-btn.activo {
+            background: #00366b;
+            color: white;
+            border-left: 4px solid #38bdf8;
+            padding-left: 28px;
+        }
+
+        /* 🖥️ ÁREA DE TRABAJO (VISOR DE PANTALLAS) */
+        .content-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* Pie de página del menú */
+        .sidebar-footer {
+            padding: 15px 20px;
+            font-size: 10px;
+            opacity: 0.5;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Tracking ARDEPE</h2>
+            <p>Panel de Operaciones en Vivo</p>
+        </div>
+        
+        <div class="menu-group">
+            <button class="menu-btn activo" onclick="cargarPantalla('configurar.html', this)">
+                🛠️ 1. Configurar Rutas
+            </button>
+            <button class="menu-btn" onclick="cargarPantalla('seguimiento.html', this)">
+                📊 3. Tablero de Control
+            </button>
+        </div>
+
+        <div class="sidebar-footer">
+            Navisaf © 2026
+        </div>
+    </div>
+
+    <div class="content-area">
+        <iframe id="visor-pantillas" src="configurar.html"></iframe>
+    </div>
+
+    <script>
+        // ⚡ FUNCIÓN MAESTRA DE NAVEGACIÓN LIBRE DE CACHÉ
+        function cargarPantalla(urlArchivo, botonPresionado) {
+            // 1. Quitar la clase activa de todos los botones anteriores
+            const botones = document.querySelectorAll('.menu-btn');
+            botones.forEach(b => b.classList.remove('activo'));
+            
+            // 2. Encender el botón que el usuario acaba de presionar
+            botonPresionado.classList.add('activo');
+            
+            // 3. Cargar el HTML en el visor central agregándole un "rompe-caché" matemático en tiempo real
+            const visor = document.getElementById('visor-pantillas');
+            const marcaTiempo = new Date().getTime();
+            
+            visor.src = urlArchivo + "?nocache=" + marcaTiempo;
+        }
+    </script>
+
+</body>
+</html>
