@@ -180,11 +180,26 @@
     let apiGlobal = null; // 🚀 REQUISITO: API de Geotab para la telemetría en vivo
 
     // 1. FUNCIÓN DE REFRESCO DE DATOS
-    function actualizar() {
-        const script = document.createElement('script');
-        script.src = WEB_APP_URL + "?read=viajes&callback=renderizar&nocache=" + new Date().getTime();
-        document.body.appendChild(script);
-        script.onload = function() { script.remove(); };
+    async function actualizar() {
+        try {
+            // Fetch sigue la redirección de Google de forma nativa sin romperse
+            const res = await fetch(WEB_APP_URL + "?read=viajes&nocache=" + new Date().getTime());
+            let texto = await res.text();
+            
+            // 💡 LIMPIEZA SÚPER IMPORTANTE: Si Google responde envuelto en callback, le quita el envoltorio para extraer el JSON limpio
+            if (texto.includes("(")) {
+                texto = texto.substring(texto.indexOf("(") + 1, texto.lastIndexOf(")"));
+            }
+            
+            const viajes = JSON.parse(texto);
+            
+            // Llama a tu función original para pintar la grilla con los datos frescos
+            window.renderizar(viajes);
+        } catch (e) {
+            console.error("Error leyendo datos del servidor:", e);
+            const tbody = document.getElementById('lista-viajes');
+            if (tbody) tbody.innerHTML = "<tr><td colspan='10' style='text-align:center; padding:40px; color:#b91c1c; font-weight:bold;'>❌ Error de comunicación con el servidor...</td></tr>";
+        }
     }
 
     let listaViajesGlobal = [];
