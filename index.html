@@ -18,8 +18,8 @@
 
         /* 📊 BARRA LATERAL NATIVA (SIDEBAR) */
         .sidebar {
-            width: 260px;
-            background: #004b93; /* El azul oficial de tus proyectos */
+            width: 280px; /* Lo agrandamos un pelo para que entren cómodos los nombres largos */
+            background: #004b93; 
             color: white;
             display: flex;
             flex-direction: column;
@@ -39,7 +39,7 @@
             font-weight: 800;
             letter-spacing: 0.8px;
             text-transform: uppercase;
-            color: #38bdf8; /* Azul cielo para resaltar */
+            color: #38bdf8; 
         }
 
         .sidebar-header p {
@@ -51,6 +51,9 @@
         .menu-group {
             padding: 15px 0;
             flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
 
         /* 🎛️ BOTONES DINÁMICOS DEL MENÚ */
@@ -122,8 +125,14 @@
             <button class="menu-btn activo" onclick="cargarPantalla('configurar.html', this)">
                 🛠️ 1. Configurar Rutas
             </button>
+            <button class="menu-btn" onclick="cargarPantalla('programar.html', this)">
+                📅 2. Programar Viajes
+            </button>
             <button class="menu-btn" onclick="cargarPantalla('seguimiento.html', this)">
                 📊 3. Tablero de Control
+            </button>
+            <button class="menu-btn" onclick="cargarPantalla('historico.html', this)">
+                📂 4. Histórico de Rutas
             </button>
         </div>
 
@@ -139,17 +148,15 @@
     <script>
         // ⚡ FUNCIÓN MAESTRA DE NAVEGACIÓN LIBRE DE CACHÉ
         function cargarPantalla(urlArchivo, botonPresionado) {
-            // 1. Quitar la clase activa de todos los botones anteriores
             const botones = document.querySelectorAll('.menu-btn');
             botones.forEach(b => b.classList.remove('activo'));
             
-            // 2. Encender el botón que el usuario acaba de presionar
             botonPresionado.classList.add('activo');
             
-            // 3. Cargar el HTML en el visor central agregándole un "rompe-caché" matemático en tiempo real
             const visor = document.getElementById('visor-pantillas');
             const marcaTiempo = new Date().getTime();
             
+            // Forzamos al navegador a destruir el caché de la pestaña seleccionada
             visor.src = urlArchivo + "?nocache=" + marcaTiempo;
         }
     </script>
