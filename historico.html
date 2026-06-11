@@ -724,30 +724,29 @@
                         // Tomamos el dato puro tal cual viene de tu Google Sheet
                         desvTiempoTexto = String(real.desviacion_hh_mm).trim();
                         
-                        // 📊 Evaluamos el semáforo basándonos en el dato real del Sheet
+                        // 📊 Evaluamos el semáforo basándonos en el dato real del Sheet (Tolerancia 10 min en negativo)
                         if (desvTiempoTexto.indexOf("-") > -1) {
-                            // Si es negativo (Retraso), calculamos si entra en la tolerancia mostaza (1 a 10 min)
                             let partesDesv = desvTiempoTexto.replace("-", "").split(":");
                             let hrsDesv = parseInt(partesDesv[0], 10) || 0;
                             let minsDesv = parseInt(partesDesv[1], 10) || 0;
                             let totalMinsDesv = (hrsDesv * 60) + minsDesv;
                             
                             if (totalMinsDesv <= 10) {
-                                semaforoTiempo = "mostaza"; // Tolerancia de 1 a 10 min de retraso
+                                semaforoTiempo = "mostaza"; // Rango de -00:01 a -00:10
                             } else {
-                                semaforoTiempo = "rojo";    // Retraso crítico mayor a 10 min
+                                semaforoTiempo = "rojo";    // Retraso crítico mayor a -00:10
                             }
                         } else if (desvTiempoTexto !== "00:00" && desvTiempoTexto !== "0:00" && desvTiempoTexto !== "0") {
                             semaforoTiempo = "verde"; // Es positivo (Adelantado / A tiempo)
                         }
                     }
+
                     let tiempoViajePlan = "---";
                     let tiempoViajeReal = "---";
                     let distPlanKm = "---";
                     let distRealTramo = "---";
                     let difKm = "---";
 
-                    let semaforoTiempo = "verde";
                     let semaforoDistancia = "verde";
                     let semaforoViajeReal = "verde";
 
