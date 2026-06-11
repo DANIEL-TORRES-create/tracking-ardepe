@@ -90,13 +90,24 @@
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     }
 
-    function getHaversine(lat1, lon1, lat2, lon2) {
+    async function getDistanciaCarreteraReal(lat1, lon1, lat2, lon2) {
         if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        return new Promise((resolve) => {
+            apiGlobal.call("GetRoute", {
+                waypoints: [
+                    { y: parseFloat(lat1), x: parseFloat(lon1) },
+                    { y: parseFloat(lat2), x: parseFloat(lon2) }
+                ]
+            }, function(resultado) {
+                if (resultado && resultado.distance) {
+                    resolve(resultado.distance / 1000);
+                } else {
+                    resolve(0); // Si Geotab no encuentra ruta, marca 0
+                }
+            }, function(error) {
+                resolve(0); // Si hay error de red, marca 0
+            });
+        });
     }
 
     async function cargarRutas() {
@@ -179,7 +190,7 @@
                 cargarZonasGeotab(api);
                 cargarRutas();
                 document.getElementById("btnCancelar").addEventListener("click", resetearFormulario);
-                document.getElementById("btnAgregar").addEventListener("click", () => {
+                document.getElementById("btnAgregar").addEventListener("click", async () => {
                     const inputNombre = document.getElementById("nombreRuta");
                     const inputBusqueda = document.getElementById("buscadorZonas");
                     if (!inputNombre.value.trim()) { alert("⚠️ Pon un nombre a la ruta"); return; }
@@ -189,8 +200,15 @@
                     if (zonaSel.center) { lat = zonaSel.center.y; lon = zonaSel.center.x; }
                     else if (zonaSel.y) { lat = zonaSel.y; lon = zonaSel.x; }
                     else if (zonaSel.points && zonaSel.points[0]) { lat = zonaSel.points[0].y; lon = zonaSel.points[0].x; }
+                    
                     const previo = rutaActual[rutaActual.length - 1];
-                    let km = (previo && lat !== 0) ? getHaversine(previo.lat, previo.lon, lat, lon) : 0;
+                    
+                    // 🗺️ REEMPLAZADO: Ahora el cálculo espera la respuesta de la pista real
+                    let km = 0;
+                    if (previo && lat !== 0) {
+                        km = await getDistanciaCarreteraReal(previo.lat, previo.lon, lat, lon);
+                    }
+                    
                     rutaActual.push({ 
                         name: zonaSel.name, lat: lat, lon: lon, 
                         km: km.toFixed(2), tiempo: formatTime(km / 60), pernocte: "00:30" 
