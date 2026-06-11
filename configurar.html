@@ -173,45 +173,9 @@
     });
 
     geotab.addin.configurar = (api, state) => {
-    apiGlobal = api;
-    return {
-        initialize(api, state, callback) {
-            
-            // 🚀 INICIO DEL BLOQUE DE CONTROL DE GRUPO (ARDEPE)
-            api.getSession(s => {
-                const usuarioActual = s.userName;
-                
-                api.call("Get", {
-                    typeName: "User",
-                    search: { name: usuarioActual }
-                }, function(resultado) {
-                    if (resultado && resultado.length > 0) {
-                        const datosUsuario = resultado[0];
-                        
-                        // 🔑 VALIDACIÓN CON TU ID REAL DE ARDEPE
-                        const esDeArdepe = datosUsuario.companyGroups.some(g => g.id === "b334A");
-                        
-                        if (!esDeArdepe) {
-                            // 🛑 Bloqueo visual inmediato de la pantalla
-                            document.body.innerHTML = `
-                                <div style="padding: 40px; font-family: Arial, sans-serif; text-align: center; color: #475569; background: #f8fafc; height: 100vh; box-sizing: border-box;">
-                                    <h2 style="color: #ef4444; margin-bottom: 8px;">🚫 Acceso Restringido</h2>
-                                    <p style="font-weight: bold; margin-bottom: 4px;">Este módulo operativo pertenece exclusivamente a ARDEPE.</p>
-                                    <p style="font-size: 13px; opacity: 0.8; margin-top: 0;">No tienes asignado este grupo de flota en tu perfil.</p>
-                                </div>
-                            `;
-                            
-                            // 🪄 Oculta el Agrupador Padre del menú izquierdo de Geotab en vivo
-                            if (window.parent && window.parent.document) {
-                                const botonMenu = window.parent.document.getElementById("TRK_ARDEPE_CONTAINER");
-                                if (botonMenu) {
-                                    botonMenu.style.display = "none";
-                                }
-                            }
-                            callback();
-                            return;
-                        }
-                    }
+        apiGlobal = api;
+        return {
+            initialize(api, state, callback) {
                 cargarZonasGeotab(api);
                 cargarRutas();
                 document.getElementById("btnCancelar").addEventListener("click", resetearFormulario);
