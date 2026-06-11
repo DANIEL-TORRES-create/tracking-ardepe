@@ -1038,11 +1038,20 @@
                 colorTiempoFinal = "verde"; 
             }
 
-            let dotTiempo = `<span class="sat-table-dot dot-${colorTiempoFinal}">●</span>`;
+            let desviacionLimpiaPura = r.desvTiempo;
+            if (desviacionLimpiaPura && desviacionLimpiaPura !== "---") {
+                let partesS = desviacionLimpiaPura.split(":");
+                // Si el Sheet manda HH:MM:SS (3 bloques), nos quedamos solo con las Horas y Minutos
+                if (partesS.length >= 2) {
+                    desviacionLimpiaPura = partesS[0] + ":" + partesS[1];
+                }
+            }
+
+            let dotTiempo = `<span class="sat-table-dot dot-${r.semTiempo}">●</span>`;
             let dotViajeReal = `<span class="sat-table-dot dot-${r.semViajeReal}">●</span>`;
             let dotDistancia = `<span class="sat-table-dot dot-${r.semDist}">●</span>`;
 
-            let desvT = (r.desvTiempo !== "---") ? `${dotTiempo} <span style="color:#0f172a; font-weight:600;">${r.desvTiempo}</span>` : "---";
+            let desvT = (r.desvTiempo !== "---") ? `${dotTiempo} <span style="color:#0f172a; font-weight:600;">${desviacionLimpiaPura}</span>` : "---";
             let tReal = (r.tiempoReal !== "---") ? `${dotViajeReal} <span style="color:#0f172a; font-weight:600;">${r.tiempoReal}</span>` : "---";
             let dDifVisual = (r.difKm !== "---") ? `${dotDistancia} <span style="color:#0f172a; font-weight:600;">${dDif}</span>` : "---";
 
