@@ -714,9 +714,12 @@
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
-                    let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
                     let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
+
+                    // Jalamos el texto de la desviación y el color del semáforo nativo que ya calculó el Sheet
+                    let desvTiempoTexto = (real && real.desviacion_hh_mm) ? String(real.desviacion_hh_mm).trim() : "---";
+                    let semaforoTiempo = (real && real.semaforo_tiempo) ? String(real.semaforo_tiempo).toLowerCase().trim() : "verde"; 
 
                     let tiempoViajePlan = "---";
                     let tiempoViajeReal = "---";
@@ -724,12 +727,11 @@
                     let distRealTramo = "---";
                     let difKm = "---";
 
-                    let semaforoTiempo = "verde";
                     let semaforoDistancia = "verde";
                     let semaforoViajeReal = "verde";
 
                     let normalizarFormatoFechaSinSegundos = (fechaStr) => {
-                        let limpia = limpiarFechaSat(fechaStr);
+                        return fechaStr);
                         if (!limpia || limpia === "---") return "---";
                         let partes = limpia.split(" ");
                         if (partes.length >= 2) {
