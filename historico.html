@@ -714,10 +714,33 @@
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
-                    let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
                     let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
 
+                    let desvTiempoTexto = "---";
+                    let semaforoTiempo = "verde"; // Color base por defecto
+
+                    if (real && real.desviacion_hh_mm) {
+                        // Tomamos el dato puro tal cual viene de tu Google Sheet
+                        desvTiempoTexto = String(real.desviacion_hh_mm).trim();
+                        
+                        // 📊 Evaluamos el semáforo basándonos en el dato real del Sheet
+                        if (desvTiempoTexto.indexOf("-") > -1) {
+                            // Si es negativo (Retraso), calculamos si entra en la tolerancia mostaza (1 a 10 min)
+                            let partesDesv = desvTiempoTexto.replace("-", "").split(":");
+                            let hrsDesv = parseInt(partesDesv[0], 10) || 0;
+                            let minsDesv = parseInt(partesDesv[1], 10) || 0;
+                            let totalMinsDesv = (hrsDesv * 60) + minsDesv;
+                            
+                            if (totalMinsDesv <= 10) {
+                                semaforoTiempo = "mostaza"; // Tolerancia de 1 a 10 min de retraso
+                            } else {
+                                semaforoTiempo = "rojo";    // Retraso crítico mayor a 10 min
+                            }
+                        } else if (desvTiempoTexto !== "00:00" && desvTiempoTexto !== "0:00" && desvTiempoTexto !== "0") {
+                            semaforoTiempo = "verde"; // Es positivo (Adelantado / A tiempo)
+                        }
+                    }
                     let tiempoViajePlan = "---";
                     let tiempoViajeReal = "---";
                     let distPlanKm = "---";
