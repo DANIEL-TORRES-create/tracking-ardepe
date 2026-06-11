@@ -236,10 +236,28 @@
                     const nombre = document.getElementById("nombreRuta").value.trim();
                     const filas = document.querySelectorAll("#cuerpoRuta tr");
                     if (!nombre || rutaActual.length === 0) return alert("Faltan datos");
+                    
                     const puntosFinales = rutaActual.map((p, i) => {
                         const inputs = filas[i].querySelectorAll("input");
-                        return { ...p, tiempo: inputs[0] ? inputs[0].value : p.tiempo, pernocte: inputs[1] ? inputs[1].value : "00:30" };
+                        
+                        // 🟢 MANTENIDO INTACTO: Si es la primera fila (i === 0), no tiene input de Km, mantiene tu lógica original
+                        if (i === 0) {
+                            return { 
+                                ...p, 
+                                tiempo: inputs[0] ? inputs[0].value : p.tiempo, 
+                                pernocte: inputs[1] ? inputs[1].value : "00:30" 
+                            };
+                        } else {
+                            // 🟢 ADAPTADO CON CUIDADO: Para las demás filas, [0] es Km, [1] es Tiempo y [2] es Pernocte
+                            return { 
+                                ...p, 
+                                km: inputs[0] ? parseFloat(inputs[0].value).toFixed(2) : p.km,
+                                tiempo: inputs[1] ? inputs[1].value : p.tiempo, 
+                                pernocte: inputs[2] ? inputs[2].value : "00:30" 
+                            };
+                        }
                     });
+                    
                     document.getElementById("btnGuardar").innerText = "⏳ Guardando...";
                     fetch(WEB_APP_URL, {
                         method: "POST",
