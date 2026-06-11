@@ -168,7 +168,7 @@
             row.innerHTML = `
                 <td>${i + 1}</td>
                 <td style="text-align: left; font-weight: bold;">${item.name}</td>
-                <td>${esPrimero ? '-' : item.km + ' km'}</td>
+                <td>${esPrimero ? '-' : '<input type="number" step="0.01" class="input-tiempo" style="width:80px; text-align:right;" value="' + item.km + '" onchange="const num = parseFloat(this.value) || 0; rutaActual[' + i + '].km = num.toFixed(2);">'}</td>
                 <td>${esPrimero ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
                 <td><input type="text" class="input-tiempo" value="${item.pernocte}"></td>
                 <td><button onclick="borrar(${i})" style="color:red; background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button></td>
