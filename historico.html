@@ -1010,7 +1010,13 @@
             let dReal = (r.distReal !== "---" && !isNaN(r.distReal)) ? `${parseFloat(r.distReal).toFixed(2)} KM` : "---";
             let dDif = (r.difKm !== "---" && !isNaN(r.difKm)) ? `${r.difKm >= 0 ? "+" : ""}${parseFloat(r.difKm).toFixed(2)} KM` : "---";
 
-            let dotTiempo = `<span class="sat-table-dot dot-${r.semTiempo}">●</span>`;
+            // 🛡️ ESCUDO DE SEGURIDAD CORREGIDO: Si el texto NO tiene "-", obliga a que el punto sea VERDE sí o sí
+            let colorTiempoFinal = r.semTiempo;
+            if (r.desvTiempo && r.desvTiempo !== "---" && r.desvTiempo.indexOf("-") === -1) {
+                colorTiempoFinal = "verde"; 
+            }
+
+            let dotTiempo = `<span class="sat-table-dot dot-${colorTiempoFinal}">●</span>`;
             let dotViajeReal = `<span class="sat-table-dot dot-${r.semViajeReal}">●</span>`;
             let dotDistancia = `<span class="sat-table-dot dot-${r.semDist}">●</span>`;
 
