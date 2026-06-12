@@ -733,9 +733,17 @@
                     let normalizarFormatoFechaSinSegundos = (fechaStr) => {
                         let limpia = limpiarFechaSat(fechaStr);
                         if (!limpia || limpia === "---") return "---";
+                        
                         let partes = limpia.split(" ");
                         if (partes.length >= 2) {
-                            return `${partes[0].replace(",", "")}, ${partes[1].substring(0, 5)}`;
+                            let horaCompleta = partes[1]; // Recibe ej: "8:30:00" o "10:38:15"
+                            let bloquesHora = horaCompleta.split(":");
+                            
+                            // Unimos solo el bloque 0 (Horas) y el bloque 1 (Minutos)
+                            let horaMinutosLimpio = bloquesHora[0] + ":" + bloquesHora[1];
+                            
+                            // Retorna la fecha sin comas raras y la hora perfecta (ej: "8:30" o "10:38")
+                            return `${partes[0].replace(",", "")}, ${horaMinutosLimpio}`;
                         }
                         return limpia;
                     };
