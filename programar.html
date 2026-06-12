@@ -355,7 +355,6 @@ var apiGlobal = apiGlobal || null;
                     filtroFechaInput.value = fechaAjustada.toISOString().split('T')[0];
                 }
 
-                cargarDatosGeotab(api);
                 document.getElementById("selectRuta").onchange = calcular;
                 document.getElementById("fechaSalida").onchange = calcular;
                 document.getElementById("checkRetorno").onchange = calcular;
@@ -468,12 +467,31 @@ var apiGlobal = apiGlobal || null;
             resetearFormularioProgramacion(); 
             cargarViajesExistentes(); 
         };
-        reader.readAsArrayBuffer(fileInput.files[0]);
-    });
+                    reader.readAsArrayBuffer(fileInput.files[0]);
+                });
 
-                callback();
+                try {
+                    // 🟢 2. LIBERACIÓN INMEDIATA: MyGeotab procesa la pestaña instantáneamente sin quedarse en blanco
+                    callback();
+                } catch (e) {
+                    console.error("Error en callback:", e);
+                }
+
+                // 🟢 3. CARGA DIFERIDA INICIAL: Los datos bajan un milisegundo después de que la pantalla se activa
+                setTimeout(() => {
+                    cargarDatosGeotab(api);
+                }, 0);
             },
-            focus(api, state) { cargarDatosGeotab(api); }
+
+            focus(api, state) { 
+                apiGlobal = api;
+                
+                // 🟢 4. REFRESH CONTROLADO: Da 100 milisegundos de espera para que la pestaña sea visible antes de actualizar la data
+                setTimeout(function() {
+                    console.log("🔄 Cambio de pestaña detectado: Actualizando registros en vivo...");
+                    cargarDatosGeotab(api);
+                }, 100);
+            }
         };
     };
 </script>
