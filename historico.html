@@ -605,65 +605,22 @@
         let diffHorasPasivo = (horaInicio, horaFin) => {
             try {
                 if (!horaInicio || !horaFin || horaInicio === "---" || horaFin === "---" || horaInicio === "--:--" || horaFin === "--:--") return "---";
+                let strI = horaInicio.toString().replace(",", "").trim();
+                let strF = horaFin.toString().replace(",", "").trim();
                 
-                // 1. Limpieza agresiva de caracteres raros y comas que meten el Google Sheet / Excel
-                let strI = horaInicio.toString().replace(",", "").replace("'", "").trim();
-                let strF = horaFin.toString().replace(",", "").replace("'", "").trim();
-                
-                if (strI.indexOf("NaN") > -1 || strF.indexOf("NaN") > -1) return "---";
-
                 let parsearAFecha = (str) => {
                     let partes = str.split(/\s+/);
-                    
-                    // Si viene solo hora limpia sin fecha por acción manual
-                    if (partes.length === 1 && str.indexOf("/") === -1) {
-                        let hPartes = str.split(":");
-                        return new Date(2026, 3, 17, parseInt(hPartes[0], 10), parseInt(hPartes[1], 10), parseInt(hPartes[2], 10) || 0);
-                    }
-                    
-                    // Separamos fecha y hora de forma limpia
                     let fPartes = partes[0].split("/");
                     let hPartes = partes[1].split(":");
-                    
-                    // Forzamos enteros limpiando cualquier residuo de texto
-                    let dia = parseInt(fPartes[0], 10);
-                    let mes = parseInt(fPartes[1], 10) - 1;
-                    let anio = parseInt(fPartes[2], 10); // Aquí ya no lleva la coma destructiva
-                    
-                    let hh = parseInt(hPartes[0], 10);
-                    let mm = parseInt(hPartes[1], 10);
-                    let ss = parseInt(hPartes[2], 10) || 0;
-                    
-                    return new Date(anio, mes, dia, hh, mm, ss);
+                    return new Date(parseInt(fPartes[2],10), parseInt(fPartes[1],10)-1, parseInt(fPartes[0],10), parseInt(hPartes[0],10), parseInt(hPartes[1],10), parseInt(hPartes[2],10)||0);
                 };
 
-                let dateInicio = parsearAFecha(strI);
-                let dateFin = parsearAFecha(strF);
-                
-                // Escudo protector contra fechas inválidas para resucitar el buscador
-                if (isNaN(dateInicio.getTime()) || isNaN(dateFin.getTime())) return "---";
-
-                // 2. MATEMÁTICA PURA: Restamos Planificado menos Real (dateInicio - dateFin)
-                // Si el Real es mayor, dará negativo (Retraso) tal cual lo pides
-                let diffMs = dateInicio.getTime() - dateFin.getTime();
-                
-                let signo = diffMs < 0 ? "-" : "";
+                let diffMs = parsearAFecha(strF).getTime() - parsearAFecha(strI).getTime();
                 let totalMins = Math.abs(Math.floor(diffMs / (1000 * 60)));
-                
                 let h = Math.floor(totalMins / 60);
                 let m = totalMins % 60;
-                
-                // Formateamos con ceros a la izquierda en los minutos
-                let horasTexto = h.toString();
-                let minsTexto = m < 10 ? "0" + m : m;
-                
-                // Retorna el String exacto como lo necesitas: "-1336:32" o "-00:26"
-                return signo + horasTexto + ":" + minsTexto;
-
-            } catch (e) { 
-                console.error("Error en diffHorasPasivo:", e);
-                return "---"; 
-            }
+                return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
+            } catch(e) { return "---"; }
         };
 
         window[nombreCallbackTemporal] = function(datosSeguimiento) {
@@ -737,6 +694,7 @@
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL");
                     
+                    // 🔢 Numeración secuencial inteligente en intervenciones
                     let numSecuencia = secuenciaCorrelativa++;
                     if (plan.punto === "INICIO_MANUAL") {
                         numSecuencia = 1;
@@ -756,23 +714,9 @@
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
+                    let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
                     let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
-
-                    // Capturamos la desviación tal cual viene del Sheet
-                    let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
-
-                    // 🛡️ Si la hora planificada viene vacía o rota (lo que te pasa en el Hito 6), la blindamos
-                    if (!plan.planHora || plan.planHora.toString().trim() === "" || plan.planHora.toString().includes("NaN") || plan.planHora === "--:--") {
-                        plan.planHora = "---";
-                        desvTiempoTexto = "---"; // Apaga la desviación de esta fila para que diffHorasPasivo no bote NaN
-                    }
-                    
-                    // 🛡️ Lo mismo para la hora real de llegada
-                    if (!horaRealLlegada || horaRealLlegada.toString().trim() === "" || horaRealLlegada.toString().includes("NaN") || horaRealLlegada === "--:--") {
-                        horaRealLlegada = "---";
-                        desvTiempoTexto = "---";
-                    }
 
                     let tiempoViajePlan = "---";
                     let tiempoViajeReal = "---";
@@ -786,7 +730,7 @@
 
                     let normalizarFormatoFechaSinSegundos = (fechaStr) => {
                         let limpia = limpiarFechaSat(fechaStr);
-                        if (!limpia || limpia === "---" || limpia.indexOf("NaN") > -1) return "---";
+                        if (!limpia || limpia === "---") return "---";
                         let partes = limpia.split(" ");
                         if (partes.length >= 2) {
                             return `${partes[0].replace(",", "")}, ${partes[1].substring(0, 5)}`;
@@ -794,21 +738,18 @@
                         return limpia;
                     };
 
-                    // 🛡️ CONTROL DE SEGURIDAD CRÍTICO: Si el hito es manual o el texto del Sheet viene dañado, anulamos la matemática pesada
-                    let esDatoValido = !esFilaManual && desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("NaN") === -1 && plan.planHora && plan.planHora.indexOf("NaN") === -1;
-
                     if (!esOmitido && (esCompletado || tipoRegistro === "---")) {
                         
                         // A. Kilómetros Planificados por Tramo
-                        if (index === 0 || plan.punto === "CIERRE_MANUAL" || esFilaManual) {
+                        if (index === 0 || plan.punto === "CIERRE_MANUAL") {
                             distPlanKm = "---"; 
                         } else {
                             let nodoBasePlan = itinerarioPlan[index - 1];
                             distPlanKm = Math.max(0, (parseFloat(plan.distanciaPlan) || 0) - (parseFloat(nodoBasePlan.distanciaPlan) || 0));
                         }
 
-                        // B. Tiempos de Viaje (Solo si la data es válida y no es una acción manual)
-                        if (index > 0 && plan.punto !== "CIERRE_MANUAL" && esDatoValido) {
+                        // B. Tiempos de Viaje con Corrección para Hito 2 (Post-Manual)
+                        if (index > 0 && plan.punto !== "CIERRE_MANUAL") {
                             if (index === 1 || (tieneInicioManualActivo && index === 2 && hitoRealAnteriorSalida === "---")) {
                                 hitoPlanAnteriorSalida = itinerarioPlan[0].planHoraSalida || "---";
                                 let realOrigen = rawDatosArray.find(h => h.punto_nombre.toString().toUpperCase().trim() === itinerarioPlan[0].punto.toString().toUpperCase().trim());
@@ -827,11 +768,7 @@
                                 tiempoViajePlan = diffHorasPasivo(limpiarFechaSat(hitoPlanAnteriorSalida), limpiarFechaSat(plan.planHora));
                                 tiempoViajeReal = diffHorasPasivo(limpiarFechaSat(hitoRealAnteriorSalida), limpiarFechaSat(horaRealLlegada));
                                 
-                                // Si la resta devolvió un error NaN, la forzamos a guiones limpios de seguridad
-                                if (tiempoViajePlan.indexOf("NaN") > -1 || tiempoViajeReal.indexOf("NaN") > -1) {
-                                    tiempoViajePlan = "---";
-                                    tiempoViajeReal = "---";
-                                } else if (tiempoViajePlan !== "---" && tiempoViajeReal !== "---") {
+                                if (tiempoViajePlan !== "---" && tiempoViajeReal !== "---") {
                                     let [pH, pM] = tiempoViajePlan.split(":").map(Number);
                                     let [rH, rM] = tiempoViajeReal.split(":").map(Number);
                                     let totalMinsPlan = (pH * 60) + pM;
@@ -852,14 +789,14 @@
                             distRealTramo = "---";
                             difKm = "---";
                         } else if (odometroAcumuladoActual > 0) {
-                            if (plan.punto !== "CIERRE_MANUAL" && !esFilaManual) {
+                            if (plan.punto !== "CIERRE_MANUAL") {
                                 distRealTramo = Math.abs(odometroAcumuladoActual - odometroBaseAnterior);
                                 difKm = (distPlanKm !== "---" ? distPlanKm : 0) - distRealTramo;
                                 if (difKm >= 0) semaforoDistancia = "verde";
                                 else if (difKm >= -5) semaforoDistancia = "mostaza";
                                 else semaforoDistancia = "rojo";
                             } else {
-                                distRealTramo = "---"; 
+                                distRealTramo = "---"; // Forzado a guión total solicitado para cierre manual
                                 difKm = "---"; 
                             }
                             odometroBaseAnterior = odometroAcumuladoActual;
@@ -871,31 +808,35 @@
                         }
                     }
 
-                    // ⚡ EXCEPCIONES FIJAS DE LIMPIEZA
+                    // ⚡ EXCEPCIÓN: PRIMER HITO DE UNA ZONA VÁLIDA
                     if (index === 0) {
                         tiempoViajePlan = "---"; tiempoViajeReal = "---"; distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
+                    // ⚡ EXCEPCIÓN: INICIO MANUAL
                     if (tieneInicioManualActivo && plan.punto === "INICIO_MANUAL") {
-                        plan.puntoPlanLlegadaForzadoGv = "---"; 
+                        plan.puntoPlanLlegadaForzadoGv = "---"; // Marcador para forzar la llegada planificada en guión
                         horaRealLlegada = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
+                    // ⚡ EXCEPCIÓN ESTRICTA: HITOS DE CIERRE (CIERRE_MANUAL / CANCELADO_MANUAL)
+                    // 🚫 REQUERIMIENTO: Deja en guión obligatorio Desviación, Teóricos, Tiempos, Distancias y Pernoctes
                     if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
-                        plan.puntoPlanLlegadaForzadoGv = "---"; 
+                        plan.puntoPlanLlegadaForzadoGv = "---"; // Marcador para forzar la llegada planificada en guión
                         pernoctePlan = "---"; pernocteReal = "---"; horaRealSalida = "---"; 
                         distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; 
                         tiempoViajePlan = "---"; tiempoViajeReal = "---"; desvTiempoTexto = "---";
                     }
 
+                    // 🚫 REQUERIMIENTO: LIMPIEZA TOTAL EN HITOS OMITIDOS
                     if (esOmitido || (!esCompletado && tipoRegistro === "---")) {
                         distRealTramo = "---"; difKm = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
-                    // Ajuste seguro de semáforos leyendo el String puro
-                    if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL" || esFilaManual || desvTiempoTexto === "---" || desvTiempoTexto.indexOf("NaN") > -1) {
+                    // Ajuste de semáforos para evitar pintar alertas en hitos de cierre forzado
+                    if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
                         semaforoTiempo = "verde";
-                    } else if (desvTiempoTexto.indexOf("-") > -1) {
+                    } else if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
                         let partesDesv = desvTiempoTexto.replace("-", "").split(":");
                         let hrsDesv = parseInt(partesDesv[0], 10) || 0;
                         let minsDesv = parseInt(partesDesv[1], 10) || 0;
@@ -909,7 +850,8 @@
                     horaRealLlegada = normalizarFormatoFechaSinSegundos(horaRealLlegada);
                     horaRealSalida = normalizarFormatoFechaSinSegundos(horaRealSalida);
                     
-                    let horaPlanLlegada = (plan.puntoPlanLlegadaForzadoGv === "---" || esFilaManual) ? "---" : normalizarFormatoFechaSinSegundos(plan.planHora || "---");
+                    // 🎯 APLICACIÓN DE LLEGADA PLANIFICADA EN GUIÓN PARA INICIO O CIERRE MANUAL
+                    let horaPlanLlegada = plan.puntoPlanLlegadaForzadoGv === "---" ? "---" : normalizarFormatoFechaSinSegundos(plan.planHora || "---");
                     
                     desvTiempoTexto = limpiarFechaSat(desvTiempoTexto); 
                     pernoctePlan = limpiarFechaSat(pernoctePlan);
