@@ -714,9 +714,11 @@
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
                     let horaRealSalida = real ? real.hora_real_salida : "---";
-                    let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
                     let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
+
+                    // 🟢 TRATAMIENTO TEXTO PURO: Le quitamos las comillas y lo guardamos como String plano
+                    let desvTiempoTexto = (real && real.desviacion_hh_mm) ? String(real.desviacion_hh_mm).replace("'", "").trim() : "---";
 
                     let tiempoViajePlan = "---";
                     let tiempoViajeReal = "---";
@@ -841,9 +843,22 @@
                         let hrsDesv = parseInt(partesDesv[0], 10) || 0;
                         let minsDesv = parseInt(partesDesv[1], 10) || 0;
                         let totalMinsDesv = (hrsDesv * 60) + minsDesv;
+                        
                         if (totalMinsDesv <= 10) semaforoTiempo = "mostaza";
                         else semaforoTiempo = "rojo";
+
+                        // 🟢 CORTE NAVISAF: Mantiene el signo menos "-" y une solo Horas:Minutos (Elimina los segundos :00)
+                        if (partesDesv.length >= 2) {
+                            desvTiempoTexto = "-" + partesDesv[0] + ":" + partesDesv[1];
+                        }
                     } else {
+                        // Si viene un positivo (Adelantado), también le mochamos los segundos antes de pintar verde
+                        if (desvTiempoTexto !== "---") {
+                            let partesPositivas = desvTiempoTexto.split(":");
+                            if (partesPositivas.length >= 2) {
+                                desvTiempoTexto = partesPositivas[0] + ":" + partesPositivas[1];
+                            }
+                        }
                         semaforoTiempo = "verde";
                     }
 
@@ -853,7 +868,7 @@
                     // 🎯 APLICACIÓN DE LLEGADA PLANIFICADA EN GUIÓN PARA INICIO O CIERRE MANUAL
                     let horaPlanLlegada = plan.puntoPlanLlegadaForzadoGv === "---" ? "---" : normalizarFormatoFechaSinSegundos(plan.planHora || "---");
                     
-                    desvTiempoTexto = limpiarFechaSat(desvTiempoTexto); 
+                    desvTiempoTexto = desvTiempoTexto; 
                     pernoctePlan = limpiarFechaSat(pernoctePlan);
                     pernocteReal = limpiarFechaSat(pernocteReal);
 
