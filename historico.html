@@ -813,23 +813,46 @@
                         }
 
                         // C. Resta de Kilómetros Reales por Odómetro
-                        let odometroAcumuladoActual = real ? parseFloat(real.km_acumulado || 0) : 0;
+                        let kmRaw = real ? String(real.km_acumulado).trim() : "0";
+                        let odometroAcumuladoActual = 0;
+                        let tieneOdomValido = false;
+
+                        // Si el dato del Sheet no es un guion, ni está vacío, y es un número válido, lo procesamos
+                        if (kmRaw !== "---" && kmRaw !== "" && !isNaN(kmRaw)) {
+                            odometroAcumuladoActual = parseFloat(kmRaw) || 0;
+                            if (odometroAcumuladoActual > 0) {
+                                tieneOdomValido = true;
+                            }
+                        }
+
                         if (index === 0) {
                             odometroBaseAnterior = odometroAcumuladoActual;
                             distRealTramo = "---";
                             difKm = "---";
-                        } else if (odometroAcumuladoActual > 0) {
+                        } else if (tieneOdomValido) {
                             if (plan.punto !== "CIERRE_MANUAL") {
-                                distRealTramo = Math.abs(odometroAcumuladoActual - odometroBaseAnterior);
-                                difKm = (distPlanKm !== "---" ? distPlanKm : 0) - distRealTramo;
-                                if (difKm >= 0) semaforoDistancia = "verde";
-                                else if (difKm >= -5) semaforoDistancia = "mostaza";
-                                else semaforoDistancia = "rojo";
+                                // Si el hito anterior no tenía odómetro válido, no restamos basura para evitar números gigantes
+                                if (odometroBaseAnterior === 0) {
+                                    distRealTramo = "---";
+                                    difKm = "---";
+                                } else {
+                                    distRealTramo = Math.abs(odometroAcumuladoActual - odometroBaseAnterior);
+                                    difKm = (distPlanKm !== "---" ? distPlanKm : 0) - distRealTramo;
+                                    
+                                    if (difKm >= 0) semaforoDistancia = "verde";
+                                    else if (difKm >= -5) semaforoDistancia = "mostaza";
+                                    else semaforoDistancia = "rojo";
+                                }
                             } else {
                                 distRealTramo = "---"; // Forzado a guión total solicitado para cierre manual
                                 difKm = "---"; 
                             }
                             odometroBaseAnterior = odometroAcumuladoActual;
+                        } else {
+                            // 🛡️ Si la unidad NO tiene odómetro ("---"), dejamos las distancias limpias en guiones
+                            distRealTramo = "---";
+                            difKm = "---";
+                            semaforoDistancia = "verde"; // Mantiene el indicador en neutro/verde
                         }
 
                         if (!esFilaManual) {
