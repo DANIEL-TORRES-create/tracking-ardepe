@@ -717,13 +717,57 @@
                     let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
 
-                    // Tratamos la desviación como un texto String plano directo de la base de datos
-                    let desvTiempoTexto = (real && real.desviacion_hh_mm) ? String(real.desviacion_hh_mm).trim() : "---";
-                    
-                    // Asignación directa del color leyendo el signo "-" nativo
+                    let desvTiempoTexto = "---";
                     let semaforoTiempo = "verde"; 
-                    if (desvTiempoTexto.indexOf("-") > -1) {
-                        semaforoTiempo = "rojo"; 
+
+                    // Realizamos el cálculo matemático directo si tenemos ambos tiempos válidos
+                    if (plan.planHora && horaRealLlegada && plan.planHora !== "---" && horaRealLlegada !== "---") {
+                        try {
+                            // Convertimos los textos limpios a objetos Date usando la lógica del pasivo
+                            let formatearAFecha = (str) => {
+                                let cadena = str.toString().replace(",", "").trim();
+                                let partes = cadena.split(/\s+/);
+                                let fPartes = partes[0].split("/");
+                                let hPartes = partes[1].split(":");
+                                return new Date(
+                                    parseInt(fPartes[2], 10), 
+                                    parseInt(fPartes[1], 10) - 1, 
+                                    parseInt(fPartes[0], 10), 
+                                    parseInt(hPartes[0], 10), 
+                                    parseInt(hPartes[1], 10), 
+                                    parseInt(hPartes[2], 10) || 0
+                                );
+                            };
+
+                            let datePlan = formatearAFecha(plan.planHora);
+                            let dateReal = formatearAFecha(horaRealLlegada);
+
+                            // Restamos: Planificado - Real (Si da negativo, es retraso)
+                            let diffMs = datePlan.getTime() - dateReal.getTime();
+                            let totalMins = Math.floor(diffMs / (1000 * 60));
+
+                            let signo = totalMins < 0 ? "-" : "";
+                            let minsAbsolutos = Math.abs(totalMins);
+                            let h = Math.floor(minsAbsolutos / 60);
+                            let m = minsAbsolutos % 60;
+
+                            // Formateamos el String final ej: "-01:15" o "00:20"
+                            desvTiempoTexto = signo + (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
+
+                            // 📊 Regla de Ponderación exacta Navisaf (Tolerancia de 10 min en negativo)
+                            if (totalMins < 0) {
+                                if (Math.abs(totalMins) <= 10) {
+                                    semaforoTiempo = "mostaza"; // Entre 1 y 10 minutos tarde
+                                } else {
+                                    semaforoTiempo = "rojo";    // Más de 10 minutos tarde
+                                }
+                            } else {
+                                semaforoTiempo = "verde";       // A tiempo o adelantado
+                            }
+                        } catch (e) {
+                            console.error("Error en cálculo Plan B:", e);
+                            desvTiempoTexto = "---";
+                        }
                     }
 
                     let tiempoViajePlan = "---";
