@@ -605,22 +605,65 @@
         let diffHorasPasivo = (horaInicio, horaFin) => {
             try {
                 if (!horaInicio || !horaFin || horaInicio === "---" || horaFin === "---" || horaInicio === "--:--" || horaFin === "--:--") return "---";
-                let strI = horaInicio.toString().replace(",", "").trim();
-                let strF = horaFin.toString().replace(",", "").trim();
                 
+                // 1. Limpieza agresiva de caracteres raros y comas que meten el Google Sheet / Excel
+                let strI = horaInicio.toString().replace(",", "").replace("'", "").trim();
+                let strF = horaFin.toString().replace(",", "").replace("'", "").trim();
+                
+                if (strI.indexOf("NaN") > -1 || strF.indexOf("NaN") > -1) return "---";
+
                 let parsearAFecha = (str) => {
                     let partes = str.split(/\s+/);
+                    
+                    // Si viene solo hora limpia sin fecha por acción manual
+                    if (partes.length === 1 && str.indexOf("/") === -1) {
+                        let hPartes = str.split(":");
+                        return new Date(2026, 3, 17, parseInt(hPartes[0], 10), parseInt(hPartes[1], 10), parseInt(hPartes[2], 10) || 0);
+                    }
+                    
+                    // Separamos fecha y hora de forma limpia
                     let fPartes = partes[0].split("/");
                     let hPartes = partes[1].split(":");
-                    return new Date(parseInt(fPartes[2],10), parseInt(fPartes[1],10)-1, parseInt(fPartes[0],10), parseInt(hPartes[0],10), parseInt(hPartes[1],10), parseInt(hPartes[2],10)||0);
+                    
+                    // Forzamos enteros limpiando cualquier residuo de texto
+                    let dia = parseInt(fPartes[0], 10);
+                    let mes = parseInt(fPartes[1], 10) - 1;
+                    let anio = parseInt(fPartes[2], 10); // Aquí ya no lleva la coma destructiva
+                    
+                    let hh = parseInt(hPartes[0], 10);
+                    let mm = parseInt(hPartes[1], 10);
+                    let ss = parseInt(hPartes[2], 10) || 0;
+                    
+                    return new Date(anio, mes, dia, hh, mm, ss);
                 };
 
-                let diffMs = parsearAFecha(strF).getTime() - parsearAFecha(strI).getTime();
+                let dateInicio = parsearAFecha(strI);
+                let dateFin = parsearAFecha(strF);
+                
+                // Escudo protector contra fechas inválidas para resucitar el buscador
+                if (isNaN(dateInicio.getTime()) || isNaN(dateFin.getTime())) return "---";
+
+                // 2. MATEMÁTICA PURA: Restamos Planificado menos Real (dateInicio - dateFin)
+                // Si el Real es mayor, dará negativo (Retraso) tal cual lo pides
+                let diffMs = dateInicio.getTime() - dateFin.getTime();
+                
+                let signo = diffMs < 0 ? "-" : "";
                 let totalMins = Math.abs(Math.floor(diffMs / (1000 * 60)));
+                
                 let h = Math.floor(totalMins / 60);
                 let m = totalMins % 60;
-                return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
-            } catch(e) { return "---"; }
+                
+                // Formateamos con ceros a la izquierda en los minutos
+                let horasTexto = h.toString();
+                let minsTexto = m < 10 ? "0" + m : m;
+                
+                // Retorna el String exacto como lo necesitas: "-1336:32" o "-00:26"
+                return signo + horasTexto + ":" + minsTexto;
+
+            } catch (e) { 
+                console.error("Error en diffHorasPasivo:", e);
+                return "---"; 
+            }
         };
 
         window[nombreCallbackTemporal] = function(datosSeguimiento) {
