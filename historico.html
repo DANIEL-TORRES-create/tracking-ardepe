@@ -329,19 +329,36 @@
                     if (p.length >= 5) {
                         let m = mesesIngles[p[1].toUpperCase()] || "00";
                         diaStr = `${parseInt(p[2],10)}/${parseInt(m,10)}/${p[3]}`;
-                        horaStr = p[4].substring(0, 5); // Eliminados los segundos de la grilla principal
+                        
+                        // 🟢 Ajuste inteligente para formato largo de Google Sheets
+                        let bloquesH = p[4].split(":");
+                        horaStr = bloquesH[0] + ":" + bloquesH[1];
                     }
                 } else if (t.indexOf("-") > -1 && t.indexOf("-") < 5) {
                     let partes = t.split(" ");
                     let f = partes[0].split("-");
                     diaStr = `${parseInt(f[2],10)}/${parseInt(f[1],10)}/${f[0]}`;
-                    horaStr = partes[1] ? partes[1].substring(0, 5) : "00:00";
+                    
+                    // 🟢 Ajuste inteligente para formato ISO (YYYY-MM-DD)
+                    let hRaw = partes[1] || "00:00:00";
+                    let bloquesH = hRaw.split(":");
+                    horaStr = bloquesH[0] + ":" + bloquesH[1];
                 } else {
                     let separador = t.indexOf(",") > -1 ? "," : " ";
                     let bloques = t.split(separador);
                     diaStr = bloques[0] || t;
-                    horaStr = bloques[1] ? bloques[1].trim().substring(0, 5) : "";
+                    
+                    // 🟢 Ajuste inteligente para tu formato estándar (17/4/2026 1:44:00)
+                    if (bloques[1]) {
+                        let bloquesH = bloques[1].trim().split(":");
+                        horaStr = bloquesH[0] + ":" + bloquesH[1];
+                    } else {
+                        horaStr = "";
+                    }
                 }
+
+                // Quitamos cualquier coma residual que arrastre el texto del día
+                diaStr = diaStr.replace(",", "").trim();
 
                 return `<div style="text-align:center; line-height: 1.4;">
                             <span style="color:#334155; font-weight:600; font-size:12px;">${diaStr}</span><br>
