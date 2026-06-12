@@ -1149,11 +1149,9 @@
             return;
         }
 
-        // 1. Rescatamos la Placa y la Ruta vivas de la cabecera del modal para armar la primera fila
         let lblPlaca = document.getElementById('lbl-sat-placa').innerText || "---";
         let lblRuta = document.getElementById('lbl-sat-ruta').innerText || "---";
 
-        // 2. Definimos las cabeceras de columnas idénticas a tu grilla
         let cabeceras = [
             "ESTADO HITO", "CONDUCTOR", "PUNTO / CONTROL GEOCERCA", "TIPO REGISTRO",
             "PLANIFICADO LLEGADA", "REAL LLEGADA", "DESVIACIÓN TIEMPO", 
@@ -1162,7 +1160,6 @@
             "PERNOCTE REAL", "REAL SALIDA"
         ];
 
-        // 3. Construimos el cuerpo del archivo HTML/XML compatible con Excel (CON WORKBOOK MAESTRO)
         let excelHtml = `
         <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
         <head>
@@ -1172,9 +1169,12 @@
                 td, th { border: 1px solid #cbd5e1; padding: 6px; text-align: left; }
                 .meta-header { font-weight: bold; background-color: #f1f5f9; color: #0f172a; font-size: 13px; }
                 .th-maestro { background-color: #002244; color: white; font-weight: bold; text-align: center; font-size: 11px; }
-                .st-ok { color: #15803d; font-weight: bold; }
-                .st-omitido { color: #b91c1c; font-weight: bold; }
-                .text-negativo { color: #b91c1c; font-weight: bold; mso-number-format:"\\@"; }
+                
+                /* Estilos de Celdas de Color Nativo para Excel */
+                .bg-verde { background-color: #dcfce7; color: #15803d; font-weight: bold; mso-number-format:"\\@"; }
+                .bg-mostaza { background-color: #fef9c3; color: #a16207; font-weight: bold; mso-number-format:"\\@"; }
+                .bg-rojo { background-color: #fee2e2; color: #b91c1c; font-weight: bold; mso-number-format:"\\@"; }
+                .bg-omitido { background-color: #f1f5f9; color: #475569; font-weight: bold; }
                 .text-puro { mso-number-format:"\\@"; }
             </style>
         </head>
@@ -1191,26 +1191,49 @@
                 </tr>
         `;
 
-        // 4. Recorremos los registros en memoria para inyectarlos en las celdas
         _satCacheDatosRows.forEach(r => {
             let badgeEstTexto = r.st === "✓" ? "✓ OK" : (r.st === "🚫" ? "🚫 OMITIDO" : "⏳ PENDIENTE");
-            let claseEst = r.st === "✓" ? "st-ok" : (r.st === "🚫" ? "st-omitido" : "");
+            
+            // 🎨 COLOR 1: Columna Estado Hito
+            let estiloCeldaEstado = "";
+            if (r.st === "✓") estiloCeldaEstado = 'class="bg-verde"';
+            else if (r.st === "🚫") estiloCeldaEstado = 'class="bg-rojo"';
+            else estiloCeldaEstado = 'class="bg-omitido"';
+
+            // 🎨 COLOR 2: Lógica Matemática para Columna Desviación Tiempo
+            let estiloCeldaDesv = 'class="text-puro"'; // Por defecto texto plano sin fondo
+            
+            if (r.punto === "CIERRE_MANUAL" || r.punto === "CANCELADO_MANUAL" || r.punto.indexOf("INICIO_MANUAL") > -1) {
+                estiloCeldaDesv = 'class="bg-verde"'; // Hitos manuales de control van en verde limpio
+            } else if (r.desvTiempo !== "---" && r.desvTiempo.indexOf("-") > -1) {
+                let minutosLimpios = r.desvTiempo.replace("-", "");
+                let fragmentos = minutosLimpios.split(":");
+                let horasEnteras = parseInt(fragmentos[0], 10) || 0;
+                let minutosEnteros = parseInt(fragmentos[1], 10) || 0;
+                let totalMinutosPasivo = (horasEnteras * 60) + minutosEnteros;
+
+                if (!isNaN(totalMinutosPasivo) && totalMinutosPasivo <= 10) {
+                    estiloCeldaDesv = 'class="bg-mostaza"'; // Tolerancia 1-10 min
+                } else {
+                    estiloCeldaDesv = 'class="bg-rojo"';    // Retraso crítico > 10 min (Como tu -1336:32)
+                }
+            } else if (r.desvTiempo !== "---" && r.desvTiempo !== "00:00" && r.desvTiempo !== "0:00") {
+                estiloCeldaDesv = 'class="bg-verde"';   // Adelantados o a tiempo
+            }
 
             let dPlan = (r.distPlan !== "---" && !isNaN(r.distPlan)) ? `${parseFloat(r.distPlan).toFixed(2)} KM` : "---";
             let dReal = (r.distReal !== "---" && !isNaN(r.distReal)) ? `${parseFloat(r.distReal).toFixed(2)} KM` : "---";
             let dDif = (r.difKm !== "---" && !isNaN(r.difKm)) ? `${r.difKm >= 0 ? "+" : ""}${parseFloat(r.difKm).toFixed(2)} KM` : "---";
 
-            let claseDesv = r.desvTiempo.indexOf("-") > -1 ? "text-negativo" : "text-puro";
-
             excelHtml += `
                 <tr>
-                    <td class="${claseEst}">[${r.sec}] ${badgeEstTexto}</td>
+                    <td ${estiloCeldaEstado}>[${r.sec}] ${badgeEstTexto}</td>
                     <td>${r.conductor}</td>
                     <td><strong>${r.punto}</strong></td>
                     <td>${r.tipo}</td>
                     <td class="text-puro">${r.planLlegada}</td>
                     <td class="text-puro">${r.realLlegada}</td>
-                    <td class="${claseDesv}">${r.desvTiempo}</td>
+                    <td ${estiloCeldaDesv}>${r.desvTiempo}</td>
                     <td class="text-puro">${r.tiempoPlan}</td>
                     <td class="text-puro">${r.tiempoReal}</td>
                     <td>${dPlan}</td>
@@ -1229,7 +1252,6 @@
         </html>
         `;
 
-        // 5. Disparador Blob instantáneo
         let blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8" });
         let urlDescarga = URL.createObjectURL(blob);
         let linkFalso = document.createElement("a");
