@@ -338,6 +338,7 @@
         apiGlobal = api;
         return {
             initialize(api, state, callback) {
+               try {
                 
                 //  AQUÍ PEGAS EL BLOQUE NUEVO PARA CLAVAR LA FECHA EN HOY:
                 const filtroFechaInput = document.getElementById('filtroFechaLista');
