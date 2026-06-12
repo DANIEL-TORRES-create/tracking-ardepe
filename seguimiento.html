@@ -714,7 +714,17 @@
                     let desvTiempoTexto = real ? real.desviacion_hh_mm : "---";
                     let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
-                    let odometroAcumulado = real ? parseFloat(real.km_acumulado || 0) : 0;
+                    let kmRaw = real ? String(real.km_acumulado).trim() : "0";
+                    let odometroAcumulado = 0;
+                    let tieneOdomValido = false;
+
+                    // Interceptamos si el Sheet manda "---" para que no rompa el parseFloat con un NaN
+                    if (kmRaw !== "---" && kmRaw !== "" && !isNaN(kmRaw)) {
+                        odometroAcumulado = parseFloat(kmRaw) || 0;
+                        if (odometroAcumulado > 0) {
+                            tieneOdomValido = true;
+                        }
+                    }
 
                     let tiempoViajePlan = "---";
                     let tiempoViajeReal = "---";
@@ -822,16 +832,30 @@
                             }
                         }
 
-                        if (odometroAcumulado > 0 && index > 0) {
-                             distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
-                             if (distPlanKm !== "---") {
-                                 difKm = distPlanKm - distRealTramo;
-                                 
-                                 // 🛣️ SEMÁFORO KILÓMETROS: Homologado a las tolerancias Navisaf
-                                 if (difKm >= 0) semaforoDistancia = "verde";
-                                 else if (difKm >= -5) semaforoDistancia = "mostaza";
-                                 else semaforoDistancia = "rojo";
-                             }
+                        if (index === 0) {
+                            distRealTramo = "---";
+                            difKm = "---";
+                        } else if (tieneOdomValido) {
+                            // 🛡️ Si el hito anterior no tenía odómetro válido (era 0), evitamos restar basura
+                            if (baseOdometro === 0) {
+                                distRealTramo = "---";
+                                difKm = "---";
+                            } else {
+                                distRealTramo = Math.abs(odometroAcumulado - baseOdometro);
+                                if (distPlanKm !== "---") {
+                                    difKm = distPlanKm - distRealTramo;
+                                    
+                                    // 🛣️ SEMÁFORO KILÓMETROS: Homologado a las tolerancias Navisaf
+                                    if (difKm >= 0) semaforoDistancia = "verde";
+                                    else if (difKm >= -5) semaforoDistancia = "mostaza";
+                                    else semaforoDistancia = "rojo";
+                                }
+                            }
+                        } else {
+                            // 🛡️ Si la unidad NO tiene odómetro ("---"), dejamos las distancias limpias en guiones
+                            distRealTramo = "---";
+                            difKm = "---";
+                            semaforoDistancia = "verde"; // Mantiene el indicador en neutro/verde
                         }
                     }
 
@@ -1091,8 +1115,12 @@
             if (r.st === "🚫") badgeEst = `<span class="sat-badge-table st-omitido">🚫 OMITIDO</span>`;
 
             let dotTiempo = `<span class="sat-table-dot dot-${r.semTiempo}">●</span>`;
-            let dotViajeReal = `<span class="sat-table-dot dot-${r.semViajeReal}">●</span>`; // Nueva variable de punto
-            let dotDist = `<span class="sat-table-dot dot-${r.semDist}">●</span>`;
+            let dotViajeReal = `<span class="sat-table-dot dot-${r.semViajeReal}">●</span>`; 
+            
+            // 🟢 BLINDAJE VISUAL DEL ODÓMETRO (ADD-IN 3)
+            // Si la distancia del tramo es un guion "---", el semáforo pasa a "neutral" (gris) para que no pinte verde/rojo por error
+            let claseSemDist = r.distRealTramo === "---" ? "neutral" : r.semDist;
+            let dotDist = `<span class="sat-table-dot dot-${claseSemDist}">●</span>`;
 
             let desvT = (r.desvTiempo !== "---") ? `${dotTiempo} ${r.desvTiempo}` : "---";
             let tReal = (r.tiempoReal !== "---") ? `${dotViajeReal} ${r.tiempoReal}` : "---"; // 🎯 Enganchado a su propio punto
