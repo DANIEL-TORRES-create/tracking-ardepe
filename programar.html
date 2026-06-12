@@ -338,7 +338,6 @@
         apiGlobal = api;
         return {
             initialize(api, state, callback) {
-               try {
                 
                 //  AQUÍ PEGAS EL BLOQUE NUEVO PARA CLAVAR LA FECHA EN HOY:
                 const filtroFechaInput = document.getElementById('filtroFechaLista');
@@ -349,6 +348,7 @@
                     filtroFechaInput.value = fechaAjustada.toISOString().split('T')[0];
                 }
 
+                cargarDatosGeotab(api);
                 document.getElementById("selectRuta").addEventListener("change", calcular);
                 document.getElementById("fechaSalida").addEventListener("change", calcular);
                 document.getElementById("checkRetorno").addEventListener("change", calcular);
@@ -463,29 +463,12 @@
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     });
-} catch (errInit) {
-                console.error("Error en inicialización del Add-in:", errInit);
-            } finally {
-                // 🟢 EL ESCUDO: Notifica a Geotab de inmediato para que no se congele
-                callback(); 
-            }
-        },
 
-        // 🟢 EL REFRESH AUTOMÁTICO AL CAMBIAR DE PESTAÑA (Matamos el F5)
-        focus(api, state) { 
-            if (window.cargandoDatosAddin) return; 
-            
-            window.cargandoDatosAddin = true;
-            try {
-                cargarDatosGeotab(api); 
-            } catch(e) {
-                console.error("Error al refrescar el Add-in:", e);
-            } finally {
-                window.cargandoDatosAddin = false;
-            }
-        }
+                callback();
+            },
+            focus(api, state) { cargarDatosGeotab(api); }
+        };
     };
-};
 </script>
 </body>
 </html>
