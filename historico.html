@@ -718,55 +718,49 @@
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
 
                     let desvTiempoTexto = "---";
-                    let semaforoTiempo = "verde"; 
+                    let semaforoTiempo = "verde"; // Color base por defecto
 
-                    // Realizamos el cálculo matemático directo si tenemos ambos tiempos válidos
-                    if (plan.planHora && horaRealLlegada && plan.planHora !== "---" && horaRealLlegada !== "---") {
-                        try {
-                            // Convertimos los textos limpios a objetos Date usando la lógica del pasivo
-                            let formatearAFecha = (str) => {
-                                let cadena = str.toString().replace(",", "").trim();
-                                let partes = cadena.split(/\s+/);
-                                let fPartes = partes[0].split("/");
-                                let hPartes = partes[1].split(":");
-                                return new Date(
-                                    parseInt(fPartes[2], 10), 
-                                    parseInt(fPartes[1], 10) - 1, 
-                                    parseInt(fPartes[0], 10), 
-                                    parseInt(hPartes[0], 10), 
-                                    parseInt(hPartes[1], 10), 
-                                    parseInt(hPartes[2], 10) || 0
-                                );
-                            };
-
-                            let datePlan = formatearAFecha(plan.planHora);
-                            let dateReal = formatearAFecha(horaRealLlegada);
-
-                            // Restamos: Planificado - Real (Si da negativo, es retraso)
-                            let diffMs = datePlan.getTime() - dateReal.getTime();
-                            let totalMins = Math.floor(diffMs / (1000 * 60));
-
-                            let signo = totalMins < 0 ? "-" : "";
-                            let minsAbsolutos = Math.abs(totalMins);
-                            let h = Math.floor(minsAbsolutos / 60);
-                            let m = minsAbsolutos % 60;
-
-                            // Formateamos el String final ej: "-01:15" o "00:20"
-                            desvTiempoTexto = signo + (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
-
-                            // 📊 Regla de Ponderación exacta Navisaf (Tolerancia de 10 min en negativo)
-                            if (totalMins < 0) {
-                                if (Math.abs(totalMins) <= 10) {
-                                    semaforoTiempo = "mostaza"; // Entre 1 y 10 minutos tarde
-                                } else {
-                                    semaforoTiempo = "rojo";    // Más de 10 minutos tarde
-                                }
+                    if (real && real.desviacion_hh_mm) {
+                        // 1. Forzamos el dato a cadena de texto limpia
+                        let desvRaw = String(real.desviacion_hh_mm).trim();
+                        
+                        // 2. Si el Sheet mandó una fecha loca con el año 1899, extraemos solo las horas y minutos finales
+                        if (desvRaw.includes("1899") || desvRaw.includes(" ") && isNaN(desvRaw.charAt(0))) {
+                            let partesEspacio = desvRaw.split(/\s+/);
+                            if (partesEspacio.length >= 5 && partesEspacio[4].includes(":")) {
+                                let hms = partesEspacio[4].split(":");
+                                desvTiempoTexto = "-" + hms[0] + ":" + hms[1]; // Lo fuerza a formato HH:MM negativo
                             } else {
-                                semaforoTiempo = "verde";       // A tiempo o adelantado
+                                desvTiempoTexto = desvRaw;
                             }
-                        } catch (e) {
-                            console.error("Error en cálculo Plan B:", e);
-                            desvTiempoTexto = "---";
+                        } else {
+                            // 3. Formato normal: Si trae segundos (:00), los mochamos limpiamente sin alterar las horas grandes
+                            let partesPuntos = desvRaw.split(":");
+                            if (partesPuntos.length >= 2) {
+                                // Quita los milisegundos si existieran en el primer bloque
+                                let horasBloque = partesPuntos[0].split(".")[0]; 
+                                desvTiempoTexto = horasBloque + ":" + partesPuntos[1];
+                            } else {
+                                desvTiempoTexto = desvRaw;
+                            }
+                        }
+
+                        // 📊 3. EVALUACIÓN DE COLOR ULTRA SEGURA (Evita hacer operaciones matemáticas con NaN)
+                        if (desvTiempoTexto.indexOf("-") > -1) {
+                            // Extraemos los minutos para saber si es menor o igual a 10 min de retraso
+                            let minutosLimpios = desvTiempoTexto.replace("-", "");
+                            let fragmentos = minutosLimpios.split(":");
+                            let horasEnteras = parseInt(fragmentos[0], 10) || 0;
+                            let minutosEnteros = parseInt(fragmentos[1], 10) || 0;
+                            let totalMinutosPasivo = (horasEnteras * 60) + minutosEnteros;
+
+                            if (!isNaN(totalMinutosPasivo) && totalMinutosPasivo <= 10) {
+                                semaforoTiempo = "mostaza"; // Retraso leve aceptado
+                            } else {
+                                semaforoTiempo = "rojo";    // Retraso crítico o error
+                            }
+                        } else if (desvTiempoTexto !== "00:00" && desvTiempoTexto !== "0:00" && desvTiempoTexto !== "0" && desvTiempoTexto !== "---") {
+                            semaforoTiempo = "verde"; // Es un positivo limpio (Adelantado)
                         }
                     }
 
@@ -774,6 +768,7 @@
                     let tiempoViajeReal = "---";
                     let distPlanKm = "---";
                     let distRealTramo = "---";
+                    let divKm = "---"; // Mantenido para compatibilidad
                     let difKm = "---";
 
                     let semaforoDistancia = "verde";
