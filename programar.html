@@ -115,6 +115,10 @@
 </div>
 
 <script>
+
+    (function () { // 🟢 Techo: Abre el domo de protección
+    "use strict";
+        
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwUUfNbaq4tkx05vUxjpJNtbxqJi_Q9WWnxMINupHHSWpU129H9x5wY6Jbf0SNrEE0e/exec";
     let rutasMaestras = [];
     let placasValidas = [];
@@ -313,162 +317,228 @@
         }
     };
 
-    function cargarDatosGeotab(api) {
-        api.call("Get", { typeName: "Device", search: { groups: [{ id: "b2798" }, { id: "b279A" }] } }, (res) => {
-            const dl = document.getElementById("listaVehiculos");
-            dl.innerHTML = "";
-            placasValidas = res.map(d => d.name);
-            placasValidas.forEach(p => { let o = document.createElement("option"); o.value = p; dl.appendChild(o); });
-        });
-        api.call("Get", { typeName: "User" }, (res) => {
-            const dl = document.getElementById("listaConductores");
-            dl.innerHTML = "";
-            res.filter(u => u.isDriver).forEach(u => { let o = document.createElement("option"); o.value = (u.firstName + " " + (u.lastName || "")).trim(); dl.appendChild(o); });
-        });
-        fetch(WEB_APP_URL + "?v=" + new Date().getTime()).then(r => r.json()).then(d => {
-            rutasMaestras = d;
-            const s = document.getElementById("selectRuta");
-            s.innerHTML = '<option value="">-- Seleccionar --</option>';
-            d.forEach((r, i) => { let o = document.createElement("option"); o.value = i; o.textContent = r.nombre; s.appendChild(o); });
-            cargarViajesExistentes();
+    function apiGet(api, typeName, search) {
+        return new Promise((resolve, reject) => {
+            try {
+                api.call("Get", { typeName: typeName, search: search || {} }, resolve, reject);
+            } catch (e) { reject(e); }
         });
     }
 
+    // 🛡️ BANDERAS DE CONTROL DE TU COMPAÑERO
+    let eventosInicializados = false;
+    let datosCargando = false;
+    let datosCargados = false;
+    let arranqueProgramado = false;
+    let necesitaRecargaAlVolver = true;
+    let viajesCache = [];
+
+    async function cargarDatosGeotab(api) {
+        if (!api || datosCargando) return;
+        datosCargando = true;
+
+        const listaVehiculos = document.getElementById("listaVehiculos");
+        const listaConductores = document.getElementById("listaConductores");
+        const selectRuta = document.getElementById("selectRuta");
+
+        try {
+            // Descarga en paralelo ultra rápida de Camiones, Choferes y Rutas
+            const promVehiculos = apiGet(api, "Device", { groups: [{ id: "b2798" }, { id: "b279A" }] })
+                .then(res => {
+                    listaVehiculos.innerHTML = "";
+                    placasValidas = (res || []).map(d => d.name).filter(Boolean);
+                    placasValidas.forEach(p => { let o = document.createElement("option"); o.value = p; listaVehiculos.appendChild(o); });
+                }).catch(e => console.error("Error vehículos:", e));
+
+            const promConductores = apiGet(api, "User", {})
+                .then(res => {
+                    listaConductores.innerHTML = "";
+                    (res || []).filter(u => u.isDriver).forEach(u => {
+                        let o = document.createElement("option");
+                        o.value = (u.firstName + " " + (u.lastName || "")).trim();
+                        listaConductores.appendChild(o);
+                    });
+                }).catch(e => console.error("Error conductores:", e));
+
+            const promRutas = fetch(WEB_APP_URL + "?v=" + Date.now(), { method: "GET", cache: "no-store" })
+                .then(r => r.json())
+                .then(d => {
+                    rutasMaestras = Array.isArray(d) ? d : [];
+                    selectRuta.onchange = null; // Apagamos el gatillo
+                    selectRuta.innerHTML = '<option value="">-- Seleccionar --</option>';
+                    rutasMaestras.forEach((r, i) => { let o = document.createElement("option"); o.value = i; o.textContent = r.nombre; selectRuta.appendChild(o); });
+                    
+                    // Mapeamos los viajes directo a la tabla y guardamos el caché que usa iniciarEdicion
+                    return cargarViajesExistentes();
+                })
+                .then(() => {
+                    selectRuta.onchange = calcular; // Encendemos de forma segura
+                    datosCargados = true;
+                })
+                .catch(e => {
+                    console.error("Error rutas:", e);
+                    selectRuta.innerHTML = '<option value="">Error al cargar rutas</option>';
+                });
+
+            await Promise.allSettled([promVehiculos, promConductores, promRutas]);
+        } catch(e) { console.error("Error general de carga:", e); } 
+        finally { datosCargando = false; }
+    }
+
+    // 🟢 ARRANQUE DIFERIDO INTELIGENTE (Frena cargas repetidas e innecesarias)
+    function arranqueDiferido(api, forzar) {
+        apiGlobal = api || apiGlobal;
+        
+        // Clavamos la fecha en Hoy si está vacía
+        const filtroFechaInput = document.getElementById('filtroFechaLista');
+        if (filtroFechaInput && !filtroFechaInput.value) {
+            const hoyLocal = new Date();
+            const offset = hoyLocal.getTimezoneOffset();
+            const fechaAjustada = new Date(hoyLocal.getTime() - (offset * 60 * 1000));
+            filtroFechaInput.value = fechaAjustada.toISOString().split('T')[0];
+        }
+
+        // Encendemos los eventos directos
+        if (!eventosInicializados) {
+            eventosInicializados = true;
+            document.getElementById("selectRuta").onchange = calcular;
+            document.getElementById("fechaSalida").onchange = calcular;
+            document.getElementById("checkRetorno").onchange = calcular;
+            document.getElementById("btnCancelar").onclick = resetearFormularioProgramacion;
+
+            // Botón manual Guardar/Actualizar viaje
+            document.getElementById("btnProgramar").onclick = function() {
+                const id = document.getElementById("idEdicion").value;
+                const v = document.getElementById("inputVehiculo").value;
+                const r = document.getElementById("selectRuta").value;
+                const s = document.getElementById("fechaSalida").value;
+                const c = document.getElementById("inputConductor").value;
+                const estaEnCurso = document.getElementById("selectRuta").disabled;
+
+                if (estaEnCurso) {
+                    if (!id || !v) return alert("Faltan datos críticos del viaje en curso");
+                } else {
+                    if (!v || r === "" || !s) return alert("Faltan datos");
+                }
+
+                this.innerText = "⏳ Guardando..."; 
+                this.disabled = true;
+
+                const itinerario = estaEnCurso ? "[]" : Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({ 
+                    orden: f.cells[0].innerText, punto: f.cells[1].innerText, km: f.cells[2].innerText, eta: f.cells[3].innerText, etd: f.cells[4].innerText 
+                }));
+
+                fetch(WEB_APP_URL, { 
+                    method: "POST", 
+                    body: JSON.stringify({ 
+                        action: id ? "editarViaje" : "programarViaje", idViaje: id, vehiculo: v, conductor: c || "Sin Conductor", 
+                        etdOrigen: estaEnCurso ? "" : "'" + s.replace('T', ' '), nombreRuta: (r !== "" && !estaEnCurso) ? rutasMaestras[r].nombre : "", itinerario: JSON.stringify(itinerario) 
+                    }) 
+                }).then(() => { 
+                    alert("✅ Éxito"); 
+                    resetearFormularioProgramacion(); 
+                    arranqueDiferido(apiGlobal, true); // Recarga forzada limpia
+                });
+            };
+
+            // Botón Carga Masiva Excel
+            document.getElementById("btnProcesarExcel").onclick = function() {
+                const fileInput = document.getElementById("inputExcel"), log = document.getElementById("errorLog"), btn = this;
+                if (!fileInput.files[0]) return alert("Seleccione archivo");
+                log.style.display = "none"; log.innerHTML = "";
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                        const sheet = workbook.Sheets["Programación"];
+                        if (!sheet) return alert("No se encontró hoja 'Programación'");
+                        const jsonData = XLSX.utils.sheet_to_json(sheet);
+                        let errores = [];
+                        const nombresRutas = rutasMaestras.map(r => r.nombre);
+                        
+                        jsonData.forEach((f, i) => {
+                            let n = i + 2;
+                            if (!placasValidas.includes(f.PLACA)) errores.push(`Fila ${n}: Placa '${f.PLACA}' inválida.`);
+                            let rutaCelda = String(f.RUTA || "").trim();
+                            let rutaLimpiaParaValidar = rutaCelda;
+                            if (rutaCelda.toUpperCase().endsWith("/RETORNO")) {
+                                rutaLimpiaParaValidar = rutaCelda.substring(0, rutaCelda.toUpperCase().lastIndexOf("/RETORNO")).trim();
+                            }
+                            if (!nombresRutas.includes(rutaLimpiaParaValidar)) errores.push(`Fila ${n}: Ruta '${rutaCelda}' no existe en las Maestras.`);
+                            if (!f.FECHA_ETD || !validarFechaReal(f.FECHA_ETD)) errores.push(`Fila ${n}: Fecha inválida.`);
+                        });
+                        
+                        if (errores.length > 0) { 
+                            log.style.display = "block"; log.innerHTML = errores.join("<br>"); return; 
+                        }
+                        btn.disabled = true;
+                        const total = jsonData.length;
+                        for (let [idx, f] of jsonData.entries()) {
+                            btn.innerText = `⏳ Procesando ${idx + 1}/${total}...`;
+                            let rutaCelda = String(f.RUTA || "").trim();
+                            await fetch(WEB_APP_URL, { 
+                                method: "POST", 
+                                body: JSON.stringify({ 
+                                    action: "programarViaje", vehiculo: f.PLACA, conductor: f.CONDUCTOR || "Sin Conductor", 
+                                    etdOrigen: f.FECHA_ETD.toString().startsWith("'") ? f.FECHA_ETD : "'" + f.FECHA_ETD, nombreRuta: rutaCelda, itinerario: generarItinerarioMasivo(f.RUTA, f.FECHA_ETD) 
+                                }) 
+                            });
+                        }
+                        alert("✅ Carga masiva completada con éxito");
+                        fileInput.value = "";
+                        resetearFormularioProgramacion();
+                        arranqueDiferido(apiGlobal, true);
+                    } catch (err) { console.error(err); alert("Error en carga masiva."); }
+                    finally { btn.innerText = "Validar y Subir"; btn.disabled = false; }
+                };
+                reader.readAsArrayBuffer(fileInput.files[0]);
+            };
+        }
+
+        if (forzar) {
+            datosCargados = false;
+            arranqueProgramado = false;
+        }
+        if (arranqueProgramado && !forzar) return;
+        arranqueProgramado = true;
+
+        setTimeout(() => {
+            cargarDatosGeotab(apiGlobal);
+        }, 80);
+    }
+
+    // 🌐 CICLO DE VIDA OFICIAL GEOTAB OPTIMIZADO
     geotab.addin.programar = (api, state) => {
         apiGlobal = api;
         return {
             initialize(api, state, callback) {
-                
-                //  AQUÍ PEGAS EL BLOQUE NUEVO PARA CLAVAR LA FECHA EN HOY:
-                const filtroFechaInput = document.getElementById('filtroFechaLista');
-                if (filtroFechaInput) {
-                    const hoyLocal = new Date();
-                    const offset = hoyLocal.getTimezoneOffset();
-                    const fechaAjustada = new Date(hoyLocal.getTime() - (offset * 60 * 1000));
-                    filtroFechaInput.value = fechaAjustada.toISOString().split('T')[0];
-                }
-
-                cargarDatosGeotab(api);
-                document.getElementById("selectRuta").addEventListener("change", calcular);
-                document.getElementById("fechaSalida").addEventListener("change", calcular);
-                document.getElementById("checkRetorno").addEventListener("change", calcular);
-                document.getElementById("btnCancelar").addEventListener("click", resetearFormularioProgramacion);
-                
-                // 🚀 BLOQUE CORRECTO INTEGRADO SIN ALTERAR EL RESTO DE TU FLUJO
-                document.getElementById("btnProgramar").addEventListener("click", function() {
-                    const id = document.getElementById("idEdicion").value;
-                    const v = document.getElementById("inputVehiculo").value;
-                    const r = document.getElementById("selectRuta").value;
-                    const s = document.getElementById("fechaSalida").value;
-                    const c = document.getElementById("inputConductor").value;
-                    
-                    const estaEnCurso = document.getElementById("selectRuta").disabled;
-
-                    // Validar dinámicamente según el estado en vivo del viaje
-                    if (estaEnCurso) {
-                        if (!id || !v) return alert("Faltan datos críticos del viaje en curso");
-                    } else {
-                        if (!v || r === "" || !s) return alert("Faltan datos");
-                    }
-
-                    this.innerText = "⏳ Guardando..."; 
-                    this.disabled = true;
-
-                    // Si está en curso no requiere mapear la tabla para no borrar el itinerario base en el Sheet
-                    const itinerario = estaEnCurso ? "[]" : Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({ 
-                        orden: f.cells[0].innerText, 
-                        punto: f.cells[1].innerText, 
-                        km: f.cells[2].innerText, 
-                        eta: f.cells[3].innerText, 
-                        etd: f.cells[4].innerText 
-                    }));
-
-                    fetch(WEB_APP_URL, { 
-                        method: "POST", 
-                        body: JSON.stringify({ 
-                            action: id ? "editarViaje" : "programarViaje", 
-                            idViaje: id, 
-                            vehiculo: v, 
-                            conductor: c || "Sin Conductor", 
-                            etdOrigen: estaEnCurso ? "" : "'" + s.replace('T', ' '), 
-                            nombreRuta: (r !== "" && !estaEnCurso) ? rutasMaestras[r].nombre : "", 
-                            itinerario: JSON.stringify(itinerario) 
-                        }) 
-                    }).then(() => { 
-                        alert("✅ Éxito"); 
-                        resetearFormularioProgramacion(); 
-                        cargarViajesExistentes(); 
-                    });
-                });
-
-                document.getElementById("btnProcesarExcel").addEventListener("click", function() {
-        const fileInput = document.getElementById("inputExcel"), log = document.getElementById("errorLog"), btn = this;
-        if (!fileInput.files[0]) return alert("Seleccione archivo");
-        log.style.display = "none"; log.innerHTML = "";
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-            const sheet = workbook.Sheets["Programación"];
-            if (!sheet) return alert("No se encontró hoja 'Programación'");
-            const jsonData = XLSX.utils.sheet_to_json(sheet);
-            let errores = [];
-            const nombresRutas = rutasMaestras.map(r => r.nombre);
-            
-            jsonData.forEach((f, i) => {
-                let n = i + 2;
-                if (!placasValidas.includes(f.PLACA)) errores.push(`Fila ${n}: Placa '${f.PLACA}' inválida.`);
-                
-                // Limpieza del sufijo para verificar la existencia de la ruta en la base de datos base
-                let rutaCelda = String(f.RUTA || "").trim();
-                let rutaLimpiaParaValidar = rutaCelda;
-                if (rutaCelda.toUpperCase().endsWith("/RETORNO")) {
-                    rutaLimpiaParaValidar = rutaCelda.substring(0, rutaCelda.toUpperCase().lastIndexOf("/RETORNO")).trim();
-                }
-                
-                if (!nombresRutas.includes(rutaLimpiaParaValidar)) errores.push(`Fila ${n}: Ruta '${rutaCelda}' no existe en las Maestras.`);
-                if (!f.FECHA_ETD || !validarFechaReal(f.FECHA_ETD)) errores.push(`Fila ${n}: Fecha inválida.`);
-            });
-            
-            if (errores.length > 0) { 
-                log.style.display = "block"; 
-                log.innerHTML = errores.join("<br>"); 
-                return; 
-            }
-            btn.disabled = true;
-            const total = jsonData.length;
-            for (let [idx, f] of jsonData.entries()) {
-                btn.innerText = `⏳ Procesando ${idx + 1}/${total}...`;
-                let rutaCelda = String(f.RUTA || "").trim();
-
+                apiGlobal = api;
                 try {
-                    await fetch(WEB_APP_URL, { 
-                        method: "POST", 
-                        body: JSON.stringify({ 
-                            action: "programarViaje", 
-                            vehiculo: f.PLACA, 
-                            conductor: f.CONDUCTOR || "Sin Conductor", 
-                            etdOrigen: f.FECHA_ETD.toString().startsWith("'") ? f.FECHA_ETD : "'" + f.FECHA_ETD, 
-                            nombreRuta: rutaCelda, // Se almacena con el sufijo para auditoría e historial visual
-                            itinerario: generarItinerarioMasivo(f.RUTA, f.FECHA_ETD) 
-                        }) 
-                    });
-                } catch (error) { console.error("Error en fila " + (idx + 2), error); }
-            }
-            alert("✅ Carga masiva completada con éxito");
-            fileInput.value = ""; 
-            btn.innerText = "Validar y Subir";
-            btn.disabled = false;
-            resetearFormularioProgramacion(); 
-            cargarViajesExistentes(); 
-        };
-        reader.readAsArrayBuffer(fileInput.files[0]);
-    });
-
-                callback();
+                    callback(); // Liberación instantánea de Geotab
+                } catch (e) { console.error("Error en callback initialize:", e); }
+                
+                setTimeout(() => {
+                    arranqueDiferido(api, false);
+                }, 0);
             },
-            focus(api, state) { cargarDatosGeotab(api); }
+            focus(api, state) {
+                apiGlobal = api;
+                const debeForzar = necesitaRecargaAlVolver || !datosCargados;
+                necesitaRecargaAlVolver = false;
+                arranqueDiferido(api, debeForzar);
+            },
+            blur(api, state) {
+                necesitaRecargaAlVolver = true; // Activa bandera de refresco para la vuelta sin romper el HTML
+            }
         };
     };
+
+    // 🟢 Puentes públicos expuestos para los clics en los botones HTML
+    window.exportarPlantilla = exportarPlantilla;
+    window.cargarViajesExistentes = cargarViajesExistentes;
+    window.iniciarEdicion = iniciarEdicion;
+
+})(); // 👈 Cierre hermético del domo protector IIFE
 </script>
 </body>
 </html>
