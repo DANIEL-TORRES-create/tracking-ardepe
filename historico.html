@@ -576,7 +576,11 @@
         const badge = document.getElementById('his-lbl-sat-estado-badge');
         document.getElementById('his-lbl-sat-estado-texto').innerText = estado;
         if (badge) {
-            badge.className = "sat-badge-estado " + (estado === "VENCIDO" ? "sat-status-atrasado" : "sat-status-en-curso");
+            let claseEstado = "sat-status-en-curso"; // AUTOMÁTICO → verde
+            if (estado === "VENCIDO")           claseEstado = "sat-status-atrasado";   // rojo
+            if (estado === "CANCELADO")         claseEstado = "sat-status-no-iniciado"; // gris
+            if (estado === "FINALIZADO MANUAL") claseEstado = "sat-status-no-iniciado"; // gris/azul
+            badge.className = "sat-badge-estado " + claseEstado;
         }
 
         document.getElementById('mega-modal-detalle').style.display = 'flex';
@@ -1311,7 +1315,7 @@
 
 })();
 </script>
-<div id="his-overlay-carga" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100vw; height:100vh; background:rgba(0,36,68,0.55); z-index:99999; justify-content:center; align-items:center; flex-direction:column; gap:16px; box-sizing:border-box; padding-left:160px;">
+<div id="his-overlay-carga" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100vw; height:100vh; background:rgba(0,36,68,0.55); z-index:99999; justify-content:center; align-items:center; flex-direction:column; gap:16px; box-sizing:border-box; padding-left:60px;">
     <div style="width:52px; height:52px; border:5px solid rgba(255,255,255,0.2); border-top-color:#38bdf8; border-radius:50%; animation:his-spin 0.8s linear infinite;"></div>
     <span style="color:#ffffff; font-family:'Lexend',sans-serif; font-size:13px; font-weight:700; letter-spacing:1px;">CARGANDO...</span>
 </div>
