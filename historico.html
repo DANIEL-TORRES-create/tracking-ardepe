@@ -38,12 +38,12 @@
        <div class="grupo-inputs-predictivos">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
-                <input type="text" id="txt-filtro-placa" list="dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off" onkeyup="filtrarTablaSatelital('')">
+                <input type="text" id="txt-filtro-placa" list="dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
                 <datalist id="dl-placas-activas"></datalist>
             </div>
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-route"></i>
-                <input type="text" id="txt-filtro-ruta" list="dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off" onkeyup="filtrarTablaSatelital('')">
+                <input type="text" id="txt-filtro-ruta" list="dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
                 <datalist id="dl-rutas-activas"></datalist>
             </div>
         </div>
@@ -80,7 +80,7 @@
             <h2 style="margin:0; font-weight:800; color:var(--primary); font-size:18px; text-transform:uppercase; letter-spacing:0.5px;">Resumen de Viaje</h2>
         </div>
         <div class="header-right-box">
-            <button onclick="cerrarPanel()" class="btn-close-panel" title="Cerrar Vista">&times;</button>
+            <button onclick="his_cerrarPanel()" class="btn-close-panel" title="Cerrar Vista">&times;</button>
         </div>
     </div>
     <div id="timeline-v" class="timeline-v-container"></div>
@@ -113,7 +113,7 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="cerrarMegaDetalle()" class="btn-close-mega" title="Cerrar Ventana">&times;</button>
+                    <button onclick="his_cerrarMegaDetalle()" class="btn-close-mega" title="Cerrar Ventana">&times;</button>
                 </div>
             </div>
             <div class="mega-bloque-mapa" style="width: 100% !important; margin-top: 10px;">
@@ -123,11 +123,11 @@
 
         <div class="mega-barra-filtros" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
     <div>
-        <button id="sat-btn-historial" class="sat-btn-f activo" onclick="filtrarTablaSatelital('historial')"><i class="fas fa-file-alt"></i> Todos</button>
-        <button id="sat-btn-completados" class="sat-btn-f" onclick="filtrarTablaSatelital('completados')"><i class="fas fa-check-circle"></i> Finalizados</button>
-        <button id="sat-btn-omitidos" class="sat-btn-f" onclick="filtrarTablaSatelital('omitidos')"><i class="fas fa-ban"></i> No Ejecutados</button>
+        <button id="sat-btn-historial" class="sat-btn-f activo" onclick="his_filtrarTablaSatelital('historial')"><i class="fas fa-file-alt"></i> Todos</button>
+        <button id="sat-btn-completados" class="sat-btn-f" onclick="his_filtrarTablaSatelital('completados')"><i class="fas fa-check-circle"></i> Finalizados</button>
+        <button id="sat-btn-omitidos" class="sat-btn-f" onclick="his_filtrarTablaSatelital('omitidos')"><i class="fas fa-ban"></i> No Ejecutados</button>
     </div>
-    <button type="button" class="sat-btn-f" style="background: #107c41; color: white; border-color: #107c41; font-weight: bold;" onclick="exportarTablaSatelitalAExcel()"><i class="fas fa-file-excel"></i> 🟢 Exportar Excel</button>
+    <button type="button" class="sat-btn-f" style="background: #107c41; color: white; border-color: #107c41; font-weight: bold;" onclick="his_exportarTablaSatelitalAExcel()"><i class="fas fa-file-excel"></i> 🟢 Exportar Excel</button>
 </div>
 
         <div class="mega-bunker-tabla">
@@ -411,8 +411,8 @@
                 <td>${desvVisualFila}</td>
                 <td class="vistas-cell">
                     <div style="display:flex; gap:4px; justify-content:center;">
-                        <button class="btn-vista" title="Ver Resumen de Ruta" onclick="abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">📋</button>
-                        <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="abrirMegaDetalleManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.ruta)}', '${textoEstadoVisual}', '${porcentajeProgreso}')">🔍</button>
+                        <button class="btn-vista" title="Ver Resumen de Ruta" onclick="his_abrirResumenManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.auditoriaLog)}')">📋</button>
+                        <button class="btn-vista-detalle" title="Ver Detalle Satelital Completo" onclick="his_abrirMegaDetalleManualmente('${v.idViaje}', '${v.placa}', '${encodeURIComponent(v.ruta)}', '${textoEstadoVisual}', '${porcentajeProgreso}')">🔍</button>
                     </div>
                 </td>
             `;
@@ -420,12 +420,12 @@
         });
     }
 
-    window.abrirResumenManualmente = function(idViaje, placa, logAuditoria) {
+    window.his_abrirResumenManualmente = function(idViaje, placa, logAuditoria) {
         let stringData = window._cacheItinerariosCompleto[idViaje] || "[]";
         abrirResumen(encodeURIComponent(stringData), placa, logAuditoria);
     };
 
-    window.abrirMegaDetalleManualmente = function(idViaje, placa, rutaEncoded, estado, progreso) {
+    window.his_abrirMegaDetalleManualmente = function(idViaje, placa, rutaEncoded, estado, progreso) {
         let stringData = window._cacheItinerariosCompleto[idViaje] || "[]";
         abrirMegaDetalle(idViaje, placa, rutaEncoded, estado, progreso, encodeURIComponent(stringData));
     };
@@ -548,7 +548,7 @@
     let _satMapa = null;
     let _satCacheDatosRows = []; 
 
-    window.abrirMegaDetalle = function(idViaje, placa, ruta, estado, progreso, itinerarioDecoded) {
+    window.his_abrirMegaDetalle = function(idViaje, placa, ruta, estado, progreso, itinerarioDecoded) {
         document.getElementById('lbl-sat-placa').innerText = placa;
         document.getElementById('lbl-sat-ruta').innerText = decodeURIComponent(ruta);
         document.getElementById('lbl-sat-porcentaje').innerText = progreso + "%";
@@ -578,7 +578,7 @@
         }, 400);
     };
 
-    window.cerrarMegaDetalle = function() {
+    window.his_cerrarMegaDetalle = function() {
         document.getElementById('mega-modal-detalle').style.display = 'none';
         // Destruir el mapa al cerrar para evitar estado corrupto en la próxima apertura
         if (_satMapa) {
@@ -980,7 +980,7 @@
 
                 if (puntosParaRutaOSRM.length > 0) _satMapa.setView(puntosParaRutaOSRM[0].coordenada, 8);
                 _satMapa.invalidateSize(true);
-                filtrarTablaSatelital('historial'); 
+                his_filtrarTablaSatelital('historial'); 
                 delete window[nombreCallbackTemporal];
             }
         };
@@ -991,7 +991,7 @@
         script.onload = function() { script.remove(); };
     }
 
-    window.filtrarTablaSatelital = function(tipoFiltro) {
+    window.his_filtrarTablaSatelital = function(tipoFiltro) {
         const tbody = document.getElementById('sat-tbody-rows');
         if (!tbody) return; tbody.innerHTML = "";
 
@@ -1110,9 +1110,9 @@
     }
 
     // ─── EXPONER AL HTML LAS FUNCIONES QUE USAN onclick ───
-    window.cerrarPanel              = cerrarPanel;
-    window.abrirResumen             = abrirResumen;
-    window.exportarTablaSatelitalAExcel = exportarTablaSatelitalAExcel;
+    window.his_cerrarPanel              = cerrarPanel;
+    window.his_abrirResumen             = abrirResumen;
+    window.his_exportarTablaSatelitalAExcel = exportarTablaSatelitalAExcel;
 
     // ==========================================
     // 🟢 EXPORTADOR MATRIZ NAVISAF BLINDADO
