@@ -32,19 +32,19 @@
         </div>
 
         <div class="bunker-contador-flota">
-            <i class="fas fa-archive" style="color: #38bdf8;"></i> TOTAL REGISTROS: <span id="his-num-flota-total">0</span> VIAJES
+            <i class="fas fa-archive" style="color: #38bdf8;"></i> TOTAL REGISTROS: <span id="num-flota-total">0</span> VIAJES
         </div>
 
        <div class="grupo-inputs-predictivos">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
-                <input type="text" id="his-txt-filtro-placa" list="his-his-dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
-                <datalist id="his-his-dl-placas-activas"></datalist>
+                <input type="text" id="his-txt-filtro-placa" list="his-dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
+                <datalist id="his-dl-placas-activas"></datalist>
             </div>
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-route"></i>
-                <input type="text" id="his-txt-filtro-ruta" list="his-his-dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
-                <datalist id="his-his-dl-rutas-activas"></datalist>
+                <input type="text" id="his-txt-filtro-ruta" list="his-dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
+                <datalist id="his-dl-rutas-activas"></datalist>
             </div>
         </div>
 
@@ -71,10 +71,10 @@
     </table>
 </div>
 
-<div id="his-side-panel">
+<div id="side-panel">
     <div class="side-panel-header">
         <div class="header-left-box">
-            <small id="his-side-placa" style="color:#444; font-weight:bold; font-size:14px; text-transform:uppercase;">Placa: </small>
+            <small id="side-placa" style="color:#444; font-weight:bold; font-size:14px; text-transform:uppercase;">Placa: </small>
         </div>
         <div class="header-center-box">
             <h2 style="margin:0; font-weight:800; color:var(--primary); font-size:18px; text-transform:uppercase; letter-spacing:0.5px;">Resumen de Viaje</h2>
@@ -83,10 +83,10 @@
             <button onclick="his_cerrarPanel()" class="btn-close-panel" title="Cerrar Vista">&times;</button>
         </div>
     </div>
-    <div id="his-timeline-v" class="timeline-v-container"></div>
+    <div id="timeline-v" class="timeline-v-container"></div>
 </div>
 
-<div id="his-mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
+<div id="mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
     <div class="mega-modal-content">
         <div class="mega-cabecera-satelital">
             <div class="mega-cabecera-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
@@ -117,7 +117,7 @@
                 </div>
             </div>
             <div class="mega-bloque-mapa" style="width: 100% !important; margin-top: 10px;">
-                <div id="his-sat-map-container"></div>
+                <div id="sat-map-container"></div>
             </div>
         </div>
 
@@ -186,8 +186,8 @@
     window.renderizarHistorico = function(viajes) {
         listaViajesMaster = viajes || [];
         
-        const dlPlacas = document.getElementById("his-his-dl-placas-activas");
-        const dlRutas = document.getElementById("his-his-dl-rutas-activas");
+        const dlPlacas = document.getElementById("his-dl-placas-activas");
+        const dlRutas = document.getElementById("his-dl-rutas-activas");
         
         if (dlPlacas && dlRutas) {
             let placasUnicas = [...new Set(listaViajesMaster.map(v => v.placa).filter(Boolean))].sort();
@@ -287,7 +287,7 @@
             return horaA.localeCompare(horaB);
         });
         
-        const contenedorContador = document.getElementById("his-num-flota-total");
+        const contenedorContador = document.getElementById("num-flota-total");
         if (contenedorContador) contenedorContador.innerText = viajesFiltrados.length;
         
         if (viajesFiltrados.length === 0) {
@@ -441,8 +441,8 @@
 
         let puntos = JSON.parse(decodeURIComponent(data));
         const rawLog = decodeURIComponent(logAuditoria);
-        document.getElementById('his-side-placa').innerText = "Placa: " + placa;
-        const timeline = document.getElementById('his-timeline-v');
+        document.getElementById('side-placa').innerText = "Placa: " + placa;
+        const timeline = document.getElementById('timeline-v');
         timeline.innerHTML = "";
         
         if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
@@ -537,11 +537,11 @@
 
         containerHtml += `</ul>`;
         timeline.innerHTML += containerHtml;
-        document.getElementById('his-side-panel').classList.add('open');
+        document.getElementById('side-panel').classList.add('open');
     }
 
     function cerrarPanel() { 
-        document.getElementById('his-side-panel').classList.remove('open'); 
+        document.getElementById('side-panel').classList.remove('open'); 
         document.querySelectorAll('#his-lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
     }
 
@@ -560,7 +560,7 @@
             badge.className = "sat-badge-estado " + (estado === "VENCIDO" ? "sat-status-atrasado" : "sat-status-en-curso");
         }
 
-        document.getElementById('his-mega-modal-detalle').style.display = 'flex';
+        document.getElementById('mega-modal-detalle').style.display = 'flex';
 
         setTimeout(function() {
             // Destruir y recrear el mapa limpiamente en cada apertura
@@ -568,7 +568,7 @@
                 try { _satMapa.remove(); } catch(e) {}
                 _satMapa = null;
             }
-            const mapContainer = document.getElementById('his-sat-map-container');
+            const mapContainer = document.getElementById('sat-map-container');
             if (mapContainer) mapContainer.innerHTML = '';
 
             _satMapa = L.map('sat-map-container', { center: [-12.046374, -77.042793], zoom: 7, minZoom: 3 });
@@ -579,7 +579,7 @@
     };
 
     window.his_cerrarMegaDetalle = function() {
-        document.getElementById('his-mega-modal-detalle').style.display = 'none';
+        document.getElementById('mega-modal-detalle').style.display = 'none';
         // Destruir el mapa al cerrar para evitar estado corrupto en la próxima apertura
         if (_satMapa) {
             try { _satMapa.remove(); } catch(e) {}
@@ -1256,7 +1256,7 @@
                     if (!_intervaloActualizar) {
                         _intervaloActualizar = setInterval(function() {
                             // Solo refresca si el modal de detalle NO está abierto
-                            const modal = document.getElementById('his-mega-modal-detalle');
+                            const modal = document.getElementById('mega-modal-detalle');
                             if (!modal || modal.style.display === 'none') {
                                 actualizar();
                             }
