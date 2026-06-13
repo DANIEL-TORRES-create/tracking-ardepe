@@ -14,6 +14,10 @@
     <div class="bloque-titulo-bunker">
         <h1 class="neon-title"><i class="fas fa-history" style="margin-right: 12px; color: #38bdf8;"></i>HISTORIAL DE VIAJES PLANEADOS</h1>
     </div>
+    <div id="his-spinner-refresco" style="display:none; align-items:center; gap:8px; background:rgba(15,23,42,0.4); border:1px solid rgba(56,189,248,0.3); padding:6px 14px; border-radius:8px;">
+        <div style="width:14px; height:14px; border:2px solid rgba(255,255,255,0.2); border-top-color:#38bdf8; border-radius:50%; animation:his-spin-mini 0.8s linear infinite; flex-shrink:0;"></div>
+        <span style="color:#93c5fd; font-family:'Lexend',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.5px; white-space:nowrap;">ACTUALIZANDO</span>
+    </div>
 </div>
 
 <div class="dashboard">
@@ -187,22 +191,10 @@
     window.renderizarHistorico = function(viajes) {
         var overlay = document.getElementById('his-overlay-carga');
         if (overlay) overlay.style.display = 'none';
+        var spinner = document.getElementById('his-spinner-refresco');
+        if (spinner) spinner.style.display = 'none';
         listaViajesMaster = viajes || [];
         
-        const dlPlacas = document.getElementById("his-dl-placas-activas");
-        const dlRutas = document.getElementById("his-dl-rutas-activas");
-        
-        if (dlPlacas && dlRutas) {
-            // Limpiar explícitamente antes de llenar para evitar mezcla con otros add-ins
-            dlPlacas.innerHTML = "";
-            dlRutas.innerHTML = "";
-            let placasUnicas = [...new Set(listaViajesMaster.map(v => v.placa).filter(Boolean))].sort();
-            let rutasUnicas = [...new Set(listaViajesMaster.map(v => v.ruta).filter(Boolean))].sort();
-            
-            dlPlacas.innerHTML = placasUnicas.map(p => `<option value="${p}"></option>`).join("");
-            dlRutas.innerHTML = rutasUnicas.map(r => `<option value="${r}"></option>`).join("");
-        }
-
         if (busquedaEjecutada) {
             filtrarYMostrarTabla();
         }
@@ -295,6 +287,18 @@
         
         const contenedorContador = document.getElementById("num-flota-total");
         if (contenedorContador) contenedorContador.innerText = viajesFiltrados.length;
+
+        // Actualizar datalist con placas y rutas de los viajes YA filtrados por fecha
+        const dlPlacas = document.getElementById("his-dl-placas-activas");
+        const dlRutas = document.getElementById("his-dl-rutas-activas");
+        if (dlPlacas && dlRutas) {
+            dlPlacas.innerHTML = "";
+            dlRutas.innerHTML = "";
+            let placasUnicas = [...new Set(viajesFiltrados.map(v => v.placa).filter(Boolean))].sort();
+            let rutasUnicas = [...new Set(viajesFiltrados.map(v => v.ruta).filter(Boolean))].sort();
+            dlPlacas.innerHTML = placasUnicas.map(p => `<option value="${p}"></option>`).join("");
+            dlRutas.innerHTML = rutasUnicas.map(r => `<option value="${r}"></option>`).join("");
+        }
         
         if (viajesFiltrados.length === 0) {
             tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b; font-weight:500;">🚫 Ningún registro coincide con la fecha o filtros aplicados.</td></tr>';
@@ -1273,6 +1277,8 @@
                             // Solo refresca si el modal de detalle NO está abierto
                             const modal = document.getElementById('mega-modal-detalle');
                             if (!modal || modal.style.display === 'none') {
+                                var spinner = document.getElementById('his-spinner-refresco');
+                                if (spinner) spinner.style.display = 'flex';
                                 actualizar();
                             }
                         }, 60000);
@@ -1305,12 +1311,13 @@
 
 })();
 </script>
-<div id="his-overlay-carga" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,36,68,0.55); z-index:99999; justify-content:center; align-items:center; flex-direction:column; gap:16px;">
+<div id="his-overlay-carga" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100vw; height:100vh; background:rgba(0,36,68,0.55); z-index:99999; justify-content:center; align-items:center; flex-direction:column; gap:16px; box-sizing:border-box;">
     <div style="width:52px; height:52px; border:5px solid rgba(255,255,255,0.2); border-top-color:#38bdf8; border-radius:50%; animation:his-spin 0.8s linear infinite;"></div>
     <span style="color:#ffffff; font-family:'Lexend',sans-serif; font-size:13px; font-weight:700; letter-spacing:1px;">CARGANDO...</span>
 </div>
 <style>
 @keyframes his-spin { to { transform: rotate(360deg); } }
+@keyframes his-spin-mini { to { transform: rotate(360deg); } }
 </style>
 </body>
 </html>
