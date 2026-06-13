@@ -40,12 +40,12 @@
         <div class="grupo-inputs-predictivos" style="display: flex; flex-direction: column; gap: 6px;">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
-                <input type="text" id="seg-txt-filtro-placa" list="seg-dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off">
+                <input type="text" id="seg-txt-filtro-placa" name="seg-filtro-placa" list="seg-dl-placas-activas" autocomplete="new-password" class="input-predictivo-pro" placeholder="Buscar Placa...">
                 <datalist id="seg-dl-placas-activas"></datalist>
             </div>
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-route"></i>
-                <input type="text" id="seg-txt-filtro-ruta" list="seg-dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off">
+                <input type="text" id="seg-txt-filtro-ruta" name="seg-filtro-ruta" list="seg-dl-rutas-activas" autocomplete="new-password" class="input-predictivo-pro" placeholder="Buscar Ruta...">
                 <datalist id="seg-dl-rutas-activas"></datalist>
             </div>
         </div>
@@ -330,12 +330,12 @@
 
     window.seg_abrirResumenManualmente = function(idViaje, placa, logAuditoria) {
         let stringData = window._cacheItinerarios[idViaje] || "[]";
-        abrirResumen(encodeURIComponent(stringData), placa, logAuditoria);
+        window.seg_abrirResumen(encodeURIComponent(stringData), placa, logAuditoria);
     };
 
     window.seg_abrirMegaDetalleManualmente = function(idViaje, placa, rutaEncoded, estado, progreso) {
         let stringData = window._cacheItinerarios[idViaje] || "[]";
-        abrirMegaDetalle(idViaje, placa, rutaEncoded, estado, progreso, encodeURIComponent(stringData));
+        window.seg_abrirMegaDetalle(idViaje, placa, rutaEncoded, estado, progreso, encodeURIComponent(stringData));
     };
 
     // 3. LÓGICA DE MODALES Y ACCIONES MANUALES
