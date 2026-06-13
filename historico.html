@@ -32,19 +32,19 @@
         </div>
 
         <div class="bunker-contador-flota">
-            <i class="fas fa-archive" style="color: #38bdf8;"></i> TOTAL REGISTROS: <span id="num-flota-total">0</span> VIAJES
+            <i class="fas fa-archive" style="color: #38bdf8;"></i> TOTAL REGISTROS: <span id="his-num-flota-total">0</span> VIAJES
         </div>
 
        <div class="grupo-inputs-predictivos">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
-                <input type="text" id="txt-filtro-placa" list="dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
-                <datalist id="dl-placas-activas"></datalist>
+                <input type="text" id="his-txt-filtro-placa" list="his-his-dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
+                <datalist id="his-his-dl-placas-activas"></datalist>
             </div>
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-route"></i>
-                <input type="text" id="txt-filtro-ruta" list="dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
-                <datalist id="dl-rutas-activas"></datalist>
+                <input type="text" id="his-txt-filtro-ruta" list="his-his-dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
+                <datalist id="his-his-dl-rutas-activas"></datalist>
             </div>
         </div>
 
@@ -65,16 +65,16 @@
                 <th style="text-align:center;">VISTAS</th>
             </tr>
         </thead>
-        <tbody id="lista-viajes">
+        <tbody id="his-lista-viajes">
             <tr><td colspan="10" style="text-align:center; padding:40px; color:#475569; font-weight:bold;">Seleccione una fecha de consulta y presione Buscar...</td></tr>
         </tbody>
     </table>
 </div>
 
-<div id="side-panel">
+<div id="his-side-panel">
     <div class="side-panel-header">
         <div class="header-left-box">
-            <small id="side-placa" style="color:#444; font-weight:bold; font-size:14px; text-transform:uppercase;">Placa: </small>
+            <small id="his-side-placa" style="color:#444; font-weight:bold; font-size:14px; text-transform:uppercase;">Placa: </small>
         </div>
         <div class="header-center-box">
             <h2 style="margin:0; font-weight:800; color:var(--primary); font-size:18px; text-transform:uppercase; letter-spacing:0.5px;">Resumen de Viaje</h2>
@@ -83,33 +83,33 @@
             <button onclick="his_cerrarPanel()" class="btn-close-panel" title="Cerrar Vista">&times;</button>
         </div>
     </div>
-    <div id="timeline-v" class="timeline-v-container"></div>
+    <div id="his-timeline-v" class="timeline-v-container"></div>
 </div>
 
-<div id="mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
+<div id="his-mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
     <div class="mega-modal-content">
         <div class="mega-cabecera-satelital">
             <div class="mega-cabecera-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <div class="mega-bloque-identidad">
                     <h2>DETALLE DE VIAJE HISTÓRICO</h2>
                     <div class="mega-subtitulos">
-                        <span class="badge-sat-placa">PLACA: <strong id="lbl-sat-placa">---</strong></span>
-                        <span class="badge-sat-ruta">RUTA: <strong id="lbl-sat-ruta">---</strong></span>
+                        <span class="badge-sat-placa">PLACA: <strong id="his-lbl-sat-placa">---</strong></span>
+                        <span class="badge-sat-ruta">RUTA: <strong id="his-lbl-sat-ruta">---</strong></span>
                     </div>
                 </div>
                 <div class="mega-bloque-controles" style="display: flex; align-items: center; gap: 20px;">
                     <div class="mega-termometro-inputs" style="display: flex; flex-direction: row; align-items: center; gap: 15px;">
-                        <div id="lbl-sat-estado-badge" class="sat-badge-estado">
+                        <div id="his-lbl-sat-estado-badge" class="sat-badge-estado">
                             <span class="sat-ping"></span>
-                            <span id="lbl-sat-estado-texto">---</span>
+                            <span id="his-lbl-sat-estado-texto">---</span>
                         </div>
                         <div class="sat-progreso-wrapper" style="min-width: 180px;">
                             <div class="sat-progreso-texto">
                                 <span>PROGRESO HISTÓRICO</span>
-                                <strong id="lbl-sat-porcentaje">0%</strong>
+                                <strong id="his-lbl-sat-porcentaje">0%</strong>
                             </div>
                             <div class="sat-barra-bg">
-                                <div id="lbl-sat-barra-fill" class="sat-barra-fill" style="width: 0%;"></div>
+                                <div id="his-lbl-sat-barra-fill" class="sat-barra-fill" style="width: 0%;"></div>
                             </div>
                         </div>
                     </div>
@@ -117,15 +117,15 @@
                 </div>
             </div>
             <div class="mega-bloque-mapa" style="width: 100% !important; margin-top: 10px;">
-                <div id="sat-map-container"></div>
+                <div id="his-sat-map-container"></div>
             </div>
         </div>
 
         <div class="mega-barra-filtros" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
     <div>
-        <button id="sat-btn-historial" class="sat-btn-f activo" onclick="his_filtrarTablaSatelital('historial')"><i class="fas fa-file-alt"></i> Todos</button>
-        <button id="sat-btn-completados" class="sat-btn-f" onclick="his_filtrarTablaSatelital('completados')"><i class="fas fa-check-circle"></i> Finalizados</button>
-        <button id="sat-btn-omitidos" class="sat-btn-f" onclick="his_filtrarTablaSatelital('omitidos')"><i class="fas fa-ban"></i> No Ejecutados</button>
+        <button id="his-sat-btn-historial" class="sat-btn-f activo" onclick="his_filtrarTablaSatelital('historial')"><i class="fas fa-file-alt"></i> Todos</button>
+        <button id="his-sat-btn-completados" class="sat-btn-f" onclick="his_filtrarTablaSatelital('completados')"><i class="fas fa-check-circle"></i> Finalizados</button>
+        <button id="his-sat-btn-omitidos" class="sat-btn-f" onclick="his_filtrarTablaSatelital('omitidos')"><i class="fas fa-ban"></i> No Ejecutados</button>
     </div>
     <button type="button" class="sat-btn-f" style="background: #107c41; color: white; border-color: #107c41; font-weight: bold;" onclick="his_exportarTablaSatelitalAExcel()"><i class="fas fa-file-excel"></i> 🟢 Exportar Excel</button>
 </div>
@@ -151,7 +151,7 @@
                         <th>REAL<br>SALIDA</th>
                     </tr>
                 </thead>
-                <tbody id="sat-tbody-rows"></tbody>
+                <tbody id="his-sat-tbody-rows"></tbody>
             </table>
         </div>
     </div>
@@ -186,8 +186,8 @@
     window.renderizarHistorico = function(viajes) {
         listaViajesMaster = viajes || [];
         
-        const dlPlacas = document.getElementById("dl-placas-activas");
-        const dlRutas = document.getElementById("dl-rutas-activas");
+        const dlPlacas = document.getElementById("his-his-dl-placas-activas");
+        const dlRutas = document.getElementById("his-his-dl-rutas-activas");
         
         if (dlPlacas && dlRutas) {
             let placasUnicas = [...new Set(listaViajesMaster.map(v => v.placa).filter(Boolean))].sort();
@@ -204,7 +204,7 @@
 
     function realizarBusquedaPorFecha() {
         busquedaEjecutada = true;
-        const tbody = document.getElementById('lista-viajes');
+        const tbody = document.getElementById('his-lista-viajes');
         if (tbody) {
             tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px; color:#004b93; font-weight:bold;"><i class="fas fa-spinner fa-spin"></i> Filtrando registros del archivo pasivo...</td></tr>';
         }
@@ -212,7 +212,7 @@
     }
 
     function filtrarYMostrarTabla() {
-        const tbody = document.getElementById('lista-viajes');
+        const tbody = document.getElementById('his-lista-viajes');
         if (!tbody) return;
 
         if (!busquedaEjecutada) {
@@ -220,8 +220,8 @@
             return;
         }
 
-        const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
-        const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
+        const filtroPlaca = document.getElementById("his-txt-filtro-placa").value.trim().toUpperCase();
+        const filtroRuta = document.getElementById("his-txt-filtro-ruta").value.trim().toUpperCase();
         const inputFechaRaw = document.getElementById("filtro-fecha-historico").value;
 
         let fechaBuscarLatina = "";
@@ -287,7 +287,7 @@
             return horaA.localeCompare(horaB);
         });
         
-        const contenedorContador = document.getElementById("num-flota-total");
+        const contenedorContador = document.getElementById("his-num-flota-total");
         if (contenedorContador) contenedorContador.innerText = viajesFiltrados.length;
         
         if (viajesFiltrados.length === 0) {
@@ -431,7 +431,7 @@
     };
 
     function abrirResumen(data, placa, logAuditoria) {
-        document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
+        document.querySelectorAll('#his-lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
         if (typeof event !== 'undefined' && event.currentTarget) {
             const botonActivo = event.currentTarget;
             if (botonActivo.closest('tr')) {
@@ -441,8 +441,8 @@
 
         let puntos = JSON.parse(decodeURIComponent(data));
         const rawLog = decodeURIComponent(logAuditoria);
-        document.getElementById('side-placa').innerText = "Placa: " + placa;
-        const timeline = document.getElementById('timeline-v');
+        document.getElementById('his-side-placa').innerText = "Placa: " + placa;
+        const timeline = document.getElementById('his-timeline-v');
         timeline.innerHTML = "";
         
         if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
@@ -537,30 +537,30 @@
 
         containerHtml += `</ul>`;
         timeline.innerHTML += containerHtml;
-        document.getElementById('side-panel').classList.add('open');
+        document.getElementById('his-side-panel').classList.add('open');
     }
 
     function cerrarPanel() { 
-        document.getElementById('side-panel').classList.remove('open'); 
-        document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
+        document.getElementById('his-side-panel').classList.remove('open'); 
+        document.querySelectorAll('#his-lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
     }
 
     let _satMapa = null;
     let _satCacheDatosRows = []; 
 
     window.his_abrirMegaDetalle = function(idViaje, placa, ruta, estado, progreso, itinerarioDecoded) {
-        document.getElementById('lbl-sat-placa').innerText = placa;
-        document.getElementById('lbl-sat-ruta').innerText = decodeURIComponent(ruta);
-        document.getElementById('lbl-sat-porcentaje').innerText = progreso + "%";
-        document.getElementById('lbl-sat-barra-fill').style.width = progreso + "%";
+        document.getElementById('his-lbl-sat-placa').innerText = placa;
+        document.getElementById('his-lbl-sat-ruta').innerText = decodeURIComponent(ruta);
+        document.getElementById('his-lbl-sat-porcentaje').innerText = progreso + "%";
+        document.getElementById('his-lbl-sat-barra-fill').style.width = progreso + "%";
         
-        const badge = document.getElementById('lbl-sat-estado-badge');
-        document.getElementById('lbl-sat-estado-texto').innerText = estado;
+        const badge = document.getElementById('his-lbl-sat-estado-badge');
+        document.getElementById('his-lbl-sat-estado-texto').innerText = estado;
         if (badge) {
             badge.className = "sat-badge-estado " + (estado === "VENCIDO" ? "sat-status-atrasado" : "sat-status-en-curso");
         }
 
-        document.getElementById('mega-modal-detalle').style.display = 'flex';
+        document.getElementById('his-mega-modal-detalle').style.display = 'flex';
 
         setTimeout(function() {
             // Destruir y recrear el mapa limpiamente en cada apertura
@@ -568,7 +568,7 @@
                 try { _satMapa.remove(); } catch(e) {}
                 _satMapa = null;
             }
-            const mapContainer = document.getElementById('sat-map-container');
+            const mapContainer = document.getElementById('his-sat-map-container');
             if (mapContainer) mapContainer.innerHTML = '';
 
             _satMapa = L.map('sat-map-container', { center: [-12.046374, -77.042793], zoom: 7, minZoom: 3 });
@@ -579,7 +579,7 @@
     };
 
     window.his_cerrarMegaDetalle = function() {
-        document.getElementById('mega-modal-detalle').style.display = 'none';
+        document.getElementById('his-mega-modal-detalle').style.display = 'none';
         // Destruir el mapa al cerrar para evitar estado corrupto en la próxima apertura
         if (_satMapa) {
             try { _satMapa.remove(); } catch(e) {}
@@ -588,7 +588,7 @@
     };
 
     function procesarYConsultarAuditoriaSatelitalPasiva(idViaje, itinerarioDecoded) {
-        const tbody = document.getElementById('sat-tbody-rows');
+        const tbody = document.getElementById('his-sat-tbody-rows');
         if (tbody) tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:30px; color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Reconstruyendo histórico de viaje...</td></tr>';
 
         if (window._satMarcadoresHitosGrupo) _satMapa.removeLayer(window._satMarcadoresHitosGrupo);
@@ -992,11 +992,11 @@
     }
 
     window.his_filtrarTablaSatelital = function(tipoFiltro) {
-        const tbody = document.getElementById('sat-tbody-rows');
+        const tbody = document.getElementById('his-sat-tbody-rows');
         if (!tbody) return; tbody.innerHTML = "";
 
-        const inputPlaca = document.getElementById('txt-filtro-placa');
-        const inputRuta = document.getElementById('txt-filtro-ruta');
+        const inputPlaca = document.getElementById('his-txt-filtro-placa');
+        const inputRuta = document.getElementById('his-txt-filtro-ruta');
 
         if (tipoFiltro === 'historial') {
             if (inputPlaca) inputPlaca.value = "";
@@ -1085,8 +1085,8 @@
             });
         }
 
-        document.getElementById("txt-filtro-placa").addEventListener("input", filtrarYMostrarTabla);
-        document.getElementById("txt-filtro-ruta").addEventListener("input", filtrarYMostrarTabla);
+        document.getElementById("his-txt-filtro-placa").addEventListener("input", filtrarYMostrarTabla);
+        document.getElementById("his-txt-filtro-ruta").addEventListener("input", filtrarYMostrarTabla);
         document.getElementById("btn-buscar-fecha").addEventListener("click", realizarBusquedaPorFecha);
 
         const botones = document.querySelectorAll(".btn-filto-est");
@@ -1098,8 +1098,8 @@
                 estadoFiltroActivo = this.getAttribute("data-estado");
 
                 if (estadoFiltroActivo === "TODOS") {
-                    const inputPlaca = document.getElementById("txt-filtro-placa");
-                    const inputRuta = document.getElementById("txt-filtro-ruta");
+                    const inputPlaca = document.getElementById("his-txt-filtro-placa");
+                    const inputRuta = document.getElementById("his-txt-filtro-ruta");
                     if (inputPlaca) inputPlaca.value = "";
                     if (inputRuta) inputRuta.value = "";
                 }
@@ -1123,8 +1123,8 @@
             return;
         }
 
-        let lblPlaca = document.getElementById('lbl-sat-placa').innerText || "---";
-        let lblRuta = document.getElementById('lbl-sat-ruta').innerText || "---";
+        let lblPlaca = document.getElementById('his-lbl-sat-placa').innerText || "---";
+        let lblRuta = document.getElementById('his-lbl-sat-ruta').innerText || "---";
 
         let cabeceras = [
             "ESTADO HITO", "CONDUCTOR", "PUNTO / CONTROL GEOCERCA", "TIPO REGISTRO",
@@ -1256,7 +1256,7 @@
                     if (!_intervaloActualizar) {
                         _intervaloActualizar = setInterval(function() {
                             // Solo refresca si el modal de detalle NO está abierto
-                            const modal = document.getElementById('mega-modal-detalle');
+                            const modal = document.getElementById('his-mega-modal-detalle');
                             if (!modal || modal.style.display === 'none') {
                                 actualizar();
                             }
