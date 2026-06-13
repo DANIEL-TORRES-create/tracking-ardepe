@@ -183,6 +183,7 @@
     let apiGlobal = null;
 
     // ─── FLAGS DE CONTROL DE CICLO DE VIDA ───
+    let _idViajeResumenActivo = null; // Guarda el idViaje cuya fila debe quedar activa
     let eventosInicializados = false;
     let datosCargados = false;
     let necesitaRecargaAlVolver = true;
@@ -200,6 +201,10 @@
     
     // 2. RENDERIZADO DE LA TABLA MONITOR PRINCIPAL
     window.renderizarSeguimiento = function(viajes) {
+        // Ocultar overlay de carga al recibir datos
+        var overlay = document.getElementById('seg-overlay-carga');
+        if (overlay) overlay.style.display = 'none';
+
         listaViajesGlobal = viajes || [];
         
         const dlPlacas = document.getElementById("seg-dl-placas-activas");
@@ -326,10 +331,18 @@
             `;
             tbody.appendChild(tr);
         });
+        // Reaplicar fila activa si el panel de resumen sigue abierto
+        if (_idViajeResumenActivo) {
+            document.querySelectorAll('#seg-lista-viajes tr').forEach(function(tr) {
+                var btn = tr.querySelector('[onclick*="' + _idViajeResumenActivo + '"]');
+                if (btn) tr.classList.add('fila-activa');
+            });
+        }
     }
 
     window.seg_abrirResumenManualmente = function(idViaje, placa, logAuditoria) {
         let stringData = window._cacheItinerarios[idViaje] || "[]";
+        _idViajeResumenActivo = idViaje;
         window.seg_abrirResumen(encodeURIComponent(stringData), placa, logAuditoria);
     };
 
@@ -479,6 +492,7 @@
     function cerrarPanel() { 
         document.getElementById('side-panel').classList.remove('open'); 
         document.querySelectorAll('#seg-lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
+        _idViajeResumenActivo = null;
     }
     
     function validarMotivo() { 
@@ -1252,6 +1266,7 @@
                 if (megaModal) megaModal.style.display = 'none';
                 const modalCancel = document.getElementById('modal-cancel');
                 if (modalCancel) modalCancel.style.display = 'none';
+                _idViajeResumenActivo = null;
 
                 // Si el mapa Leaflet existe, forzar invalidateSize para que no quede en blanco
                 if (_satMapa) {
@@ -1259,6 +1274,9 @@
                 }
 
                 if (debeForzar) {
+                    // Mostrar overlay de carga solo al cambiar de add-in
+                    var overlay = document.getElementById('seg-overlay-carga');
+                    if (overlay) overlay.style.display = 'flex';
                     actualizar();
                 }
             },
@@ -1275,5 +1293,12 @@
 
 })();
 </script>
+<div id="seg-overlay-carga" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,36,68,0.55); z-index:99999; justify-content:center; align-items:center; flex-direction:column; gap:16px;">
+    <div style="width:52px; height:52px; border:5px solid rgba(255,255,255,0.2); border-top-color:#38bdf8; border-radius:50%; animation:seg-spin 0.8s linear infinite;"></div>
+    <span style="color:#ffffff; font-family:'Lexend',sans-serif; font-size:13px; font-weight:700; letter-spacing:1px;">CARGANDO...</span>
+</div>
+<style>
+@keyframes seg-spin { to { transform: rotate(360deg); } }
+</style>
 </body>
 </html>
