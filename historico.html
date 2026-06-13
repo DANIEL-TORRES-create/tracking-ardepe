@@ -158,11 +158,22 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNiLU063QEua2YTtal-N17jky4JEwKomUoBkzpqCrVyOD39ILSvkqufCL4TAY1iu4A/exec"; 
-    
-    let listaViajesMaster = [];       
-    let estadoFiltroActivo = "TODOS"; 
-    let busquedaEjecutada = false;    
+(function () {
+    "use strict";
+
+    // ─── VARIABLES CENTRALES (aisladas dentro del IIFE para evitar redeclaraciones) ───
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNiLU063QEua2YTtal-N17jky4JEwKomUoBkzpqCrVyOD39ILSvkqufCL4TAY1iu4A/exec";
+
+    let apiGlobal = null;
+
+    // ─── FLAGS DE CONTROL DE CICLO DE VIDA ───
+    let eventosInicializados = false;
+    let datosCargados = false;
+    let necesitaRecargaAlVolver = true;
+
+    let listaViajesMaster = [];
+    let estadoFiltroActivo = "TODOS";
+    let busquedaEjecutada = false;
     window._cacheItinerariosCompleto = {};
 
     function actualizar() {
@@ -173,7 +184,6 @@
     }
 
     window.renderizar = function(viajes) {
-        // ✅ bypass de diagnóstico removido - data fluyendo limpia
         listaViajesMaster = viajes || [];
         
         const dlPlacas = document.getElementById("dl-placas-activas");
@@ -187,7 +197,6 @@
             dlRutas.innerHTML = rutasUnicas.map(r => `<option value="${r}"></option>`).join("");
         }
 
-        // Si el operador ya tenía una búsqueda activa, refrescamos con los datos en memoria
         if (busquedaEjecutada) {
             filtrarYMostrarTabla();
         }
@@ -202,7 +211,6 @@
         setTimeout(filtrarYMostrarTabla, 200);
     }
 
-    // 🎯 REVISADO Y SANEADO: Sin variables fantasma y 100% matemático
     function filtrarYMostrarTabla() {
         const tbody = document.getElementById('lista-viajes');
         if (!tbody) return;
@@ -214,29 +222,24 @@
 
         const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
         const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
-        const inputFechaRaw = document.getElementById("filtro-fecha-historico").value; // Formato: YYYY-MM-DD
+        const inputFechaRaw = document.getElementById("filtro-fecha-historico").value;
 
-        // Formateador local para pasar YYYY-MM-DD a D/M/YYYY para hacer el cruce exacto con el Sheet
         let fechaBuscarLatina = "";
         if (inputFechaRaw) {
             let partesF = inputFechaRaw.split("-");
-            fechaBuscarLatina = `${parseInt(partesF[2], 10)}/${parseInt(partesF[1], 10)}/${partesF[0]}`; // Ej: 17/4/2026
+            fechaBuscarLatina = `${parseInt(partesF[2], 10)}/${parseInt(partesF[1], 10)}/${partesF[0]}`;
         }
 
         const mesesIngles = { "JAN":"01", "FEB":"02", "MAR":"03", "APR":"04", "MAY":"05", "JUN":"06", "JUL":"07", "AUG":"08", "SEP":"09", "OCT":"10", "NOV":"11", "DEC":"12" };
 
-        // 🚀 CRUCE INTELIGENTE DE DATOS (Filtra Placa + Ruta + Fecha Obligatoria + Botones de Estado)
         let viajesFiltrados = listaViajesMaster.filter(v => {
             if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
             
-            // A. Evaluación Estricta de la Fecha de Salida Planificada
             if (fechaBuscarLatina !== "") {
                 let fechaCeldaRaw = String(v.salidaPlan || "").trim();
-                // Si la celda trae coma o espacio ("17/4/2026 06:30:00"), extraemos solo el primer bloque
                 let fechaCeldaLimpia = fechaCeldaRaw.split(" ")[0].split(",")[0]; 
                 
-                // Si viene en formato largo de Google Sheets ("Tue Sep 26 1899...")
                 if (fechaCeldaRaw.indexOf(" ") > -1 && isNaN(fechaCeldaRaw.charAt(0))) {
                     let p = fechaCeldaRaw.split(/\s+/);
                     if (p.length >= 5) {
@@ -247,24 +250,20 @@
                 if (fechaCeldaLimpia !== fechaBuscarLatina) return false;
             }
 
-            // B. Evaluación de los Botones Superiores de Estado (Cruza con auditoriaLog)
             let logUpper = String(v.auditoriaLog || "").toUpperCase();
             let esCancelado = logUpper.includes("CANCELADO MANUAL") || logUpper.includes("CANCELADO_MANUAL");
             let esVencido = logUpper.includes("BARRIDO AUTOMÁTICO") || logUpper.includes("CANCELADO");
             let esCierreManual = logUpper.includes("CIERRE_MANUAL") || logUpper.includes("FINALIZADO MANUAL");
 
             if (estadoFiltroActivo === "FINALIZADO") {
-                // Solo muestra viajes exitosos (Cierres manuales o Automáticos limpios)
                 if (esCancelado || esVencido) return false;
             } else if (estadoFiltroActivo === "NO EJECUTADO") {
-                // Solo muestra caídas (Cancelados o Vencidos por barrido)
                 if (!esCancelado && !esVencido) return false;
             }
 
             return true;
         });
 
-        // Ordenamiento Cronológico de Menor a Mayor por ETD Planificado
         viajesFiltrados.sort(function(a, b) {
             let extraerHoraMilitar = (strEtd) => {
                 if (!strEtd || strEtd === "---") return "00:00:00";
@@ -332,8 +331,6 @@
                     if (p.length >= 5) {
                         let m = mesesIngles[p[1].toUpperCase()] || "00";
                         diaStr = `${parseInt(p[2],10)}/${parseInt(m,10)}/${p[3]}`;
-                        
-                        // 🟢 Ajuste inteligente para formato largo de Google Sheets
                         let bloquesH = p[4].split(":");
                         horaStr = bloquesH[0] + ":" + bloquesH[1];
                     }
@@ -341,8 +338,6 @@
                     let partes = t.split(" ");
                     let f = partes[0].split("-");
                     diaStr = `${parseInt(f[2],10)}/${parseInt(f[1],10)}/${f[0]}`;
-                    
-                    // 🟢 Ajuste inteligente para formato ISO (YYYY-MM-DD)
                     let hRaw = partes[1] || "00:00:00";
                     let bloquesH = hRaw.split(":");
                     horaStr = bloquesH[0] + ":" + bloquesH[1];
@@ -350,8 +345,6 @@
                     let separador = t.indexOf(",") > -1 ? "," : " ";
                     let bloques = t.split(separador);
                     diaStr = bloques[0] || t;
-                    
-                    // 🟢 Ajuste inteligente para tu formato estándar (17/4/2026 1:44:00)
                     if (bloques[1]) {
                         let bloquesH = bloques[1].trim().split(":");
                         horaStr = bloquesH[0] + ":" + bloquesH[1];
@@ -360,7 +353,6 @@
                     }
                 }
 
-                // Quitamos cualquier coma residual que arrastre el texto del día
                 diaStr = diaStr.replace(",", "").trim();
 
                 return `<div style="text-align:center; line-height: 1.4;">
@@ -471,20 +463,18 @@
             timeline.innerHTML += logsHtml;
         }
 
-        // 🧠 RE-ORDENAMIENTO LOGÍSTICO: Insertar INICIO_MANUAL en la posición 2 y CIERRE_MANUAL/CANCELADO al final real
         let indiceInicioManual = puntos.findIndex(p => p.punto === "INICIO_MANUAL");
         if (indiceInicioManual > -1) {
             let [inicioManualNode] = puntos.splice(indiceInicioManual, 1); 
-            puntos.splice(1, 0, inicioManualNode); // Lo ubica inmediatamente después del Origen
+            puntos.splice(1, 0, inicioManualNode);
         }
         
         let indiceCierreManual = puntos.findIndex(p => p.punto === "CIERRE_MANUAL" || p.punto === "CANCELADO_MANUAL");
         if (indiceCierreManual > -1) {
             let [cierreManualNode] = puntos.splice(indiceCierreManual, 1);
-            puntos.push(cierreManualNode); // Forzar que sea el hito final de cierre
+            puntos.push(cierreManualNode);
         }
 
-        // Helper interno para limpiar y formatear las fechas largas a formato Latino "DD/MM/YYYY, HH:MM:SS"
         let limpiarFechaTimeline = (strFecha) => {
             if (!strFecha || strFecha === "---" || strFecha === "--:--" || strFecha.trim() === "") return "---";
             let t = strFecha.toString().replace("'", "").trim();
@@ -523,7 +513,6 @@
                 marcaVisual = `<span style="color:#94a3b8; margin-right:6px;">📍</span> `;
             }
 
-            // Normalización de tiempos planificados y reales del hito
             let planificadoLimpio = limpiarFechaTimeline(p.planHora);
             let realLimpio = limpiarFechaTimeline(p.realHora);
 
@@ -621,7 +610,6 @@
             return t;
         };
 
-        // 🧠 FUNCIÓN MATEMÁTICA LOCAL (Resta horas evitando depender de otros archivos)
         let diffHorasPasivo = (horaInicio, horaFin) => {
             try {
                 if (!horaInicio || !horaFin || horaInicio === "---" || horaFin === "---" || horaInicio === "--:--" || horaFin === "--:--") return "---";
@@ -672,7 +660,6 @@
                 let hitoRealAnteriorSalida = "---";
                 let hitoPlanAnteriorSalida = "---";
 
-                // 🚀 1. INYECCIÓN CRÍTICA Y DEPURACIÓN DE HITOS MANUALES
                 rawDatosArray.forEach(h => {
                     let pNom = String(h.punto_nombre || "").trim().toUpperCase();
                     if (pNom === "INICIO_MANUAL" || pNom === "CIERRE_MANUAL" || pNom === "CANCELADO_MANUAL") {
@@ -690,14 +677,12 @@
                     }
                 });
 
-                // Posicionamiento estricto: Origen [0] e INICIO_MANUAL [1]
                 let idxManual = itinerarioPlan.findIndex(p => p.punto === "INICIO_MANUAL");
                 if (idxManual > -1) {
                     let [nodoManual] = itinerarioPlan.splice(idxManual, 1);
                     itinerarioPlan.splice(1, 0, nodoManual);
                 }
 
-                // Posicionamiento estricto: CIERRE_MANUAL al final absoluto
                 let idxCierre = itinerarioPlan.findIndex(p => p.punto === "CIERRE_MANUAL");
                 if (idxCierre > -1) {
                     let [nodoCierre] = itinerarioPlan.splice(idxCierre, 1);
@@ -707,14 +692,12 @@
                 let tieneInicioManualActivo = itinerarioPlan.some(p => p.punto === "INICIO_MANUAL");
                 let esOrigenOmitido = itinerarioPlan.length > 0 && itinerarioPlan[0].deteccion === "NO" && tieneInicioManualActivo;
 
-                // 🚀 2. BUCLE PROCESADOR CRONOLÓGICO CON REGLAS DE NEGOCIO SEGMENTADAS
                 itinerarioPlan.forEach((plan, index) => {
                     let real = rawDatosArray.find(h => h.punto_nombre && h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL");
                     
-                    // 🔢 Numeración secuencial inteligente en intervenciones
                     let numSecuencia = secuenciaCorrelativa++;
                     if (plan.punto === "INICIO_MANUAL") {
                         numSecuencia = 1;
@@ -737,7 +720,6 @@
                     let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
 
-                    // 🟢 TRATAMIENTO TEXTO PURO: Le quitamos las comillas y lo guardamos como String plano
                     let desvTiempoTexto = (real && real.desviacion_hh_mm) ? String(real.desviacion_hh_mm).replace("'", "").trim() : "---";
 
                     let tiempoViajePlan = "---";
@@ -756,13 +738,9 @@
                         
                         let partes = limpia.split(" ");
                         if (partes.length >= 2) {
-                            let horaCompleta = partes[1]; // Recibe ej: "8:30:00" o "10:38:15"
+                            let horaCompleta = partes[1];
                             let bloquesHora = horaCompleta.split(":");
-                            
-                            // Unimos solo el bloque 0 (Horas) y el bloque 1 (Minutos)
                             let horaMinutosLimpio = bloquesHora[0] + ":" + bloquesHora[1];
-                            
-                            // Retorna la fecha sin comas raras y la hora perfecta (ej: "8:30" o "10:38")
                             return `${partes[0].replace(",", "")}, ${horaMinutosLimpio}`;
                         }
                         return limpia;
@@ -770,7 +748,6 @@
 
                     if (!esOmitido && (esCompletado || tipoRegistro === "---")) {
                         
-                        // A. Kilómetros Planificados por Tramo
                         if (index === 0 || plan.punto === "CIERRE_MANUAL") {
                             distPlanKm = "---"; 
                         } else {
@@ -778,7 +755,6 @@
                             distPlanKm = Math.max(0, (parseFloat(plan.distanciaPlan) || 0) - (parseFloat(nodoBasePlan.distanciaPlan) || 0));
                         }
 
-                        // B. Tiempos de Viaje con Corrección para Hito 2 (Post-Manual)
                         if (index > 0 && plan.punto !== "CIERRE_MANUAL") {
                             if (index === 1 || (tieneInicioManualActivo && index === 2 && hitoRealAnteriorSalida === "---")) {
                                 hitoPlanAnteriorSalida = itinerarioPlan[0].planHoraSalida || "---";
@@ -812,12 +788,10 @@
                             }
                         }
 
-                        // C. Resta de Kilómetros Reales por Odómetro
                         let kmRaw = real ? String(real.km_acumulado).trim() : "0";
                         let odometroAcumuladoActual = 0;
                         let tieneOdomValido = false;
 
-                        // Si el dato del Sheet no es un guion, ni está vacío, y es un número válido, lo procesamos
                         if (kmRaw !== "---" && kmRaw !== "" && !isNaN(kmRaw)) {
                             odometroAcumuladoActual = parseFloat(kmRaw) || 0;
                             if (odometroAcumuladoActual > 0) {
@@ -831,7 +805,6 @@
                             difKm = "---";
                         } else if (tieneOdomValido) {
                             if (plan.punto !== "CIERRE_MANUAL") {
-                                // Si el hito anterior no tenía odómetro válido, no restamos basura para evitar números gigantes
                                 if (odometroBaseAnterior === 0) {
                                     distRealTramo = "---";
                                     difKm = "---";
@@ -844,15 +817,14 @@
                                     else semaforoDistancia = "rojo";
                                 }
                             } else {
-                                distRealTramo = "---"; // Forzado a guión total solicitado para cierre manual
+                                distRealTramo = "---";
                                 difKm = "---"; 
                             }
                             odometroBaseAnterior = odometroAcumuladoActual;
                         } else {
-                            // 🛡️ Si la unidad NO tiene odómetro ("---"), dejamos las distancias limpias en guiones
                             distRealTramo = "---";
                             difKm = "---";
-                            semaforoDistancia = "verde"; // Mantiene el indicador en neutro/verde
+                            semaforoDistancia = "verde";
                         }
 
                         if (!esFilaManual) {
@@ -861,32 +833,26 @@
                         }
                     }
 
-                    // ⚡ EXCEPCIÓN: PRIMER HITO DE UNA ZONA VÁLIDA
                     if (index === 0) {
                         tiempoViajePlan = "---"; tiempoViajeReal = "---"; distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
-                    // ⚡ EXCEPCIÓN: INICIO MANUAL
                     if (tieneInicioManualActivo && plan.punto === "INICIO_MANUAL") {
-                        plan.puntoPlanLlegadaForzadoGv = "---"; // Marcador para forzar la llegada planificada en guión
+                        plan.puntoPlanLlegadaForzadoGv = "---";
                         horaRealLlegada = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
-                    // ⚡ EXCEPCIÓN ESTRICTA: HITOS DE CIERRE (CIERRE_MANUAL / CANCELADO_MANUAL)
-                    // 🚫 REQUERIMIENTO: Deja en guión obligatorio Desviación, Teóricos, Tiempos, Distancias y Pernoctes
                     if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
-                        plan.puntoPlanLlegadaForzadoGv = "---"; // Marcador para forzar la llegada planificada en guión
+                        plan.puntoPlanLlegadaForzadoGv = "---";
                         pernoctePlan = "---"; pernocteReal = "---"; horaRealSalida = "---"; 
                         distPlanKm = "---"; distRealTramo = "---"; difKm = "---"; 
                         tiempoViajePlan = "---"; tiempoViajeReal = "---"; desvTiempoTexto = "---";
                     }
 
-                    // 🚫 REQUERIMIENTO: LIMPIEZA TOTAL EN HITOS OMITIDOS
                     if (esOmitido || (!esCompletado && tipoRegistro === "---")) {
                         distRealTramo = "---"; difKm = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
-                    // Ajuste de semáforos para evitar pintar alertas en hitos de cierre forzado
                     if (plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL") {
                         semaforoTiempo = "verde";
                     } else if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
@@ -898,12 +864,10 @@
                         if (totalMinsDesv <= 10) semaforoTiempo = "mostaza";
                         else semaforoTiempo = "rojo";
 
-                        // 🟢 CORTE NAVISAF: Mantiene el signo menos "-" y une solo Horas:Minutos (Elimina los segundos :00)
                         if (partesDesv.length >= 2) {
                             desvTiempoTexto = "-" + partesDesv[0] + ":" + partesDesv[1];
                         }
                     } else {
-                        // Si viene un positivo (Adelantado), también le mochamos los segundos antes de pintar verde
                         if (desvTiempoTexto !== "---") {
                             let partesPositivas = desvTiempoTexto.split(":");
                             if (partesPositivas.length >= 2) {
@@ -916,10 +880,8 @@
                     horaRealLlegada = normalizarFormatoFechaSinSegundos(horaRealLlegada);
                     horaRealSalida = normalizarFormatoFechaSinSegundos(horaRealSalida);
                     
-                    // 🎯 APLICACIÓN DE LLEGADA PLANIFICADA EN GUIÓN PARA INICIO O CIERRE MANUAL
                     let horaPlanLlegada = plan.puntoPlanLlegadaForzadoGv === "---" ? "---" : normalizarFormatoFechaSinSegundos(plan.planHora || "---");
                     
-                    desvTiempoTexto = desvTiempoTexto; 
                     pernoctePlan = limpiarFechaSat(pernoctePlan);
                     pernocteReal = limpiarFechaSat(pernocteReal);
 
@@ -931,11 +893,10 @@
                         distPlan: distPlanKm, distReal: distRealTramo, semDist: semaforoDistancia,
                         difKm: difKm, pernoctePlan: pernoctePlan, pernocteReal: pernocteReal, realSalida: horaRealSalida
                     });
-                    // [PROCESAMIENTO MAPA LEAFLET - MANTENIDO INTACTO]
+
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     let centroideLatLng = null;
                     
-                    // 🎯 Coordenada promedio: centroide de todos los puntos de la API
                     if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                         let sumaLat = 0, sumaLng = 0;
                         zonaMatch.points.forEach(pt => { sumaLat += pt.y; sumaLng += pt.x; });
@@ -948,7 +909,6 @@
                     if (centroideLatLng) {
                         let geocercaVisual = null;
                         
-                        // 🟩 DIBUJAR LA GEOCERCA REAL DE GEOTAB (Su forma original con opacidad suave)
                         if (plan.punto === "INICIO_MANUAL") {
                             geocercaVisual = L.circle(centroideLatLng, { radius: 40, color: '#d97706', fillColor: '#d97706', weight: 2, fillOpacity: 0.25 }).addTo(window._satMarcadoresHitosGrupo);
                         } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
@@ -958,12 +918,10 @@
                             geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.20 }).addTo(window._satMarcadoresHitosGrupo);
                         }
 
-                        // Texto flotante fijado estrictamente en el centro geométrico de la zona
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
                         
-                        // 🚀 Inyección de datos completa para que el bloque 2 sepa cómo pintar la traza
                         puntosParaRutaOSRM.push({ 
                             coordenada: centroideLatLng, 
                             esGris: esOmitido || (!esCompletado),
@@ -974,9 +932,8 @@
                 });
 
                 puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
-                    // Dibujamos el nodo de origen del tramo en el mapa para que se ensarte en la línea
-                    let colorNodo = puntoOrigen.esGris ? '#64748b' : '#ef4444'; // Gris si es omitido, Rojo vivo si es real
-                    if (puntoOrigen.esManual) colorNodo = '#d97706'; // Naranja si es manual
+                    let colorNodo = puntoOrigen.esGris ? '#64748b' : '#ef4444';
+                    if (puntoOrigen.esManual) colorNodo = '#d97706';
 
                     L.circle(puntoOrigen.coordenada, {
                         radius: 5,
@@ -1000,10 +957,9 @@
                                 let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                 let colorLinea = esTramoGris ? '#94a3b8' : '#004b93'; 
                                 
-                                // 🎯 DISEÑO NAVISAF: Línea continua para real, discontinua (dashArray) para omitido
                                 let estiloLinea = esTramoGris ? 
-                                    { color: colorLinea, weight: 4, opacity: 0.65, dashArray: '6, 12' } : // ─── ─── (Omitido)
-                                    { color: colorLinea, weight: 5, opacity: 0.85 };                      // ─────── (Real)
+                                    { color: colorLinea, weight: 4, opacity: 0.65, dashArray: '6, 12' } :
+                                    { color: colorLinea, weight: 5, opacity: 0.85 };
 
                                 L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
                             }
@@ -1030,7 +986,6 @@
         const inputPlaca = document.getElementById('txt-filtro-placa');
         const inputRuta = document.getElementById('txt-filtro-ruta');
 
-        // ⚡ REQUERIMIENTO CRÍTICO: Si se pulsa "Todos" (historial), limpiamos los cuadros de texto de arriba
         if (tipoFiltro === 'historial') {
             if (inputPlaca) inputPlaca.value = "";
             if (inputRuta) inputRuta.value = "";
@@ -1039,28 +994,23 @@
         let valorPlaca = inputPlaca ? inputPlaca.value.toUpperCase().trim() : "";
         let valorRuta = inputRuta ? inputRuta.value.toUpperCase().trim() : "";
 
-        // 📊 FILTRADO MULTI-NIVEL EN MEMORIA SEGURA
         let registrosFiltrados = _satCacheDatosRows.filter(r => {
             let puntoUpper = String(r.punto || "").toUpperCase().trim();
             let conductorUpper = String(r.conductor || "").toUpperCase().trim();
             let tipoUpper = String(r.tipo || "").toUpperCase().trim();
 
-            // Respetar las búsquedas actuales por texto si existen
             if (valorPlaca !== "" && conductorUpper.indexOf(valorPlaca) === -1) return false;
             if (valorRuta !== "" && puntoUpper.indexOf(valorRuta) === -1) return false;
 
-            // Segmentación estricta de botones Navisaf
             if (tipoFiltro === 'completados') {
-                // ✔️ Finalizados: Registro con check (✓) o tipo AUTOMÁTICO/MANUAL exitoso
                 return r.st === "✓" || tipoUpper === "AUTOMÁTICO" || tipoUpper === "MANUAL";
             }
             
             if (tipoFiltro === 'omitidos') {
-                // 🚫 No Ejecutados: Registro Omitido (🚫), Cancelados o Vencidos
                 return r.st === "🚫" || tipoUpper === "OMITIDO" || puntoUpper.indexOf("CANCELADO") > -1 || puntoUpper.indexOf("VENCIDO") > -1;
             }
 
-            return true; // 'historial' (Todos) muestra todo el itinerario sin restricciones
+            return true;
         });
 
         if (registrosFiltrados.length === 0) {
@@ -1105,68 +1055,57 @@
         });
     };
 
-    geotab.addin.seguimientoHistorico = () => {
-        return {
-            initialize(api, state, callback) {
-                // 🚀 INYECCIÓN CRÍTICA: Guardamos la instancia de telemetría en la variable global
-                apiGlobal = api; 
+    // ─── INICIALIZAR EVENTOS UNA SOLA VEZ (con .onclick / addEventListener controlado) ───
+    function inicializarEventos() {
+        if (eventosInicializados) return;
+        eventosInicializados = true;
 
-                const inputF = document.getElementById('filtro-fecha-historico');
-                if (inputF) {
-                    const hoyLocal = new Date();
-                    const offset = hoyLocal.getTimezoneOffset();
-                    const fechaAjustada = new Date(hoyLocal.getTime() - (offset * 60 * 1000));
-                    inputF.value = fechaAjustada.toISOString().split('T')[0];
-                    
-                    inputF.addEventListener("change", function() {
-                        busquedaEjecutada = false;
-                        filtrarYMostrarTabla();
-                    });
+        const inputF = document.getElementById('filtro-fecha-historico');
+        if (inputF) {
+            const hoyLocal = new Date();
+            const offset = hoyLocal.getTimezoneOffset();
+            const fechaAjustada = new Date(hoyLocal.getTime() - (offset * 60 * 1000));
+            inputF.value = fechaAjustada.toISOString().split('T')[0];
+            
+            inputF.addEventListener("change", function() {
+                busquedaEjecutada = false;
+                filtrarYMostrarTabla();
+            });
+        }
+
+        document.getElementById("txt-filtro-placa").addEventListener("input", filtrarYMostrarTabla);
+        document.getElementById("txt-filtro-ruta").addEventListener("input", filtrarYMostrarTabla);
+        document.getElementById("btn-buscar-fecha").addEventListener("click", realizarBusquedaPorFecha);
+
+        const botones = document.querySelectorAll(".btn-filto-est");
+        botones.forEach(btn => {
+            btn.addEventListener("click", function() {
+                botones.forEach(b => b.classList.remove("activo"));
+                this.classList.add("activo");
+                
+                estadoFiltroActivo = this.getAttribute("data-estado");
+
+                if (estadoFiltroActivo === "TODOS") {
+                    const inputPlaca = document.getElementById("txt-filtro-placa");
+                    const inputRuta = document.getElementById("txt-filtro-ruta");
+                    if (inputPlaca) inputPlaca.value = "";
+                    if (inputRuta) inputRuta.value = "";
                 }
 
-                document.getElementById("txt-filtro-placa").addEventListener("input", filtrarYMostrarTabla);
-                document.getElementById("txt-filtro-ruta").addEventListener("input", filtrarYMostrarTabla);
-                document.getElementById("btn-buscar-fecha").addEventListener("click", realizarBusquedaPorFecha);
+                filtrarYMostrarTabla();
+            });
+        });
+    }
 
-                const botones = document.querySelectorAll(".btn-filto-est");
-                botones.forEach(btn => {
-                    btn.addEventListener("click", function() {
-                        botones.forEach(b => b.classList.remove("activo"));
-                        this.classList.add("activo");
-                        
-                        estadoFiltroActivo = this.getAttribute("data-estado");
-
-                        // 🚀 REQUERIMIENTO: Si se pulsa el botón "TODOS", limpiamos Placa y Ruta, manteniendo la Fecha intacta
-                        if (estadoFiltroActivo === "TODOS") {
-                            const inputPlaca = document.getElementById("txt-filtro-placa");
-                            const inputRuta = document.getElementById("txt-filtro-ruta");
-                            if (inputPlaca) inputPlaca.value = "";
-                            if (inputRuta) inputRuta.value = "";
-                        }
-
-                        // Re-renderiza la tabla maestra con los campos limpios y la fecha seleccionada
-                        filtrarYMostrarTabla();
-                    });
-                });
-
-                // Carga inicial al enganchar MyGeotab
-                actualizar();
-
-                // Reloj de automatización de fondo (Cada 60 segundos)
-                setInterval(actualizar, 60000); 
-
-                callback();
-            }
-        };
-    };
-
-    // Ejecución inicial de contingencia
-    actualizar();
+    // ─── EXPONER AL HTML LAS FUNCIONES QUE USAN onclick ───
+    window.cerrarPanel              = cerrarPanel;
+    window.abrirResumen             = abrirResumen;
+    window.exportarTablaSatelitalAExcel = exportarTablaSatelitalAExcel;
 
     // ==========================================
     // 🟢 EXPORTADOR MATRIZ NAVISAF BLINDADO
     // ==========================================
-    window.exportarTablaSatelitalAExcel = function() {
+    function exportarTablaSatelitalAExcel() {
         if (!_satCacheDatosRows || _satCacheDatosRows.length === 0) {
             alert("No hay registros en la tabla para exportar.");
             return;
@@ -1192,8 +1131,6 @@
                 td, th { border: 1px solid #cbd5e1; padding: 6px; text-align: left; }
                 .meta-header { font-weight: bold; background-color: #f1f5f9; color: #0f172a; font-size: 13px; }
                 .th-maestro { background-color: #002244; color: white; font-weight: bold; text-align: center; font-size: 11px; }
-                
-                /* Estilos de Celdas de Color Nativo para Excel */
                 .bg-verde { background-color: #dcfce7; color: #15803d; font-weight: bold; mso-number-format:"\\@"; }
                 .bg-mostaza { background-color: #fef9c3; color: #a16207; font-weight: bold; mso-number-format:"\\@"; }
                 .bg-rojo { background-color: #fee2e2; color: #b91c1c; font-weight: bold; mso-number-format:"\\@"; }
@@ -1217,17 +1154,15 @@
         _satCacheDatosRows.forEach(r => {
             let badgeEstTexto = r.st === "✓" ? "✓ OK" : (r.st === "🚫" ? "🚫 OMITIDO" : "⏳ PENDIENTE");
             
-            // 🎨 COLOR 1: Columna Estado Hito
             let estiloCeldaEstado = "";
             if (r.st === "✓") estiloCeldaEstado = 'class="bg-verde"';
             else if (r.st === "🚫") estiloCeldaEstado = 'class="bg-rojo"';
             else estiloCeldaEstado = 'class="bg-omitido"';
 
-            // 🎨 COLOR 2: Lógica Matemática para Columna Desviación Tiempo
-            let estiloCeldaDesv = 'class="text-puro"'; // Por defecto texto plano sin fondo
+            let estiloCeldaDesv = 'class="text-puro"';
             
             if (r.punto === "CIERRE_MANUAL" || r.punto === "CANCELADO_MANUAL" || r.punto.indexOf("INICIO_MANUAL") > -1) {
-                estiloCeldaDesv = 'class="bg-verde"'; // Hitos manuales de control van en verde limpio
+                estiloCeldaDesv = 'class="bg-verde"';
             } else if (r.desvTiempo !== "---" && r.desvTiempo.indexOf("-") > -1) {
                 let minutosLimpios = r.desvTiempo.replace("-", "");
                 let fragmentos = minutosLimpios.split(":");
@@ -1236,12 +1171,12 @@
                 let totalMinutosPasivo = (horasEnteras * 60) + minutosEnteros;
 
                 if (!isNaN(totalMinutosPasivo) && totalMinutosPasivo <= 10) {
-                    estiloCeldaDesv = 'class="bg-mostaza"'; // Tolerancia 1-10 min
+                    estiloCeldaDesv = 'class="bg-mostaza"';
                 } else {
-                    estiloCeldaDesv = 'class="bg-rojo"';    // Retraso crítico > 10 min (Como tu -1336:32)
+                    estiloCeldaDesv = 'class="bg-rojo"';
                 }
             } else if (r.desvTiempo !== "---" && r.desvTiempo !== "00:00" && r.desvTiempo !== "0:00") {
-                estiloCeldaDesv = 'class="bg-verde"';   // Adelantados o a tiempo
+                estiloCeldaDesv = 'class="bg-verde"';
             }
 
             let dPlan = (r.distPlan !== "---" && !isNaN(r.distPlan)) ? `${parseFloat(r.distPlan).toFixed(2)} KM` : "---";
@@ -1285,8 +1220,50 @@
         document.body.appendChild(linkFalso);
         linkFalso.click();
         document.body.removeChild(linkFalso);
+    }
+
+    // ─── CICLO DE VIDA DEL ADD-IN ───
+    geotab.addin.seguimientoHistorico = () => {
+        return {
+            initialize(api, state, callback) {
+                apiGlobal = api;
+
+                // 1. Primero liberar MyGeotab para que no se congele
+                try {
+                    callback();
+                } catch (e) {
+                    console.error("Error ejecutando callback de initialize:", e);
+                }
+
+                // 2. Inicializar eventos y carga de forma diferida
+                setTimeout(() => {
+                    inicializarEventos();
+                    actualizar();
+                    setInterval(actualizar, 60000);
+                    datosCargados = true;
+                }, 0);
+            },
+
+            focus(api, state) {
+                apiGlobal = api;
+                const debeForzar = necesitaRecargaAlVolver || !datosCargados;
+                necesitaRecargaAlVolver = false;
+                if (debeForzar) {
+                    actualizar();
+                }
+            },
+
+            blur(api, state) {
+                // NO limpiar tablas aquí. Solo marcar que al volver debe recargar.
+                necesitaRecargaAlVolver = true;
+            }
+        };
     };
-    
+
+    // Ejecución inicial de contingencia
+    actualizar();
+
+})();
 </script>
 </body>
 </html>
