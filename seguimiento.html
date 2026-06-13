@@ -514,12 +514,22 @@
         document.getElementById('mega-modal-detalle').style.display = 'flex';
 
         setTimeout(function() {
-            if (!_satMapa) {
-                _satMapa = L.map('sat-map-container', { center: [-12.046374, -77.042793], zoom: 7, minZoom: 3 });
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', noWrap: true }).addTo(_satMapa);
-            } else {
-                _satMapa.invalidateSize(true);
+            // Destruir y recrear el mapa limpiamente en cada apertura
+            // para evitar estado corrupto al volver de otro add-in
+            if (_satMapa) {
+                try { _satMapa.remove(); } catch(e) {}
+                _satMapa = null;
+                _satMarcadorCamion = null;
+                _satLineasRecorridas = null;
+                _satLineasPendientes = null;
             }
+            // Limpiar el contenedor del mapa antes de reinicializar
+            const mapContainer = document.getElementById('sat-map-container');
+            if (mapContainer) mapContainer.innerHTML = '';
+
+            _satMapa = L.map('sat-map-container', { center: [-12.046374, -77.042793], zoom: 7, minZoom: 3 });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', noWrap: true }).addTo(_satMapa);
+
             procesarYConsultarAuditoriaSatelital(idViaje, itinerarioDecoded);
         }, 400);
     };
@@ -528,6 +538,14 @@
         document.getElementById('mega-modal-detalle').style.display = 'none';
         document.querySelectorAll('.sat-btn-f').forEach(b => b.classList.remove('active'));
         document.getElementById('sat-btn-historial').classList.add('active');
+        // Destruir el mapa al cerrar para evitar estado corrupto en la próxima apertura
+        if (_satMapa) {
+            try { _satMapa.remove(); } catch(e) {}
+            _satMapa = null;
+            _satMarcadorCamion = null;
+            _satLineasRecorridas = null;
+            _satLineasPendientes = null;
+        }
     };
 
     function procesarYConsultarAuditoriaSatelital(idViaje, itinerarioDecoded) {
@@ -1216,6 +1234,20 @@
                 apiGlobal = api;
                 const debeForzar = necesitaRecargaAlVolver || !datosCargados;
                 necesitaRecargaAlVolver = false;
+
+                // Cerrar panel lateral y modal si quedaron abiertos de la sesión anterior
+                const sidePanel = document.getElementById('side-panel');
+                if (sidePanel) sidePanel.classList.remove('open');
+                const megaModal = document.getElementById('mega-modal-detalle');
+                if (megaModal) megaModal.style.display = 'none';
+                const modalCancel = document.getElementById('modal-cancel');
+                if (modalCancel) modalCancel.style.display = 'none';
+
+                // Si el mapa Leaflet existe, forzar invalidateSize para que no quede en blanco
+                if (_satMapa) {
+                    try { _satMapa.invalidateSize(true); } catch(e) {}
+                }
+
                 if (debeForzar) {
                     actualizar();
                 }
