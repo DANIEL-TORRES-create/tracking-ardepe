@@ -38,12 +38,12 @@
        <div class="grupo-inputs-predictivos">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
-                <input type="text" id="his-txt-filtro-placa" list="his-dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
+                <input type="text" id="his-txt-filtro-placa" name="his-filtro-placa" list="his-dl-placas-activas" autocomplete="new-password" class="input-predictivo-pro" placeholder="Buscar Placa..." onkeyup="his_filtrarTablaSatelital('')">
                 <datalist id="his-dl-placas-activas"></datalist>
             </div>
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-route"></i>
-                <input type="text" id="his-txt-filtro-ruta" list="his-dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off" onkeyup="his_filtrarTablaSatelital('')">
+                <input type="text" id="his-txt-filtro-ruta" name="his-filtro-ruta" list="his-dl-rutas-activas" autocomplete="new-password" class="input-predictivo-pro" placeholder="Buscar Ruta..." onkeyup="his_filtrarTablaSatelital('')">
                 <datalist id="his-dl-rutas-activas"></datalist>
             </div>
         </div>
@@ -422,12 +422,12 @@
 
     window.his_abrirResumenManualmente = function(idViaje, placa, logAuditoria) {
         let stringData = window._cacheItinerariosCompleto[idViaje] || "[]";
-        abrirResumen(encodeURIComponent(stringData), placa, logAuditoria);
+        window.his_abrirResumen(encodeURIComponent(stringData), placa, logAuditoria);
     };
 
     window.his_abrirMegaDetalleManualmente = function(idViaje, placa, rutaEncoded, estado, progreso) {
         let stringData = window._cacheItinerariosCompleto[idViaje] || "[]";
-        abrirMegaDetalle(idViaje, placa, rutaEncoded, estado, progreso, encodeURIComponent(stringData));
+        window.his_abrirMegaDetalle(idViaje, placa, rutaEncoded, estado, progreso, encodeURIComponent(stringData));
     };
 
     function abrirResumen(data, placa, logAuditoria) {
