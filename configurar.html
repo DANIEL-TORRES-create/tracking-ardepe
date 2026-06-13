@@ -1,73 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="estilos.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        .seccion-lista { margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px; }
+        .btn-lupa { padding: 5px 15px; cursor: pointer; background: #1a73e8; color: white; border: none; border-radius: 4px; font-weight: bold; }
+        .modo-masivo { background: #f0f7ff; padding: 15px; border: 1px solid #1a73e8; border-radius: 8px; margin-bottom: 20px; }
+        .editando { border: 2px solid #f2994a !important; background: #fff4e5; }
+        .input-file-custom { padding: 8px; background: white; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; }
+        .btn-descarga { background: #27ae60; color: white; padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; }
+        .error-log { background: #fee; color: #b00; padding: 10px; border-radius: 4px; margin-top: 10px; display: none; font-size: 12px; border: 1px solid #b00; line-height: 1.5; }
+        .tabla-constructor th { font-size: 11px; }
+        input:disabled, select:disabled { background-color: #eee !important; cursor: not-allowed; color: #666; }
+    </style>
 </head>
 <body>
 
 <div class="card-container">
-    <h2 class="titulo-seccion">🛠️ Crear Plan de Rutas</h2>
+    <h2 class="titulo-seccion">📅 Control de Programación y Edición</h2>
     
-    <!-- 🎛 shrink CONTENEDOR DE DOS COLUMNAS EN ACCIÓN -->
+    <!-- 🎛️ CONTENEDOR DE DOS COLUMNAS EN ACCIÓN CORREGIDO -->
     <div class="bunker-split-container">
         
-        <!-- [VENTANA IZQUIERDA (50%)]: CONSTRUCTOR DE TRAMOS -->
+        <!-- [VENTANA IZQUIERDA (50%)]: OPERACIONES DE DESPACHO -->
         <div class="columna-izquierda-pro">
             
-            <div id="contenedorManual" class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: flex-end;">
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label>NOMBRE DE LA RUTA:</label>
-                    <input type="text" id="nombreRuta" placeholder="Ej: LIMA - HUANCAVELICA" style="width: 100%;">
+            <!-- Carga Masiva Excel -->
+            <div class="modo-masivo">
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                  <label style="font-size: 12px !important;">📊 PANEL DE CARGA MASIVA EXCEL</label>
+                  <button onclick="exportarPlantilla()" class="btn-descarga" style="padding: 5px 12px !important; font-size: 10px !important;">📥 Plantilla</button>
+              </div>
+                <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%;">
+                    <input type="file" id="inputExcel" style="flex-grow: 1;">
+                    <button id="btnProcesarExcel" class="btn-lupa" style="height: 33px;">Validar y Subir</button>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label id="lblZonas">BUSCANDO ZONAS EN MYGEOTAB...</label>
-                    <input list="listaZonas" id="buscadorZonas" placeholder="Buscar geocerca..." style="width: 100%;">
-                    <datalist id="listaZonas"></datalist>
+                <div id="errorLog" class="error-log"></div>
+            </div>
+
+            <!-- Registro Manual Especializado -->
+            <div id="contenedorManual" class="barra-herramientas" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <input type="hidden" id="idEdicion"> 
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label>1. RUTA MAESTRA:</label>
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                        <select id="selectRuta" style="width: 100%;"><option value="">Cargando...</option></select>
+                        <label style="white-space: nowrap; display: flex; align-items: center; gap: 4px; margin: 0;"><input type="checkbox" id="checkRetorno" style="margin:0;"> ¿RET?</label>
+                    </div>
+                    <label>2. SALIDA PROGRAMADA (ETD):</label>
+                    <input type="datetime-local" id="fechaSalida" style="width: 100%;">
                 </div>
-                <div style="grid-column: span 2; display: flex; justify-content: flex-end; margin-top: 4px;">
-                    <button id="btnAgregar" class="btn-lupa" style="width: 100%; height: 34px;">➕ Añadir Punto al Itinerario</button>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label id="lblVehiculo">3. VEHÍCULO (PLACA):</label>
+                    <input list="listaVehiculos" id="inputVehiculo" placeholder="Placa..." style="width: 100%;">
+                    <datalist id="listaVehiculos"></datalist>
+                    <label>4. CONDUCTOR ASIGNADO:</label>
+                    <input list="listaConductores" id="inputConductor" placeholder="Conductor..." style="width: 100%;">
+                    <datalist id="listaConductores"></datalist>
                 </div>
             </div>
 
+            <!-- Previsualización del Itinerario Calculado -->
             <table class="tabla-constructor">
                 <thead>
                     <tr>
                         <th style="width: 40px;">Ord</th>
                         <th style="text-align: left; padding-left: 8px;">Punto de Control</th>
-                        <th>Dist (Km)</th>
-                        <th>Tiempo Tramo</th>
-                        <th>Pernocte</th>
-                        <th style="width: 50px;">Acción</th>
+                        <th>Km</th>
+                        <th>ETA Llegada</th>
+                        <th>ETD Salida</th>
                     </tr>
                 </thead>
-                <tbody id="cuerpoRuta"></tbody>
+                <tbody id="cuerpoItinerario"></tbody>
             </table>
 
+            <!-- Acciones de Confirmación -->
             <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: flex-end;">
                 <button id="btnCancelar" class="btn-cancelar" style="margin: 0;">❌ Cancelar</button>
-                <button id="btnGuardar" class="btn-guardar" style="margin: 0;">💾 Guardar Ruta</button>
+                <button id="btnProgramar" class="btn-guardar" style="margin: 0;">🚚 Confirmar Viaje</button>
             </div>
 
         </div>
 
-        <!-- [VENTANA DERECHA (50%)]: PANEL DE RUTAS GUARDADAS -->
+        <!-- [VENTANA DERECHA (50%)]: PANEL DE HISTORIAL VIVO -->
         <div class="columna-derecha-pro">
             <div class="seccion-lista">
-                <div style="margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
-                    <h3 style="margin: 0; color: #004b93; font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: 0.3px;">📂 HISTORIAL DE RUTAS CREADAS</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                    <h3 style="margin: 0; color: #004b93; font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: 0.3px;">🗂️ PROGRAMADOS PARA EDICIÓN</h3>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="date" id="filtroFechaLista" style="padding: 5px !important; border: 1px solid #cbd5e1 !important; font-size: 11px !important; border-radius: 4px; color:#334155; background:#ffffff !important; height:28px; box-sizing:border-box;">
+                        <button onclick="cargarViajesExistentes()" class="btn-lupa" style="padding: 0 12px !important; font-size: 11px !important; height:28px;">🔍 Buscar</button>
+                    </div>
                 </div>
                 
                 <table class="tabla-constructor">
                     <thead>
                         <tr>
-                            <th style="text-align: left; padding-left: 8px;">Nombre Oficial de la Ruta</th>
-                            <th>Puntos</th>
-                            <th>Fecha Creación</th>
-                            <th>Cargar</th>
+                            <th>Placa</th>
+                            <th>Conductor</th>
+                            <th style="text-align: left; padding-left: 8px;">Ruta</th>
+                            <th>Salida</th>
+                            <th>Estado</th>
+                            <th>Editar</th>
                         </tr>
                     </thead>
-                    <tbody id="listaRutasGuardadas"></tbody>
+                    <tbody id="cuerpoListaViajes"></tbody>
                 </table>
             </div>
         </div>
@@ -76,202 +115,516 @@
 </div>
 
 <script>
-    let zonasFiltradas = [];
-    let rutaActual = [];
-    let idRutaActiva = null; 
-    let apiGlobal;
-    // URL ACTUALIZADA
+(function () {
+    "use strict";
+
+    // ─── VARIABLES CENTRALES (aisladas dentro del IIFE para evitar redeclaraciones) ───
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwUUfNbaq4tkx05vUxjpJNtbxqJi_Q9WWnxMINupHHSWpU129H9x5wY6Jbf0SNrEE0e/exec";
+    let rutasMaestras = [];
+    let placasValidas = [];
+    let apiGlobal = null;
 
-    function formatTime(decimal) {
-        if (!decimal || isNaN(decimal) || decimal <= 0) return "00:00";
-        let h = Math.floor(decimal);
-        let m = Math.round((decimal - h) * 60);
-        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    // ─── FLAGS DE CONTROL DE CICLO DE VIDA ───
+    let eventosInicializados = false;
+    let datosCargando = false;
+    let datosCargados = false;
+    let arranqueProgramado = false;
+    let necesitaRecargaAlVolver = true;
+    let viajesCache = [];
+
+    // ─── HELPER ───
+    function $(id) {
+        return document.getElementById(id);
     }
 
-    async function getDatosCarreteraReal(lat1, lon1, lat2, lon2) {
-    if (!lat1 || !lon1 || !lat2 || !lon2) return { km: 0, tiempoMinutos: 0 };
-    
-    try {
-        // 🗺️ Consultamos al servidor gratuito de enrutamiento OSRM
-        // Formato obligatorio de OSRM: longitud1,latitud1;longitud2,latitud2
-        const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`;
+    // ─── ESTABLECE FECHA HOY EN EL FILTRO (solo si está vacío) ───
+    function establecerFechaHoy() {
+        const filtroFechaInput = $("filtroFechaLista");
+        if (!filtroFechaInput || filtroFechaInput.value) return;
+        const hoyLocal = new Date();
+        const offset = hoyLocal.getTimezoneOffset();
+        const fechaAjustada = new Date(hoyLocal.getTime() - (offset * 60 * 1000));
+        filtroFechaInput.value = fechaAjustada.toISOString().split("T")[0];
+    }
+
+    // ─── EXPORTAR PLANTILLA EXCEL ───
+    function exportarPlantilla() {
+        const wb = XLSX.utils.book_new();
+        const wsData = [
+            ["PLACA", "CONDUCTOR", "RUTA", "FECHA_ETD"],
+            ["ABC-123", "JUAN PEREZ", "LIMA-ICA", "'2026-04-15 22:00"]
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wsInstData = [
+            ["INSTRUCCIONES DE CARGA MASIVA - NAVISAF"],
+            [""],
+            ["1. Solo use la hoja 'Programación' para cargar los datos de sus viajes."],
+            ["2. La FECHA_ETD es CRÍTICA: debe llevar una comilla simple al inicio: '2026-04-15 22:00"],
+            ["   Formato aceptado: AAAA-MM-DD HH:mm (Año-Mes-Día Hora:Minuto)"],
+            ["3. La PLACA debe coincidir exactamente con el nombre del vehículo en MyGeotab."],
+            ["4. EL CONDUCTOR debe ser el nombre y apellido registrado en la plataforma."],
+            ["5. La RUTA debe ser idéntica al nombre de la ruta creada en el Add-in 1. Configurar Rutas."],
+            ["6. No cambie el nombre de los encabezados de la primera fila."],
+            ["7. Si es un viaje de retorno, al final del nombre de la ruta agregar /RETORNO (Ejemplo: LIMA-ICA/RETORNO)."],
+            [""],
+            ["Nota: El botón 'Validar y Subir' verificará que las Placas y Rutas existan antes de procesar."]
+        ];
+        const wsInst = XLSX.utils.aoa_to_sheet(wsInstData);
+        ws['!cols'] = [{wch:15}, {wch:25}, {wch:25}, {wch:20}];
+        wsInst['!cols'] = [{wch:80}];
+        XLSX.utils.book_append_sheet(wb, ws, "Programación");
+        XLSX.utils.book_append_sheet(wb, wsInst, "Instrucciones");
+        XLSX.writeFile(wb, "Plantilla_Viajes_Navisaf.xlsx");
+    }
+
+    // ─── RESET FORMULARIO ───
+    const resetearFormularioProgramacion = () => {
+        document.getElementById("contenedorManual").classList.remove("editando");
+        document.getElementById("idEdicion").value = "";
+        document.querySelectorAll("#contenedorManual input, #contenedorManual select").forEach(el => el.disabled = false);
+        document.getElementById("inputVehiculo").value = "";
+        document.getElementById("inputConductor").value = "";
+        document.getElementById("selectRuta").value = "";
+        document.getElementById("fechaSalida").value = "";
+        document.getElementById("checkRetorno").checked = false;
+        document.getElementById("cuerpoItinerario").innerHTML = "";
+        document.getElementById("btnProgramar").innerText = "🚚 Confirmar Viaje";
+        document.getElementById("btnProgramar").disabled = false;
+        document.getElementById("errorLog").style.display = "none";
+        document.getElementById("errorLog").innerHTML = "";
+    };
+
+    // ─── VALIDAR FECHA ───
+    function validarFechaReal(fechaStr) {
+        const f = fechaStr.toString().replace("'", "").trim();
+        const regex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\s([01]\d|2[0-3]):([0-5]\d)$/;
+        return regex.test(f);
+    }
+
+    // ─── GENERAR ITINERARIO MASIVO (lógica original intacta) ───
+    function generarItinerarioMasivo(nombreRuta, fechaSalida) {
+        let esRetornoMasivo = false;
+        let nombreBuscar = nombreRuta.toString().trim();
         
-        const respuesta = await fetch(url);
-        const data = await respuesta.json();
-        
-        if (data && data.routes && data.routes.length > 0) {
-            const ruta = data.routes[0];
-            
-            const kilometros = ruta.distance / 1000; // OSRM da metros, pasamos a Km
-            const tiempoMinutos = ruta.duration / 60; // OSRM da segundos, pasamos a minutos
-            
-            return {
-                km: kilometros,
-                tiempoMinutos: tiempoMinutos
-            };
+        if (nombreBuscar.toUpperCase().endsWith("/RETORNO")) {
+            esRetornoMasivo = true;
+            nombreBuscar = nombreBuscar.substring(0, nombreBuscar.toUpperCase().lastIndexOf("/RETORNO")).trim();
         }
-        
-        return { km: 0, tiempoMinutos: 0 };
-    } catch (e) {
-        console.error("Error consultando el enrutador OSRM:", e);
-        return { km: 0, tiempoMinutos: 0 };
-    }
-}
 
-    async function cargarRutas() {
-        const listaUI = document.getElementById("listaRutasGuardadas");
+        const ruta = rutasMaestras.find(r => r.nombre === nombreBuscar);
+        if (!ruta) return "[]";
+        
+        let puntosOriginales = JSON.parse(ruta.puntos);
+        let puntos;
+
+        if (esRetornoMasivo) {
+            puntos = [...puntosOriginales].reverse();
+            puntos = puntos.map((p, i) => {
+                if (i === 0) return { ...p, km: 0, tiempo: "00:00" };
+                let originalIndex = puntosOriginales.findIndex(orig => orig.name === p.name);
+                let dataReferencia = puntosOriginales[originalIndex + 1] || puntosOriginales[originalIndex];
+                return { ...p, km: dataReferencia.km, tiempo: dataReferencia.tiempo };
+            });
+        } else {
+            puntos = puntosOriginales;
+        }
+
+        let partFecha = fechaSalida.toString().replace("'", "").trim().split(" ");
+        let f = partFecha[0].split("-"), h = partFecha[1].split(":");
+        let tiempoMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime(), kmAcum = 0;
+        
+        let resultado = puntos.map((p, i) => {
+            let perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000), eta, etd;
+            if (i === 0) { etd = tiempoMs; eta = etd - perMs; }
+            else { 
+                let tieMs = (p.tiempo.split(":")[0]*3600000)+(p.tiempo.split(":")[1]*60000); 
+                eta = tiempoMs + tieMs; etd = eta + perMs; kmAcum += parseFloat(p.km || 0); 
+            }
+            tiempoMs = etd;
+            return { orden: i+1, punto: p.name, km: kmAcum.toFixed(2), eta: new Date(eta).toLocaleString(), etd: new Date(etd).toLocaleString() };
+        });
+        return JSON.stringify(resultado);
+    }
+
+    // ─── CALCULAR ITINERARIO MANUAL (lógica original intacta) ───
+    function calcular() {
         try {
-            const res = await fetch(WEB_APP_URL + "?v=" + new Date().getTime());
-            const data = await res.json();
-            listaUI.innerHTML = "";
-            data.forEach(r => {
-                const row = listaUI.insertRow();
-                let ptsArray = JSON.parse(r.puntos);
-                row.innerHTML = `
-                    <td style="text-align:left; font-weight:bold;">${r.nombre}</td>
-                    <td>${ptsArray.length}</td>
-                    <td>${r.fecha || '-'}</td>
-                    <td><button onclick='cargarParaEditar(${r.puntos}, "${r.nombre}", "${r.id}")' style="cursor:pointer; border:none; background:none; font-size:18px;">✏️</button></td>
-                `;
+            const idx = document.getElementById("selectRuta").value;
+            const salidaUser = document.getElementById("fechaSalida").value;
+            if (idx === "" || !salidaUser) return;
+            
+            let puntosOriginales = JSON.parse(rutasMaestras[idx].puntos);
+            let puntos;
+
+            if (document.getElementById("checkRetorno").checked) {
+                puntos = [...puntosOriginales].reverse();
+                puntos = puntos.map((p, i) => {
+                    if (i === 0) return { ...p, km: 0, tiempo: "00:00" };
+                    let originalIndex = puntosOriginales.findIndex(orig => orig.name === p.name);
+                    let dataReferencia = puntosOriginales[originalIndex + 1] || puntosOriginales[originalIndex];
+                    return { ...p, km: dataReferencia.km, tiempo: dataReferencia.tiempo };
+                });
+            } else {
+                puntos = puntosOriginales;
+            }
+
+            const cuerpo = document.getElementById("cuerpoItinerario");
+            cuerpo.innerHTML = "";
+            let f = salidaUser.split("T")[0].split("-"), h = salidaUser.split("T")[1].split(":");
+            let tiempoMs = new Date(f[0], f[1]-1, f[2], h[0], h[1]).getTime(), kmAcum = 0;
+            
+            puntos.forEach((p, i) => {
+                let perMs = (p.pernocte.split(":")[0]*3600000)+(p.pernocte.split(":")[1]*60000), eta, etd;
+                if (i === 0) { etd = tiempoMs; eta = etd - perMs; }
+                else { 
+                    let tieMs = (p.tiempo.split(":")[0]*3600000)+(p.tiempo.split(":")[1]*60000); 
+                    eta = tiempoMs + tieMs; etd = eta + perMs; kmAcum += parseFloat(p.km || 0); 
+                }
+                cuerpo.insertRow().innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${kmAcum.toFixed(2)}</td><td>${new Date(eta).toLocaleString()}</td><td>${new Date(etd).toLocaleString()}</td>`;
+                tiempoMs = etd;
             });
-        } catch(e) { listaUI.innerHTML = "<tr><td colspan='4'>Sincronizando con DB_CONFIGURACION...</td></tr>"; }
+        } catch (e) { console.error("Error en calcular:", e); }
     }
 
-    function cargarZonasGeotab(api) {
-        api.call("Get", { typeName: "Zone", search: { zoneTypeIds: ["b4A3"] } }, (result) => {
-            zonasFiltradas = result.filter(z => z.zoneTypes && z.zoneTypes.some(t => t.id === "b4A3")).sort((a,b)=>a.name.localeCompare(b.name));
-            document.getElementById("lblZonas").innerText = `Escribe zona (${zonasFiltradas.length}):`;
-            const datalist = document.getElementById("listaZonas");
-            datalist.innerHTML = "";
-            zonasFiltradas.forEach(z => {
-                let opt = document.createElement("option"); opt.value = z.name; datalist.appendChild(opt);
+    // ─── CARGAR VIAJES EXISTENTES (lógica original intacta, con cache: no-store) ───
+    async function cargarViajesExistentes() {
+        const c = document.getElementById("cuerpoListaViajes");
+        const f = document.getElementById("filtroFechaLista").value;
+        c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Buscando...</td></tr>";
+        try {
+            const res = await fetch(WEB_APP_URL + "?read=viajes&v=" + new Date().getTime(), {
+                method: "GET",
+                cache: "no-store"
             });
-        });
-    }
+            const viajes = await res.json();
+            c.innerHTML = "";
+            const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(f));
 
-    const resetearFormulario = () => {
-        document.getElementById("contenedorManual").classList.remove("editando"); // 🚀 Apaga el contorno rojo
-        document.getElementById("nombreRuta").value = "";
-        document.getElementById("buscadorZonas").value = "";
-        rutaActual = [];
-        idRutaActiva = null;
-        updateUI();
-    };
-    function updateUI() {
-        const cuerpo = document.getElementById("cuerpoRuta");
-        cuerpo.innerHTML = "";
-        rutaActual.forEach((item, i) => {
-            const row = cuerpo.insertRow();
-            const esPrimero = (i === 0);
-            row.innerHTML = `
-                <td>${i + 1}</td>
-                <td style="text-align: left; font-weight: bold;">${item.name}</td>
-                <td>${esPrimero ? '-' : '<input type="number" step="0.01" class="input-tiempo" style="width:80px; text-align:right;" value="' + item.km + '" onchange="const num = parseFloat(this.value) || 0; rutaActual[' + i + '].km = num.toFixed(2);">'}</td>
-                <td>${esPrimero ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '">'}</td>
-                <td><input type="text" class="input-tiempo" value="${item.pernocte}"></td>
-                <td><button onclick="borrar(${i})" style="color:red; background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button></td>
-            `;
-        });
-    }
+            viajesCache = filtrados;
 
-    window.borrar = (idx) => { rutaActual.splice(idx, 1); updateUI(); };
-    window.cargarParaEditar = (pts, nombre, id) => {
-        document.getElementById("contenedorManual").classList.add("editando"); // 🚀 Enciende el contorno rojo
-        document.getElementById("nombreRuta").value = nombre;
-        rutaActual = pts;
-        idRutaActiva = id; 
-        updateUI();
-        window.scrollTo(0,0);
-    };
+            if (filtrados.length === 0) {
+                c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Sin registros</td></tr>";
+                return;
+            }
+            
+            filtrados.forEach((v, idx) => {
+                let tr = c.insertRow();
+                
+                let fechaFormateadaHistorial = "---";
+                if (v.etdOrigen && v.etdOrigen !== "---") {
+                    try {
+                        let strEtd = v.etdOrigen.toString().replace("'", "").replace("T", " ").trim();
+                        let partesEspacio = strEtd.split(" ");
+                        let partesFecha = partesEspacio[0].split("-");
+                        let partesHora = partesEspacio[1].split(":");
+                        
+                        let anio = parseInt(partesFecha[0], 10);
+                        let mes = parseInt(partesFecha[1], 10);
+                        let dia = parseInt(partesFecha[2], 10);
+                        let hora = partesHora[0];
+                        let min = partesHora[1];
+                        
+                        fechaFormateadaHistorial = `${dia}/${mes}/${anio}, ${hora}:${min}:00`;
+                    } catch(e) {
+                        fechaFormateadaHistorial = v.etdOrigen.toString().replace("'","").replace("T"," ");
+                    }
+                }
 
-    document.addEventListener("visibilitychange", () => {
-        if (!document.hidden && apiGlobal) {
-            cargarZonasGeotab(apiGlobal);
-            cargarRutas();
+                // Se usa índice numérico en lugar de JSON.stringify(v) para evitar problemas de reinyección
+                tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${fechaFormateadaHistorial}</td><td><b>${v.estado}</b></td><td><button onclick='iniciarEdicion(${idx})'>✏️</button></td>`;
+            });
+        } catch(e) {
+            console.error("Error cargando viajes:", e);
+            c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error de sincronización</td></tr>";
         }
-    });
+    }
 
-    geotab.addin.configurar = (api, state) => {
+    // ─── INICIAR EDICIÓN (acepta índice numérico o objeto, lógica original intacta) ───
+    function iniciarEdicion(idxOrViaje) {
+        const v = (typeof idxOrViaje === "number") ? viajesCache[idxOrViaje] : idxOrViaje;
+        if (!v) return;
+
+        if (v.estado === "FINALIZADO") return alert("⚠️ No editable.");
+        resetearFormularioProgramacion();
+        document.getElementById("contenedorManual").classList.add("editando");
+        document.getElementById("idEdicion").value = v.idViaje;
+        document.getElementById("inputVehiculo").value = v.placa;
+        document.getElementById("inputConductor").value = v.conductor;
+        document.getElementById("btnProgramar").innerText = "🔄 Actualizar";
+        if (v.estado === "EN CURSO") {
+            document.querySelectorAll("#inputVehiculo, #selectRuta, #fechaSalida, #checkRetorno").forEach(el => el.disabled = true);
+        } else {
+            const idxRuta = rutasMaestras.findIndex(r => r.nombre === v.ruta);
+            if(idxRuta !== -1) document.getElementById("selectRuta").value = idxRuta;
+            document.getElementById("fechaSalida").value = v.etdOrigen.toString().replace("'","").replace(" ","T");
+            calcular();
+        }
+    }
+
+    // ─── CARGAR DATOS DESDE GEOTAB (lógica original intacta) ───
+    function cargarDatosGeotab(api) {
+        if (!api) return;
+
+        api.call("Get", { typeName: "Device", search: { groups: [{ id: "b2798" }, { id: "b279A" }] } }, (res) => {
+            const dl = document.getElementById("listaVehiculos");
+            dl.innerHTML = "";
+            placasValidas = (res || []).map(d => d.name).filter(Boolean);
+            placasValidas.forEach(p => { let o = document.createElement("option"); o.value = p; dl.appendChild(o); });
+        }, (e) => { console.error("Error cargando vehículos:", e); });
+
+        api.call("Get", { typeName: "User" }, (res) => {
+            const dl = document.getElementById("listaConductores");
+            dl.innerHTML = "";
+            (res || []).filter(u => u.isDriver).forEach(u => { let o = document.createElement("option"); o.value = (u.firstName + " " + (u.lastName || "")).trim(); dl.appendChild(o); });
+        }, (e) => { console.error("Error cargando conductores:", e); });
+
+        fetch(WEB_APP_URL + "?v=" + new Date().getTime(), {
+            method: "GET",
+            cache: "no-store"
+        })
+        .then(r => r.json())
+        .then(d => {
+            rutasMaestras = Array.isArray(d) ? d : [];
+            const s = document.getElementById("selectRuta");
+            s.innerHTML = '<option value="">-- Seleccionar --</option>';
+            rutasMaestras.forEach((r, i) => { let o = document.createElement("option"); o.value = i; o.textContent = r.nombre; s.appendChild(o); });
+            cargarViajesExistentes();
+        })
+        .catch(e => {
+            console.error("Error cargando rutas:", e);
+            document.getElementById("selectRuta").innerHTML = '<option value="">Error cargando rutas</option>';
+        });
+    }
+
+    // ─── CARGA SEGURA CON FLAGS (evita doble carga simultánea) ───
+    async function cargarDatosGeotabSeguro(api, forzar) {
+        if (!api) return;
+        if (datosCargando) return;
+        if (datosCargados && !forzar) return;
+
+        datosCargando = true;
+        try {
+            cargarDatosGeotab(api);
+            datosCargados = true;
+        } catch (e) {
+            console.error("Error general en carga segura:", e);
+        } finally {
+            datosCargando = false;
+        }
+    }
+
+    // ─── INICIALIZAR EVENTOS UNA SOLA VEZ (con .onclick para evitar duplicados) ───
+    function inicializarEventos() {
+        if (eventosInicializados) return;
+        eventosInicializados = true;
+
+        document.getElementById("selectRuta").onchange = calcular;
+        document.getElementById("fechaSalida").onchange = calcular;
+        document.getElementById("checkRetorno").onchange = calcular;
+        document.getElementById("btnCancelar").onclick = resetearFormularioProgramacion;
+
+        // ─── BOTÓN PROGRAMAR / ACTUALIZAR (lógica original intacta) ───
+        document.getElementById("btnProgramar").onclick = function() {
+            const id = document.getElementById("idEdicion").value;
+            const v = document.getElementById("inputVehiculo").value;
+            const r = document.getElementById("selectRuta").value;
+            const s = document.getElementById("fechaSalida").value;
+            const c = document.getElementById("inputConductor").value;
+            
+            const estaEnCurso = document.getElementById("selectRuta").disabled;
+
+            if (estaEnCurso) {
+                if (!id || !v) return alert("Faltan datos críticos del viaje en curso");
+            } else {
+                if (!v || r === "" || !s) return alert("Faltan datos");
+            }
+
+            const btn = this;
+            const textoOriginal = btn.innerText;
+            btn.innerText = "⏳ Guardando..."; 
+            btn.disabled = true;
+
+            const itinerario = estaEnCurso ? "[]" : Array.from(document.querySelectorAll("#cuerpoItinerario tr")).map(f => ({ 
+                orden: f.cells[0].innerText, 
+                punto: f.cells[1].innerText, 
+                km: f.cells[2].innerText, 
+                eta: f.cells[3].innerText, 
+                etd: f.cells[4].innerText 
+            }));
+
+            fetch(WEB_APP_URL, { 
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ 
+                    action: id ? "editarViaje" : "programarViaje", 
+                    idViaje: id, 
+                    vehiculo: v, 
+                    conductor: c || "Sin Conductor", 
+                    etdOrigen: estaEnCurso ? "" : "'" + s.replace('T', ' '), 
+                    nombreRuta: (r !== "" && !estaEnCurso) ? rutasMaestras[r].nombre : "", 
+                    itinerario: JSON.stringify(itinerario) 
+                }) 
+            })
+            .then(() => { 
+                alert("✅ Éxito"); 
+                resetearFormularioProgramacion();
+                datosCargados = false;
+                return cargarDatosGeotabSeguro(apiGlobal, true);
+            })
+            .catch(e => {
+                console.error("Error guardando:", e);
+                alert("Error guardando el viaje. Revise consola o conexión.");
+            })
+            .finally(() => {
+                btn.innerText = textoOriginal;
+                btn.disabled = false;
+            });
+        };
+
+        // ─── BOTÓN PROCESAR EXCEL (lógica original intacta) ───
+        document.getElementById("btnProcesarExcel").onclick = function() {
+            const fileInput = document.getElementById("inputExcel");
+            const log = document.getElementById("errorLog");
+            const btn = this;
+
+            if (!fileInput.files[0]) return alert("Seleccione archivo");
+            log.style.display = "none";
+            log.innerHTML = "";
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                    const sheet = workbook.Sheets["Programación"];
+                    if (!sheet) return alert("No se encontró hoja 'Programación'");
+                    const jsonData = XLSX.utils.sheet_to_json(sheet);
+                    let errores = [];
+                    const nombresRutas = rutasMaestras.map(r => r.nombre);
+                    
+                    jsonData.forEach((f, i) => {
+                        let n = i + 2;
+                        if (!placasValidas.includes(f.PLACA)) errores.push(`Fila ${n}: Placa '${f.PLACA}' inválida.`);
+                        
+                        let rutaCelda = String(f.RUTA || "").trim();
+                        let rutaLimpiaParaValidar = rutaCelda;
+                        if (rutaCelda.toUpperCase().endsWith("/RETORNO")) {
+                            rutaLimpiaParaValidar = rutaCelda.substring(0, rutaCelda.toUpperCase().lastIndexOf("/RETORNO")).trim();
+                        }
+                        
+                        if (!nombresRutas.includes(rutaLimpiaParaValidar)) errores.push(`Fila ${n}: Ruta '${rutaCelda}' no existe en las Maestras.`);
+                        if (!f.FECHA_ETD || !validarFechaReal(f.FECHA_ETD)) errores.push(`Fila ${n}: Fecha inválida.`);
+                    });
+                    
+                    if (errores.length > 0) { 
+                        log.style.display = "block"; 
+                        log.innerHTML = errores.join("<br>"); 
+                        return; 
+                    }
+
+                    btn.disabled = true;
+                    const total = jsonData.length;
+
+                    for (let [idx, f] of jsonData.entries()) {
+                        btn.innerText = `⏳ Procesando ${idx + 1}/${total}...`;
+                        let rutaCelda = String(f.RUTA || "").trim();
+                        try {
+                            await fetch(WEB_APP_URL, { 
+                                method: "POST",
+                                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                                body: JSON.stringify({ 
+                                    action: "programarViaje", 
+                                    vehiculo: f.PLACA, 
+                                    conductor: f.CONDUCTOR || "Sin Conductor", 
+                                    etdOrigen: f.FECHA_ETD.toString().startsWith("'") ? f.FECHA_ETD : "'" + f.FECHA_ETD, 
+                                    nombreRuta: rutaCelda,
+                                    itinerario: generarItinerarioMasivo(f.RUTA, f.FECHA_ETD) 
+                                }) 
+                            });
+                        } catch (error) { console.error("Error en fila " + (idx + 2), error); }
+                    }
+
+                    alert("✅ Carga masiva completada con éxito");
+                    fileInput.value = ""; 
+                    btn.innerText = "Validar y Subir";
+                    btn.disabled = false;
+                    resetearFormularioProgramacion();
+                    datosCargados = false;
+                    await cargarDatosGeotabSeguro(apiGlobal, true);
+
+                } catch (error) {
+                    console.error("Error procesando Excel:", error);
+                    alert("Error procesando el archivo Excel.");
+                    btn.innerText = "Validar y Subir";
+                    btn.disabled = false;
+                }
+            };
+            reader.readAsArrayBuffer(fileInput.files[0]);
+        };
+    }
+
+    // ─── ARRANQUE DIFERIDO (evita doble arranque) ───
+    function arranqueDiferido(api, forzar) {
+        apiGlobal = api || apiGlobal;
+
+        establecerFechaHoy();
+        inicializarEventos();
+
+        if (forzar) {
+            datosCargados = false;
+            arranqueProgramado = false;
+        }
+
+        if (arranqueProgramado && !forzar) return;
+        arranqueProgramado = true;
+
+        setTimeout(() => {
+            cargarDatosGeotabSeguro(apiGlobal, !!forzar);
+        }, 80);
+    }
+
+    // ─── EXPONER AL HTML SOLO LAS FUNCIONES QUE USAN onclick ───
+    window.exportarPlantilla      = exportarPlantilla;
+    window.cargarViajesExistentes = cargarViajesExistentes;
+    window.iniciarEdicion         = iniciarEdicion;
+
+    // ─── CICLO DE VIDA DEL ADD-IN ───
+    geotab.addin.programar = (api, state) => {
         apiGlobal = api;
+
         return {
             initialize(api, state, callback) {
-                cargarZonasGeotab(api);
-                cargarRutas();
-                document.getElementById("btnCancelar").addEventListener("click", resetearFormulario);
-                document.getElementById("btnAgregar").addEventListener("click", async () => {
-                    const inputNombre = document.getElementById("nombreRuta");
-                    const inputBusqueda = document.getElementById("buscadorZonas");
-                    if (!inputNombre.value.trim()) { alert("⚠️ Pon un nombre a la ruta"); return; }
-                    const zonaSel = zonasFiltradas.find(z => z.name === inputBusqueda.value);
-                    if (!zonaSel) return;
-                    let lat = 0, lon = 0;
-                    if (zonaSel.center) { lat = zonaSel.center.y; lon = zonaSel.center.x; }
-                    else if (zonaSel.y) { lat = zonaSel.y; lon = zonaSel.x; }
-                    else if (zonaSel.points && zonaSel.points[0]) { lat = zonaSel.points[0].y; lon = zonaSel.points[0].x; }
-                    
-                    const previo = rutaActual[rutaActual.length - 1];
-                    
-                    let kmFinal = 0;
-                    let tiempoFinalStr = "00:00";
-                    
-                    if (previo && lat !== 0) {
-                        // 🔍 Capturamos el objeto con los dos datos reales de carretera
-                        const datosPista = await getDatosCarreteraReal(previo.lat, previo.lon, lat, lon);
-                        
-                        kmFinal = datosPista.km;
-                        
-                        // Usamos tus minutos reales para pasarlos al formato de horas/minutos de tu tabla
-                        tiempoFinalStr = formatTime(datosPista.tiempoMinutos / 60); 
-                    }
-                    
-                    rutaActual.push({ 
-                        name: zonaSel.name, lat: lat, lon: lon, 
-                        km: kmFinal.toFixed(2), tiempo: tiempoFinalStr, pernocte: "00:30" 
-                    });
-                    inputBusqueda.value = ""; updateUI();
-                });
-                document.getElementById("btnGuardar").addEventListener("click", async () => {
-                    const nombre = document.getElementById("nombreRuta").value.trim();
-                    const filas = document.querySelectorAll("#cuerpoRuta tr");
-                    if (!nombre || rutaActual.length === 0) return alert("Faltan datos");
-                    
-                    const puntosFinales = rutaActual.map((p, i) => {
-                        const inputs = filas[i].querySelectorAll("input");
-                        
-                        // 🟢 MANTENIDO INTACTO: Si es la primera fila (i === 0), no tiene input de Km, mantiene tu lógica original
-                        if (i === 0) {
-                            return { 
-                                ...p, 
-                                tiempo: inputs[0] ? inputs[0].value : p.tiempo, 
-                                pernocte: inputs[1] ? inputs[1].value : "00:30" 
-                            };
-                        } else {
-                            // 🟢 ADAPTADO CON CUIDADO: Para las demás filas, [0] es Km, [1] es Tiempo y [2] es Pernocte
-                            return { 
-                                ...p, 
-                                km: inputs[0] ? parseFloat(inputs[0].value).toFixed(2) : p.km,
-                                tiempo: inputs[1] ? inputs[1].value : p.tiempo, 
-                                pernocte: inputs[2] ? inputs[2].value : "00:30" 
-                            };
-                        }
-                    });
-                    
-                    document.getElementById("btnGuardar").innerText = "⏳ Guardando...";
-                    fetch(WEB_APP_URL, {
-                        method: "POST",
-                        body: JSON.stringify({ action: "write", idRuta: idRutaActiva, nombre: nombre, puntos: JSON.stringify(puntosFinales) })
-                    }).then(() => { alert("✅ Ruta Guardada en DB_CONFIGURACION"); resetearFormulario(); cargarRutas(); document.getElementById("btnGuardar").innerText = "💾 Guardar Ruta"; });
-                });
-                callback();
+                apiGlobal = api;
+
+                // 1. Primero liberar MyGeotab para que no se congele
+                try {
+                    callback();
+                } catch (e) {
+                    console.error("Error ejecutando callback de initialize:", e);
+                }
+
+                // 2. Luego cargar datos de forma diferida (no bloquea initialize)
+                setTimeout(() => {
+                    arranqueDiferido(api, false);
+                }, 0);
             },
+
             focus(api, state) {
-                cargarZonasGeotab(api);
-                cargarRutas();
+                apiGlobal = api;
+                // Al volver al add-in, forzar recarga si es necesario
+                const debeForzar = necesitaRecargaAlVolver || !datosCargados;
+                necesitaRecargaAlVolver = false;
+                arranqueDiferido(api, debeForzar);
+            },
+
+            blur(api, state) {
+                // NO limpiar tablas ni selects aquí.
+                // Solo marcar que al volver debe recargar.
+                necesitaRecargaAlVolver = true;
             }
         };
     };
+
+})();
 </script>
 </body>
 </html>
