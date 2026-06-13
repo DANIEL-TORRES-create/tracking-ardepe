@@ -34,19 +34,19 @@
         </div>
 
         <div class="bunker-contador-flota">
-            <i class="fas fa-microchip" style="color: #38bdf8;"></i> TOTAL UNIDADES: <span id="seg-num-flota-total">0</span> VIAJES
+            <i class="fas fa-microchip" style="color: #38bdf8;"></i> TOTAL UNIDADES: <span id="num-flota-total">0</span> VIAJES
         </div>
 
         <div class="grupo-inputs-predictivos" style="display: flex; flex-direction: column; gap: 6px;">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
-                <input type="text" id="seg-txt-filtro-placa" list="seg-seg-dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off">
-                <datalist id="seg-seg-dl-placas-activas"></datalist>
+                <input type="text" id="seg-txt-filtro-placa" list="seg-dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off">
+                <datalist id="seg-dl-placas-activas"></datalist>
             </div>
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-route"></i>
-                <input type="text" id="seg-txt-filtro-ruta" list="seg-seg-dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off">
-                <datalist id="seg-seg-dl-rutas-activas"></datalist>
+                <input type="text" id="seg-txt-filtro-ruta" list="seg-dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off">
+                <datalist id="seg-dl-rutas-activas"></datalist>
             </div>
         </div>
 
@@ -73,10 +73,10 @@
     </table>
 </div>
 
-<div id="seg-side-panel">
+<div id="side-panel">
     <div class="side-panel-header">
         <div class="header-left-box">
-            <small id="seg-side-placa" style="color:#444; font-weight:bold; font-size:14px; text-transform:uppercase;">Placa: </small>
+            <small id="side-placa" style="color:#444; font-weight:bold; font-size:14px; text-transform:uppercase;">Placa: </small>
         </div>
         
         <div class="header-center-box">
@@ -88,7 +88,7 @@
         </div>
     </div>
     
-    <div id="seg-timeline-v" class="timeline-v-container"></div>
+    <div id="timeline-v" class="timeline-v-container"></div>
 </div>
     
 <div id="modal-cancel" class="modal-full-bg" style="display:none; z-index: 6000 !important;">
@@ -102,7 +102,7 @@
         </div>
     </div>
 </div>
-<div id="seg-mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
+<div id="mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
     <div class="mega-modal-content">
         <div class="mega-cabecera-satelital">
             <div class="mega-cabecera-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
@@ -133,7 +133,7 @@
                 </div>
             </div>
             <div class="mega-bloque-mapa" style="width: 100% !important; margin-top: 10px;">
-                <div id="seg-sat-map-container"></div>
+                <div id="sat-map-container"></div>
             </div>
         </div>
 
@@ -202,8 +202,8 @@
     window.renderizarSeguimiento = function(viajes) {
         listaViajesGlobal = viajes || [];
         
-        const dlPlacas = document.getElementById("seg-seg-dl-placas-activas");
-        const dlRutas = document.getElementById("seg-seg-dl-rutas-activas");
+        const dlPlacas = document.getElementById("seg-dl-placas-activas");
+        const dlRutas = document.getElementById("seg-dl-rutas-activas");
         
         if (dlPlacas && dlRutas) {
             let placasUnicas = [...new Set(listaViajesGlobal.map(v => v.placa).filter(Boolean))].sort();
@@ -232,7 +232,7 @@
             return true;
         });
         
-        const contenedorContador = document.getElementById("seg-num-flota-total");
+        const contenedorContador = document.getElementById("num-flota-total");
         if (contenedorContador) {
             contenedorContador.innerText = viajesFiltrados.length;
         }
@@ -400,8 +400,8 @@
 
         let puntos = JSON.parse(decodeURIComponent(data));
         const rawLog = decodeURIComponent(logAuditoria);
-        document.getElementById('seg-side-placa').innerText = "Placa: " + placa;
-        const timeline = document.getElementById('seg-timeline-v');
+        document.getElementById('side-placa').innerText = "Placa: " + placa;
+        const timeline = document.getElementById('timeline-v');
         timeline.innerHTML = "";
         
         if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
@@ -466,7 +466,7 @@
 
         containerHtml += `</ul>`;
         timeline.innerHTML += containerHtml;
-        document.getElementById('seg-side-panel').classList.add('open');
+        document.getElementById('side-panel').classList.add('open');
     }
 
     // 5. UTILIDADES DE CONTROL INTERNO
@@ -477,7 +477,7 @@
     }
     
     function cerrarPanel() { 
-        document.getElementById('seg-side-panel').classList.remove('open'); 
+        document.getElementById('side-panel').classList.remove('open'); 
         document.querySelectorAll('#seg-lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
     }
     
@@ -511,7 +511,7 @@
             else badge.classList.add("sat-status-no-iniciado");
         }
 
-        document.getElementById('seg-mega-modal-detalle').style.display = 'flex';
+        document.getElementById('mega-modal-detalle').style.display = 'flex';
 
         setTimeout(function() {
             // Destruir y recrear el mapa limpiamente en cada apertura
@@ -524,7 +524,7 @@
                 _satLineasPendientes = null;
             }
             // Limpiar el contenedor del mapa antes de reinicializar
-            const mapContainer = document.getElementById('seg-sat-map-container');
+            const mapContainer = document.getElementById('sat-map-container');
             if (mapContainer) mapContainer.innerHTML = '';
 
             _satMapa = L.map('sat-map-container', { center: [-12.046374, -77.042793], zoom: 7, minZoom: 3 });
@@ -535,7 +535,7 @@
     };
 
     window.seg_cerrarMegaDetalle = function() {
-        document.getElementById('seg-mega-modal-detalle').style.display = 'none';
+        document.getElementById('mega-modal-detalle').style.display = 'none';
         document.querySelectorAll('.sat-btn-f').forEach(b => b.classList.remove('active'));
         document.getElementById('seg-sat-btn-historial').classList.add('active');
         // Destruir el mapa al cerrar para evitar estado corrupto en la próxima apertura
@@ -1230,7 +1230,7 @@
                     if (!_intervaloActualizar) {
                         _intervaloActualizar = setInterval(function() {
                             // Solo refresca si el modal de detalle NO está abierto
-                            const modal = document.getElementById('seg-mega-modal-detalle');
+                            const modal = document.getElementById('mega-modal-detalle');
                             if (!modal || modal.style.display === 'none') {
                                 actualizar();
                             }
@@ -1246,9 +1246,9 @@
                 necesitaRecargaAlVolver = false;
 
                 // Cerrar panel lateral y modal si quedaron abiertos de la sesión anterior
-                const sidePanel = document.getElementById('seg-side-panel');
+                const sidePanel = document.getElementById('side-panel');
                 if (sidePanel) sidePanel.classList.remove('open');
-                const megaModal = document.getElementById('seg-mega-modal-detalle');
+                const megaModal = document.getElementById('mega-modal-detalle');
                 if (megaModal) megaModal.style.display = 'none';
                 const modalCancel = document.getElementById('modal-cancel');
                 if (modalCancel) modalCancel.style.display = 'none';
