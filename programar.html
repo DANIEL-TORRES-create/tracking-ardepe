@@ -1,5 +1,3 @@
-programar
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -121,6 +119,7 @@ programar
 var rutasMaestras = rutasMaestras || [];
 var placasValidas = placasValidas || [];
 var apiGlobal = apiGlobal || null;
+var viajesCache = viajesCache || [];
 
     function exportarPlantilla() {
         const wb = XLSX.utils.book_new();
@@ -266,10 +265,11 @@ var apiGlobal = apiGlobal || null;
             const viajes = await res.json();
             c.innerHTML = "";
             const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(f));
+            viajesCache = filtrados;
             if (filtrados.length === 0) return c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Sin registros</td></tr>";
             
-            filtrados.forEach(v => {
-                let tr = c.insertRow();
+            filtrados.forEach((v, idx) => {
+            let tr = c.insertRow();
                 
                 // ⏰ CONVERTIDOR DINÁMICO: Pasa de "2026-06-03 16:30" a "3/6/2026, 16:30:00"
                 let fechaFormateadaHistorial = "---";
@@ -292,12 +292,15 @@ var apiGlobal = apiGlobal || null;
                     }
                 }
 
-                tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${fechaFormateadaHistorial}</td><td><b>${v.estado}</b></td><td><button onclick='iniciarEdicion(${JSON.stringify(v)})'>✏️</button></td>`;
+                tr.innerHTML = `<td>${v.placa}</td><td>${v.conductor}</td><td>${v.ruta}</td><td>${fechaFormateadaHistorial}</td><td><b>${v.estado}</b></td><td><button onclick='iniciarEdicion(${idx})'>✏️</button></td>`;
             });
         } catch(e) { c.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Error de sincronización</td></tr>"; }
     }
 
-    window.iniciarEdicion = (v) => {
+    window.iniciarEdicion = (idx) => {
+        const v = viajesCache[idx]; // 🟢 Busca el viaje directamente en el caché seguro
+        if (!v) return;
+
         if (v.estado === "FINALIZADO") return alert("⚠️ No editable.");
         resetearFormularioProgramacion();
         document.getElementById("contenedorManual").classList.add("editando");
@@ -466,11 +469,11 @@ var apiGlobal = apiGlobal || null;
             btn.disabled = false;
             resetearFormularioProgramacion(); 
             cargarViajesExistentes(); 
-        };
-                    reader.readAsArrayBuffer(fileInput.files[0]);
-                });
+        }; // Cierre de reader.onload
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    }); // Cierre de addEventListener click
 
-                try {
+    try {
                     // 🟢 2. LIBERACIÓN INMEDIATA: MyGeotab procesa la pestaña instantáneamente sin quedarse en blanco
                     callback();
                 } catch (e) {
