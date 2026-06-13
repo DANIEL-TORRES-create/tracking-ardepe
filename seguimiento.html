@@ -34,19 +34,19 @@
         </div>
 
         <div class="bunker-contador-flota">
-            <i class="fas fa-microchip" style="color: #38bdf8;"></i> TOTAL UNIDADES: <span id="num-flota-total">0</span> VIAJES
+            <i class="fas fa-microchip" style="color: #38bdf8;"></i> TOTAL UNIDADES: <span id="seg-num-flota-total">0</span> VIAJES
         </div>
 
         <div class="grupo-inputs-predictivos" style="display: flex; flex-direction: column; gap: 6px;">
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-truck"></i>
-                <input type="text" id="txt-filtro-placa" list="dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off">
-                <datalist id="dl-placas-activas"></datalist>
+                <input type="text" id="seg-txt-filtro-placa" list="seg-seg-dl-placas-activas" class="input-predictivo-pro" placeholder="Buscar Placa..." autocomplete="off">
+                <datalist id="seg-seg-dl-placas-activas"></datalist>
             </div>
             <div class="caja-predictiva-wrapper">
                 <i class="fas fa-route"></i>
-                <input type="text" id="txt-filtro-ruta" list="dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off">
-                <datalist id="dl-rutas-activas"></datalist>
+                <input type="text" id="seg-txt-filtro-ruta" list="seg-seg-dl-rutas-activas" class="input-predictivo-pro" placeholder="Buscar Ruta..." autocomplete="off">
+                <datalist id="seg-seg-dl-rutas-activas"></datalist>
             </div>
         </div>
 
@@ -67,16 +67,16 @@
                 <th style="text-align:center;">VISTAS</th>
             </tr>
         </thead>
-        <tbody id="lista-viajes">
+        <tbody id="seg-lista-viajes">
             <tr><td colspan="10" style="text-align:center; padding:40px; color:#475569; font-weight:bold;">Sincronizando viajes en vivo...</td></tr>
         </tbody>
     </table>
 </div>
 
-<div id="side-panel">
+<div id="seg-side-panel">
     <div class="side-panel-header">
         <div class="header-left-box">
-            <small id="side-placa" style="color:#444; font-weight:bold; font-size:14px; text-transform:uppercase;">Placa: </small>
+            <small id="seg-side-placa" style="color:#444; font-weight:bold; font-size:14px; text-transform:uppercase;">Placa: </small>
         </div>
         
         <div class="header-center-box">
@@ -88,7 +88,7 @@
         </div>
     </div>
     
-    <div id="timeline-v" class="timeline-v-container"></div>
+    <div id="seg-timeline-v" class="timeline-v-container"></div>
 </div>
     
 <div id="modal-cancel" class="modal-full-bg" style="display:none; z-index: 6000 !important;">
@@ -102,30 +102,30 @@
         </div>
     </div>
 </div>
-<div id="mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
+<div id="seg-mega-modal-detalle" class="modal-full-bg" style="display:none; z-index: 5000 !important;">
     <div class="mega-modal-content">
         <div class="mega-cabecera-satelital">
             <div class="mega-cabecera-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <div class="mega-bloque-identidad">
                     <h2>DETALLE DE VIAJE</h2>
                     <div class="mega-subtitulos">
-                        <span class="badge-sat-placa">PLACA: <strong id="lbl-sat-placa">---</strong></span>
-                        <span class="badge-sat-ruta">RUTA: <strong id="lbl-sat-ruta">---</strong></span>
+                        <span class="badge-sat-placa">PLACA: <strong id="seg-lbl-sat-placa">---</strong></span>
+                        <span class="badge-sat-ruta">RUTA: <strong id="seg-lbl-sat-ruta">---</strong></span>
                     </div>
                 </div>
                 <div class="mega-bloque-controles" style="display: flex; align-items: center; gap: 20px;">
                     <div class="mega-termometro-inputs" style="display: flex; flex-direction: row; align-items: center; gap: 15px;">
-                        <div id="lbl-sat-estado-badge" class="sat-badge-estado">
+                        <div id="seg-lbl-sat-estado-badge" class="sat-badge-estado">
                             <span class="sat-ping"></span>
-                            <span id="lbl-sat-estado-texto">---</span>
+                            <span id="seg-lbl-sat-estado-texto">---</span>
                         </div>
                         <div class="sat-progreso-wrapper" style="min-width: 180px;">
                             <div class="sat-progreso-texto">
                                 <span>PROGRESO GLOBAL</span>
-                                <strong id="lbl-sat-porcentaje">0%</strong>
+                                <strong id="seg-lbl-sat-porcentaje">0%</strong>
                             </div>
                             <div class="sat-barra-bg">
-                                <div id="lbl-sat-barra-fill" class="sat-barra-fill" style="width: 0%;"></div>
+                                <div id="seg-lbl-sat-barra-fill" class="sat-barra-fill" style="width: 0%;"></div>
                             </div>
                         </div>
                     </div>
@@ -133,15 +133,15 @@
                 </div>
             </div>
             <div class="mega-bloque-mapa" style="width: 100% !important; margin-top: 10px;">
-                <div id="sat-map-container"></div>
+                <div id="seg-sat-map-container"></div>
             </div>
         </div>
 
         <div class="mega-barra-filtros">
-            <button id="sat-btn-historial" class="sat-btn-f activo" onclick="seg_filtrarTablaSatelital('historial')"><i class="fas fa-file-alt"></i> Ver Todos</button>
-            <button id="sat-btn-completados" class="sat-btn-f" onclick="seg_filtrarTablaSatelital('completados')"><i class="fas fa-check-circle"></i> Completados</button>
-            <button id="sat-btn-pendientes" class="sat-btn-f" onclick="seg_filtrarTablaSatelital('pendientes')"><i class="fas fa-clock"></i> Por Completar</button>
-            <button id="sat-btn-desviaciones" class="sat-btn-f" onclick="seg_filtrarTablaSatelital('desviaciones')"><i class="fas fa-exclamation-triangle"></i> Desviaciones</button>
+            <button id="seg-sat-btn-historial" class="sat-btn-f activo" onclick="seg_filtrarTablaSatelital('historial')"><i class="fas fa-file-alt"></i> Ver Todos</button>
+            <button id="seg-sat-btn-completados" class="sat-btn-f" onclick="seg_filtrarTablaSatelital('completados')"><i class="fas fa-check-circle"></i> Completados</button>
+            <button id="seg-sat-btn-pendientes" class="sat-btn-f" onclick="seg_filtrarTablaSatelital('pendientes')"><i class="fas fa-clock"></i> Por Completar</button>
+            <button id="seg-sat-btn-desviaciones" class="sat-btn-f" onclick="seg_filtrarTablaSatelital('desviaciones')"><i class="fas fa-exclamation-triangle"></i> Desviaciones</button>
         </div>
 
         <div class="mega-bunker-tabla">
@@ -164,7 +164,7 @@
                         <th>REAL<br>SALIDA</th>
                     </tr>
                 </thead>
-                <tbody id="sat-tbody-rows"></tbody>
+                <tbody id="seg-sat-tbody-rows"></tbody>
             </table>
         </div>
     </div>
@@ -202,8 +202,8 @@
     window.renderizarSeguimiento = function(viajes) {
         listaViajesGlobal = viajes || [];
         
-        const dlPlacas = document.getElementById("dl-placas-activas");
-        const dlRutas = document.getElementById("dl-rutas-activas");
+        const dlPlacas = document.getElementById("seg-seg-dl-placas-activas");
+        const dlRutas = document.getElementById("seg-seg-dl-rutas-activas");
         
         if (dlPlacas && dlRutas) {
             let placasUnicas = [...new Set(listaViajesGlobal.map(v => v.placa).filter(Boolean))].sort();
@@ -218,12 +218,12 @@
 
     // 🧠 MOTOR UNIFICADO DE FILTRADO TRIPLE (ESTADOS + PLACA + RUTA)
     function filtrarYMostrarTabla() {
-        const tbody = document.getElementById('lista-viajes');
+        const tbody = document.getElementById('seg-lista-viajes');
         if (!tbody) return;
         tbody.innerHTML = "";
 
-        const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
-        const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
+        const filtroPlaca = document.getElementById("seg-txt-filtro-placa").value.trim().toUpperCase();
+        const filtroRuta = document.getElementById("seg-txt-filtro-ruta").value.trim().toUpperCase();
 
         let viajesFiltrados = listaViajesGlobal.filter(v => {
             if (estadoFiltroActivo !== "TODOS" && v.estadoVisual !== estadoFiltroActivo) return false;
@@ -232,7 +232,7 @@
             return true;
         });
         
-        const contenedorContador = document.getElementById("num-flota-total");
+        const contenedorContador = document.getElementById("seg-num-flota-total");
         if (contenedorContador) {
             contenedorContador.innerText = viajesFiltrados.length;
         }
@@ -390,7 +390,7 @@
     
     // 4. LÓGICA DEL PANEL LATERAL (RESUMEN)
     function abrirResumen(data, placa, logAuditoria) {
-        document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
+        document.querySelectorAll('#seg-lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
         if (typeof event !== 'undefined' && event.currentTarget) {
             const botonActivo = event.currentTarget;
             if (botonActivo.closest('tr')) {
@@ -400,8 +400,8 @@
 
         let puntos = JSON.parse(decodeURIComponent(data));
         const rawLog = decodeURIComponent(logAuditoria);
-        document.getElementById('side-placa').innerText = "Placa: " + placa;
-        const timeline = document.getElementById('timeline-v');
+        document.getElementById('seg-side-placa').innerText = "Placa: " + placa;
+        const timeline = document.getElementById('seg-timeline-v');
         timeline.innerHTML = "";
         
         if (rawLog && rawLog !== "undefined" && rawLog !== "null" && rawLog.trim() !== "") {
@@ -466,7 +466,7 @@
 
         containerHtml += `</ul>`;
         timeline.innerHTML += containerHtml;
-        document.getElementById('side-panel').classList.add('open');
+        document.getElementById('seg-side-panel').classList.add('open');
     }
 
     // 5. UTILIDADES DE CONTROL INTERNO
@@ -477,8 +477,8 @@
     }
     
     function cerrarPanel() { 
-        document.getElementById('side-panel').classList.remove('open'); 
-        document.querySelectorAll('#lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
+        document.getElementById('seg-side-panel').classList.remove('open'); 
+        document.querySelectorAll('#seg-lista-viajes tr').forEach(tr => tr.classList.remove('fila-activa'));
     }
     
     function validarMotivo() { 
@@ -496,13 +496,13 @@
     let _satCacheDatosRows = []; 
 
     window.seg_abrirMegaDetalle = function(idViaje, placa, ruta, estado, progreso, itinerarioDecoded) {
-        document.getElementById('lbl-sat-placa').innerText = placa;
-        document.getElementById('lbl-sat-ruta').innerText = decodeURIComponent(ruta);
-        document.getElementById('lbl-sat-porcentaje').innerText = progreso + "%";
-        document.getElementById('lbl-sat-barra-fill').style.width = progreso + "%";
+        document.getElementById('seg-lbl-sat-placa').innerText = placa;
+        document.getElementById('seg-lbl-sat-ruta').innerText = decodeURIComponent(ruta);
+        document.getElementById('seg-lbl-sat-porcentaje').innerText = progreso + "%";
+        document.getElementById('seg-lbl-sat-barra-fill').style.width = progreso + "%";
         
-        const badge = document.getElementById('lbl-sat-estado-badge');
-        const txtEstado = document.getElementById('lbl-sat-estado-texto');
+        const badge = document.getElementById('seg-lbl-sat-estado-badge');
+        const txtEstado = document.getElementById('seg-lbl-sat-estado-texto');
         txtEstado.innerText = estado;
         if (badge) {
             badge.className = "sat-badge-estado"; 
@@ -511,7 +511,7 @@
             else badge.classList.add("sat-status-no-iniciado");
         }
 
-        document.getElementById('mega-modal-detalle').style.display = 'flex';
+        document.getElementById('seg-mega-modal-detalle').style.display = 'flex';
 
         setTimeout(function() {
             // Destruir y recrear el mapa limpiamente en cada apertura
@@ -524,7 +524,7 @@
                 _satLineasPendientes = null;
             }
             // Limpiar el contenedor del mapa antes de reinicializar
-            const mapContainer = document.getElementById('sat-map-container');
+            const mapContainer = document.getElementById('seg-sat-map-container');
             if (mapContainer) mapContainer.innerHTML = '';
 
             _satMapa = L.map('sat-map-container', { center: [-12.046374, -77.042793], zoom: 7, minZoom: 3 });
@@ -535,9 +535,9 @@
     };
 
     window.seg_cerrarMegaDetalle = function() {
-        document.getElementById('mega-modal-detalle').style.display = 'none';
+        document.getElementById('seg-mega-modal-detalle').style.display = 'none';
         document.querySelectorAll('.sat-btn-f').forEach(b => b.classList.remove('active'));
-        document.getElementById('sat-btn-historial').classList.add('active');
+        document.getElementById('seg-sat-btn-historial').classList.add('active');
         // Destruir el mapa al cerrar para evitar estado corrupto en la próxima apertura
         if (_satMapa) {
             try { _satMapa.remove(); } catch(e) {}
@@ -549,7 +549,7 @@
     };
 
     function procesarYConsultarAuditoriaSatelital(idViaje, itinerarioDecoded) {
-        const tbody = document.getElementById('sat-tbody-rows');
+        const tbody = document.getElementById('seg-sat-tbody-rows');
         if (tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:30px; color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Cargando tramos y telemetría...</td></tr>';
 
         if (_satMarcadorCamion) { _satMapa.removeLayer(_satMarcadorCamion); _satMarcadorCamion = null; }
@@ -582,7 +582,7 @@
             let camionCoordenadaVivo = null;
             let horaArranqueFiltroGps = null;
 
-            let placaActual = document.getElementById('lbl-sat-placa').innerText;
+            let placaActual = document.getElementById('seg-lbl-sat-placa').innerText;
             
             apiGlobal.call("Get", {
                 typeName: "Device",
@@ -1080,12 +1080,12 @@
     window.seg_filtrarTablaSatelital = function(tipoFiltro) {
         document.querySelectorAll('.sat-btn-f').forEach(b => b.classList.remove('activo'));
         
-        if (tipoFiltro === 'historial') document.getElementById('sat-btn-historial').classList.add('activo');
-        if (tipoFiltro === 'completados') document.getElementById('sat-btn-completados').classList.add('activo');
-        if (tipoFiltro === 'pendientes') document.getElementById('sat-btn-pendientes').classList.add('activo');
-        if (tipoFiltro === 'desviaciones') document.getElementById('sat-btn-desviaciones').classList.add('activo');
+        if (tipoFiltro === 'historial') document.getElementById('seg-sat-btn-historial').classList.add('activo');
+        if (tipoFiltro === 'completados') document.getElementById('seg-sat-btn-completados').classList.add('activo');
+        if (tipoFiltro === 'pendientes') document.getElementById('seg-sat-btn-pendientes').classList.add('activo');
+        if (tipoFiltro === 'desviaciones') document.getElementById('seg-sat-btn-desviaciones').classList.add('activo');
 
-        const tbody = document.getElementById('sat-tbody-rows');
+        const tbody = document.getElementById('seg-sat-tbody-rows');
         tbody.innerHTML = "";
 
         let registrosFiltrados = _satCacheDatosRows.filter(r => {
@@ -1177,8 +1177,8 @@
                 estadoFiltroActivo = this.getAttribute("data-estado");
 
                 if (estadoFiltroActivo === "TODOS") {
-                    const txtPlaca = document.getElementById("txt-filtro-placa");
-                    const txtRuta = document.getElementById("txt-filtro-ruta");
+                    const txtPlaca = document.getElementById("seg-txt-filtro-placa");
+                    const txtRuta = document.getElementById("seg-txt-filtro-ruta");
                     if (txtPlaca) txtPlaca.value = "";
                     if (txtRuta) txtRuta.value = "";
                 }
@@ -1188,12 +1188,12 @@
         });
 
         // 🔍 C. FILTRADO DINÁMICO INPUT POR INPUT
-        const inputPlaca = document.getElementById("txt-filtro-placa");
+        const inputPlaca = document.getElementById("seg-txt-filtro-placa");
         if (inputPlaca) {
             inputPlaca.addEventListener("input", filtrarYMostrarTabla);
         }
 
-        const inputRuta = document.getElementById("txt-filtro-ruta");
+        const inputRuta = document.getElementById("seg-txt-filtro-ruta");
         if (inputRuta) {
             inputRuta.addEventListener("input", filtrarYMostrarTabla);
         }
@@ -1230,7 +1230,7 @@
                     if (!_intervaloActualizar) {
                         _intervaloActualizar = setInterval(function() {
                             // Solo refresca si el modal de detalle NO está abierto
-                            const modal = document.getElementById('mega-modal-detalle');
+                            const modal = document.getElementById('seg-mega-modal-detalle');
                             if (!modal || modal.style.display === 'none') {
                                 actualizar();
                             }
@@ -1246,9 +1246,9 @@
                 necesitaRecargaAlVolver = false;
 
                 // Cerrar panel lateral y modal si quedaron abiertos de la sesión anterior
-                const sidePanel = document.getElementById('side-panel');
+                const sidePanel = document.getElementById('seg-side-panel');
                 if (sidePanel) sidePanel.classList.remove('open');
-                const megaModal = document.getElementById('mega-modal-detalle');
+                const megaModal = document.getElementById('seg-mega-modal-detalle');
                 if (megaModal) megaModal.style.display = 'none';
                 const modalCancel = document.getElementById('modal-cancel');
                 if (modalCancel) modalCancel.style.display = 'none';
