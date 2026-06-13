@@ -190,7 +190,7 @@
     // 1. FUNCIÓN DE REFRESCO DE DATOS
     function actualizar() {
         const script = document.createElement('script');
-        script.src = WEB_APP_URL + "?read=viajes&callback=renderizar&nocache=" + new Date().getTime();
+        script.src = WEB_APP_URL + "?read=viajes&callback=renderizarSeguimiento&nocache=" + new Date().getTime();
         document.body.appendChild(script);
         script.onload = function() { script.remove(); };
     }
@@ -199,7 +199,7 @@
     let estadoFiltroActivo = "TODOS";
     
     // 2. RENDERIZADO DE LA TABLA MONITOR PRINCIPAL
-    window.renderizar = function(viajes) {
+    window.renderizarSeguimiento = function(viajes) {
         listaViajesGlobal = viajes || [];
         
         const dlPlacas = document.getElementById("dl-placas-activas");
@@ -1207,7 +1207,9 @@
     window.prepararAccion          = prepararAccion;
     window.abrirResumen            = abrirResumen;
 
-    // 6. INTEGRACIÓN CON GEOTAB (API)
+    // ─── CICLO DE VIDA DEL ADD-IN ───
+    let _intervaloActualizar = null;
+
     geotab.addin.seguimiento = () => {
         return {
             initialize(api, state, callback) {
@@ -1225,7 +1227,15 @@
                 setTimeout(() => {
                     inicializarEventos(api);
                     actualizar();
-                    setInterval(actualizar, 60000);
+                    if (!_intervaloActualizar) {
+                        _intervaloActualizar = setInterval(function() {
+                            // Solo refresca si el modal de detalle NO está abierto
+                            const modal = document.getElementById('mega-modal-detalle');
+                            if (!modal || modal.style.display === 'none') {
+                                actualizar();
+                            }
+                        }, 60000);
+                    }
                     datosCargados = true;
                 }, 0);
             },
