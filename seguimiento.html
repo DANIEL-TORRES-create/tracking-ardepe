@@ -171,13 +171,21 @@
 </div>
 
 <script>
-    // URL DE TU SCRIPT (Asegúrate de que sea la última versión desplegada)
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwUUfNbaq4tkx05vUxjpJNtbxqJi_Q9WWnxMINupHHSWpU129H9x5wY6Jbf0SNrEE0e/exec"; 
-    
+(function () {
+    "use strict";
+
+    // ─── VARIABLES CENTRALES (aisladas dentro del IIFE para evitar redeclaraciones) ───
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwUUfNbaq4tkx05vUxjpJNtbxqJi_Q9WWnxMINupHHSWpU129H9x5wY6Jbf0SNrEE0e/exec";
+
     let _usuarioLogueado = "Monitor";
     let _viajeSeleccionado = null;
     let _tipoAccionManual = "";
-    let apiGlobal = null; // 🚀 REQUISITO: API de Geotab para la telemetría en vivo
+    let apiGlobal = null;
+
+    // ─── FLAGS DE CONTROL DE CICLO DE VIDA ───
+    let eventosInicializados = false;
+    let datosCargados = false;
+    let necesitaRecargaAlVolver = true;
 
     // 1. FUNCIÓN DE REFRESCO DE DATOS
     function actualizar() {
@@ -194,7 +202,6 @@
     window.renderizar = function(viajes) {
         listaViajesGlobal = viajes || [];
         
-        // 🎯 LÓGICA ALIMENTACIÓN DATALISTS: Extrae solo Placas y Rutas VIVAS de la DB_OPERACION actual
         const dlPlacas = document.getElementById("dl-placas-activas");
         const dlRutas = document.getElementById("dl-rutas-activas");
         
@@ -206,7 +213,6 @@
             dlRutas.innerHTML = rutasUnicas.map(r => `<option value="${r}"></option>`).join("");
         }
 
-        // Ejecutamos el filtro unificado para pintar la pantalla de inmediato
         filtrarYMostrarTabla();
     };
 
@@ -219,18 +225,13 @@
         const filtroPlaca = document.getElementById("txt-filtro-placa").value.trim().toUpperCase();
         const filtroRuta = document.getElementById("txt-filtro-ruta").value.trim().toUpperCase();
 
-        // Aplicamos discriminación en cascada de los tres filtros en simultáneo
         let viajesFiltrados = listaViajesGlobal.filter(v => {
-            // Filtro 1: Botonera de Estados
             if (estadoFiltroActivo !== "TODOS" && v.estadoVisual !== estadoFiltroActivo) return false;
-            // Filtro 2: Predictivo de Placas
             if (filtroPlaca !== "" && !v.placa.toUpperCase().includes(filtroPlaca)) return false;
-            // Filtro 3: Predictivo de Rutas
             if (filtroRuta !== "" && !v.ruta.toUpperCase().includes(filtroRuta)) return false;
             return true;
         });
         
-     // 📊 ACTIVACIÓN MATEMÁTICA: Actualiza el marcador central en tiempo real
         const contenedorContador = document.getElementById("num-flota-total");
         if (contenedorContador) {
             contenedorContador.innerText = viajesFiltrados.length;
@@ -249,7 +250,7 @@
             let salidaPlanVisual = "---";
             if (v.etdOrigen && v.etdOrigen !== "---") {
                 try {
-                    let strEtd = v.etdOrigen.replace("'", "").trim(); // Limpia prefijos de Excel
+                    let strEtd = v.etdOrigen.replace("'", "").trim();
                     
                     if (strEtd.indexOf("-") > -1) {
                         let fechaNormalizada = strEtd.replace(/-/g, "/");
@@ -639,8 +640,8 @@
             function dibujarTodoElModalSatelital(zonasGeotab) {
                 let ultimoIndiceCompletado = -1;
                 let esOrigenOmitido = false;
-                let latitudManualOculta = null;  // 🚀 LÍNEA CORREGIDA
-                let longitudManualOculta = null; // 🚀 LÍNEA CORREGIDA
+                let latitudManualOculta = null;
+                let longitudManualOculta = null;
                 
                 let indiceManual = itinerarioPlan.findIndex(p => p.punto === "INICIO_MANUAL");
                 let tieneHitoManualActivo = false;
@@ -656,9 +657,8 @@
                         tieneHitoManualActivo = true;
                         horaSalidaManualOculta = realManual ? realManual.hora_real_salida : nodoManual.realHora;
                         odometroManualOculto = realManual ? parseFloat(realManual.km_acumulado || 0) : 0;
-                        // 🚀 AGREGA ESTAS DOS LÍNEAS ABAJO:
-                         latitudManualOculta = realManual ? parseFloat(realManual.latitud_manual) : null;
-                         longitudManualOculta = realManual ? parseFloat(realManual.longitud_manual) : null;
+                        latitudManualOculta = realManual ? parseFloat(realManual.latitud_manual) : null;
+                        longitudManualOculta = realManual ? parseFloat(realManual.longitud_manual) : null;
                     }
                 }
 
@@ -679,11 +679,10 @@
                 let origenHitoInicial = itinerarioPlan[0];
                 let esOrigenFrioYEspera = (origenHitoInicial && origenHitoInicial.deteccion === "NO" && !tieneHitoManualActivo);
 
-               let ultimoHitoRealValido = null;
+                let ultimoHitoRealValido = null;
                 let ultimoHitoRealValidoPlan = null;
                 let secuenciaCorrelativa = 1;
 
-                // 🚀 NUEVO RECOLECTOR DE HITOS PARA OSRM
                 let puntosParaRutaOSRM = []; 
 
                 itinerarioPlan.forEach((plan, index) => {
@@ -718,7 +717,6 @@
                     let odometroAcumulado = 0;
                     let tieneOdomValido = false;
 
-                    // Interceptamos si el Sheet manda "---" para que no rompa el parseFloat con un NaN
                     if (kmRaw !== "---" && kmRaw !== "" && !isNaN(kmRaw)) {
                         odometroAcumulado = parseFloat(kmRaw) || 0;
                         if (odometroAcumulado > 0) {
@@ -733,7 +731,7 @@
                     let difKm = "---";
                     let semaforoTiempo = "verde";
                     let semaforoDistancia = "verde";
-                    let semaforoViajeReal = "verde"; // 🚀 AQUÍ NACE: Declarada correctamente al inicio del hito
+                    let semaforoViajeReal = "verde";
 
                     if (esFilaManual) {
                         horaRealLlegada = "---";
@@ -797,7 +795,6 @@
                             tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                             tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
 
-                            // ⏱️ SEMÁFORO VIAJE REAL: Homologado matemáticamente al histórico (Add-in 4)
                             if (tiempoViajePlan !== "---" && tiempoViajeReal !== "---") {
                                 let [pH, pM] = tiempoViajePlan.split(":").map(Number);
                                 let [rH, rM] = tiempoViajeReal.split(":").map(Number);
@@ -818,7 +815,6 @@
                             tiempoViajePlan = calcularDiferenciaHorasTexto(basePlanHoraSalida, plan.planHora);
                             tiempoViajeReal = calcularDiferenciaHorasTexto(baseSalidaHora, horaRealLlegada);
 
-                            // ⏱️ SEMÁFORO VIAJE REAL (Homologado matemáticamente al histórico)
                             if (tiempoViajePlan !== "---" && tiempoViajeReal !== "---") {
                                 let [pH, pM] = tiempoViajePlan.split(":").map(Number);
                                 let [rH, rM] = tiempoViajeReal.split(":").map(Number);
@@ -836,7 +832,6 @@
                             distRealTramo = "---";
                             difKm = "---";
                         } else if (tieneOdomValido) {
-                            // 🛡️ Si el hito anterior no tenía odómetro válido (era 0), evitamos restar basura
                             if (baseOdometro === 0) {
                                 distRealTramo = "---";
                                 difKm = "---";
@@ -845,21 +840,18 @@
                                 if (distPlanKm !== "---") {
                                     difKm = distPlanKm - distRealTramo;
                                     
-                                    // 🛣️ SEMÁFORO KILÓMETROS: Homologado a las tolerancias Navisaf
                                     if (difKm >= 0) semaforoDistancia = "verde";
                                     else if (difKm >= -5) semaforoDistancia = "mostaza";
                                     else semaforoDistancia = "rojo";
                                 }
                             }
                         } else {
-                            // 🛡️ Si la unidad NO tiene odómetro ("---"), dejamos las distancias limpias en guiones
                             distRealTramo = "---";
                             difKm = "---";
-                            semaforoDistancia = "verde"; // Mantiene el indicador en neutro/verde
+                            semaforoDistancia = "verde";
                         }
                     }
 
-                    // 🚨 SEMÁFORO DESVIACIÓN TIEMPO: Con tolerancia exacta de 10 minutos
                     if (desvTiempoTexto !== "---" && desvTiempoTexto.indexOf("-") > -1) {
                         let minsDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[1], 10)) || 0;
                         let horasDesv = Math.abs(parseInt(desvTiempoTexto.split(":")[0], 10)) || 0;
@@ -871,17 +863,14 @@
                         semaforoTiempo = "verde";
                     }
 
-                    // 🚀 OBTENCIÓN DINÁMICA DEL CONDUCTOR DEL VIAJE PRINCIPAL COMO RESPALDO
                     let conductorActual = "---";
                     if (typeof viajes !== 'undefined' && Array.isArray(viajes)) {
                         let vMatch = viajes.find(v => v.placa === placaActual);
                         if (vMatch) conductorActual = vMatch.conductor || "---";
                     }
 
-                    // 🎯 REQUERIMIENTO: Si es Omitido (o el origen está omitido), conductor sale como guión "---"
                     let conductorVisualFila = (esOmitido || (index === 0 && esOrigenOmitido)) ? "---" : (real ? (real.conductor || conductorActual) : conductorActual);
 
-                    // 📝 ALMACENAMIENTO SEGURO CON SEMÁFOROS INDEPENDIENTES ACTIVADOS
                     _satCacheDatosRows.push({
                         st: esCompletado ? "✓" : (esOmitido ? "🚫" : "⏳"), 
                         sec: numSecuencia,
@@ -894,7 +883,7 @@
                         semTiempo: semaforoTiempo,
                         tiempoPlan: tiempoViajePlan, 
                         tiempoReal: tiempoViajeReal, 
-                        semViajeReal: semaforoViajeReal, // Inyección de semáforo independiente
+                        semViajeReal: semaforoViajeReal,
                         distPlan: distPlanKm, 
                         distReal: distRealTramo,
                         semDist: semaforoDistancia, 
@@ -910,7 +899,6 @@
 
                     let zonaMatch = zonasGeotab.find(z => z.name.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
                     
-                    // 🎯 REQUERIMIENTO 1: CALCULO DE CENTROIDE GEOMÉTRICO ÚNICO
                     let centroideLatLng = null;
                     if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
                         let sumaLat = 0, sumaLng = 0;
@@ -932,27 +920,23 @@
                         let geocercaVisual = null;
 
                         if (esFilaManual) {
-                            // 🍊 REQUERIMIENTO 2: Círculo naranja exacto de 30 metros para el Inicio Manual
                             geocercaVisual = L.circle(centroideLatLng, { radius: 30, color: '#d97706', fillColor: '#d97706', weight: 3, fillOpacity: 0.5 }).addTo(window._satMarcadoresHitosGrupo);
                         } else if (zonaMatch && zonaMatch.points && zonaMatch.points.length > 0) {
-                            // 🟩 REQUERIMIENTO 1: Polígono real calcando la forma exacta de MyGeotab
                             let verticesLeaflet = zonaMatch.points.map(pt => [pt.y, pt.x]);
                             geocercaVisual = L.polygon(verticesLeaflet, { color: colorHito, fillColor: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         } else {
                             geocercaVisual = L.circle(centroideLatLng, { radius: 50, fillColor: colorHito, color: colorHito, weight: 2, fillOpacity: 0.35 }).addTo(window._satMarcadoresHitosGrupo);
                         }
 
-                        // 🎯 REQUERIMIENTO 1: Texto fijado estrictamente en el centro geométrico de la zona
                         let centroApoyo = L.circleMarker(centroideLatLng, { radius: 1, color: 'transparent', fillColor: 'transparent' }).addTo(window._satMarcadoresHitosGrupo);
                         centroApoyo.bindTooltip(labelTexto, { permanent: true, direction: 'top', className: esOmitido ? 'sat-label-omitida-hito' : 'sat-label-fija-hito', offset: [0, -4] });
                         geocercaVisual.bindPopup(`<b>[${numSecuencia}] Hito: ${plan.punto}</b><br>Registro: ${tipoRegistro}`);
 
-                        // Alimentamos la cola de simulación
                         puntosParaRutaOSRM.push({
                             coordenada: centroideLatLng,
                             esCompletado: esCompletado,
                             esOmitido: esOmitido,
-                            esGris: !esCompletado, // 🌟 Si no está completado (Hito 7 pendiente), fuerza que el tramo sea Gris
+                            esGris: !esCompletado,
                             esManual: esFilaManual
                         });
                     }
@@ -964,7 +948,6 @@
                 }
 
                 puntosParaRutaOSRM.forEach((puntoOrigen, idx) => {
-                    // 🔴 PUNTOS ROJOS ESTILO HISTÓRICO
                     let colorNodo = (puntoOrigen.esOmitido || puntoOrigen.esGris) ? '#64748b' : '#ef4444'; 
                     if (puntoOrigen.esManual) colorNodo = '#d97706'; 
 
@@ -979,11 +962,10 @@
                     if (idx >= puntosParaRutaOSRM.length - 1) return;
                     let puntoDestino = puntosParaRutaOSRM[idx + 1];
 
-                    // 🎯 CORRECCIÓN: Ahora incluye tramos pendientes (del 6 al 7) en la condición de dibujo
                     if (puntoOrigen.esCompletado || puntoOrigen.esManual) {
                         let coordInicio = puntoOrigen.coordenada;
                         let coordFin = puntoDestino.coordenada;
-                        let esTramoGris = puntoDestino.esOmitido || puntoDestino.esGris; // Si el destino está omitido o pendiente, va gris
+                        let esTramoGris = puntoDestino.esOmitido || puntoDestino.esGris;
 
                         fetch(`https://router.project-osrm.org/route/v1/driving/${coordInicio[1]},${coordInicio[0]};${coordFin[1]},${coordFin[0]}?overview=full&geometries=geojson`)
                             .then(r => r.json())
@@ -991,16 +973,14 @@
                                 if (jsonRoute.routes && jsonRoute.routes.length > 0) {
                                     let caminoCarretera = jsonRoute.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                     
-                                    // 🛣️ SEPARACIÓN MÍNIMA: Reducido de 45m a solo 8m para que no se salga de la pista
-                                    // Solo se desfasa si el tramo es Gris (Omitido/Pendiente) para evitar distorsiones
                                     if (esTramoGris) { 
                                         caminoCarretera = aplicarDesfaseParalelo(caminoCarretera, 8); 
                                     }
 
                                     let colorLinea = esTramoGris ? '#94a3b8' : '#004b93'; 
                                     let estiloLinea = esTramoGris ? 
-                                        { color: colorLinea, weight: 4, opacity: 0.7, dashArray: '5, 10' } : // ── ── Gris entrecortado (Hito 6 al 7)
-                                        { color: colorLinea, weight: 5, opacity: 0.85 };                     // ─── Azul continuo (Pasado/Real)
+                                        { color: colorLinea, weight: 4, opacity: 0.7, dashArray: '5, 10' } :
+                                        { color: colorLinea, weight: 5, opacity: 0.85 };
 
                                     L.polyline(caminoCarretera, estiloLinea).addTo(window._satMarcadoresHitosGrupo);
                                 }
@@ -1034,18 +1014,16 @@
         try {
             if (!horaInicio || !horaFin || horaInicio === "---" || horaFin === "---") return "---";
             
-            // Limpiar comas y espacios dobles para homogeneizar los formatos de Google y Geotab
             let strI = horaInicio.toString().replace(",", "").trim();
             let strF = horaFin.toString().replace(",", "").trim();
             
-            // Función interna para convertir cualquier cadena "DD/MM/YYYY HH:MM:SS" a un objeto Date real
             let formatearAFechaObjeto = (stringFecha) => {
                 let partes = stringFecha.split(/\s+/);
                 let fechaPartes = partes[0].split("/");
                 let horaPartes = partes[1].split(":");
                 
                 let dia = parseInt(fechaPartes[0], 10);
-                let mes = parseInt(fechaPartes[1], 10) - 1; // Enero es 0
+                let mes = parseInt(fechaPartes[1], 10) - 1;
                 let anio = parseInt(fechaPartes[2], 10);
                 let hora = parseInt(horaPartes[0], 10);
                 let min = parseInt(horaPartes[1], 10);
@@ -1057,10 +1035,8 @@
             let dateInicio = formatearAFechaObjeto(strI);
             let dateFin = formatearAFechaObjeto(strF);
             
-            // Calcular la diferencia neta en milisegundos absolutos
             let diffMs = dateFin.getTime() - dateInicio.getTime();
             
-            // Si por un desfase de clics la resta da negativa, extraemos el valor absoluto transcurrido
             let totalMins = Math.abs(Math.floor(diffMs / (1000 * 60)));
             let h = Math.floor(totalMins / 60);
             let m = totalMins % 60;
@@ -1117,13 +1093,11 @@
             let dotTiempo = `<span class="sat-table-dot dot-${r.semTiempo}">●</span>`;
             let dotViajeReal = `<span class="sat-table-dot dot-${r.semViajeReal}">●</span>`; 
             
-            // 🟢 BLINDAJE VISUAL DEL ODÓMETRO (ADD-IN 3)
-            // Si la distancia del tramo es un guion "---", el semáforo pasa a "neutral" (gris) para que no pinte verde/rojo por error
-            let claseSemDist = r.distRealTramo === "---" ? "neutral" : r.semDist;
+            let claseSemDist = r.distReal === "---" ? "neutral" : r.semDist;
             let dotDist = `<span class="sat-table-dot dot-${claseSemDist}">●</span>`;
 
             let desvT = (r.desvTiempo !== "---") ? `${dotTiempo} ${r.desvTiempo}` : "---";
-            let tReal = (r.tiempoReal !== "---") ? `${dotViajeReal} ${r.tiempoReal}` : "---"; // 🎯 Enganchado a su propio punto
+            let tReal = (r.tiempoReal !== "---") ? `${dotViajeReal} ${r.tiempoReal}` : "---";
             let dPlan = (r.distPlan !== "---") ? `${parseFloat(r.distPlan).toFixed(2)} KM` : "---";
             let dReal = (r.distReal !== "---") ? `${parseFloat(r.distReal).toFixed(2)} KM` : "---";
             let dDif = (r.difKm !== "---") ? `${dotDist} ${r.difKm >= 0 ? "+" : ""}${parseFloat(r.difKm).toFixed(2)} KM` : "---";
@@ -1149,76 +1123,115 @@
         });
     };
 
+    // ─── INICIALIZAR EVENTOS UNA SOLA VEZ (con .onclick para evitar duplicados) ───
+    function inicializarEventos(api) {
+        if (eventosInicializados) return;
+        eventosInicializados = true;
+
+        // ⏰ A. RELOJ DEL BUNKER
+        const contenedorHora = document.getElementById("bunker-time");
+        if (contenedorHora) {
+            setInterval(() => {
+                const ahora = new Date();
+                let hrs = ahora.getHours();
+                let mins = ahora.getMinutes();
+                let segs = ahora.getSeconds();
+                
+                hrs = hrs < 10 ? "0" + hrs : hrs;
+                mins = mins < 10 ? "0" + mins : mins;
+                segs = segs < 10 ? "0" + segs : segs;
+                
+                contenedorHora.innerText = hrs + ":" + mins + ":" + segs;
+            }, 1000);
+        }
+
+        // 🎛️ B. BOTONERA DE ESTADOS
+        const botonesEstado = document.querySelectorAll(".btn-filto-est");
+        botonesEstado.forEach(boton => {
+            boton.addEventListener("click", function() {
+                botonesEstado.forEach(b => {
+                    b.classList.remove("activo");
+                    b.style.opacity = "0.65";
+                });
+                this.classList.add("activo");
+                this.style.opacity = "1";
+                
+                estadoFiltroActivo = this.getAttribute("data-estado");
+
+                if (estadoFiltroActivo === "TODOS") {
+                    const txtPlaca = document.getElementById("txt-filtro-placa");
+                    const txtRuta = document.getElementById("txt-filtro-ruta");
+                    if (txtPlaca) txtPlaca.value = "";
+                    if (txtRuta) txtRuta.value = "";
+                }
+                
+                filtrarYMostrarTabla();
+            });
+        });
+
+        // 🔍 C. FILTRADO DINÁMICO INPUT POR INPUT
+        const inputPlaca = document.getElementById("txt-filtro-placa");
+        if (inputPlaca) {
+            inputPlaca.addEventListener("input", filtrarYMostrarTabla);
+        }
+
+        const inputRuta = document.getElementById("txt-filtro-ruta");
+        if (inputRuta) {
+            inputRuta.addEventListener("input", filtrarYMostrarTabla);
+        }
+    }
+
+    // ─── EXPONER AL HTML LAS FUNCIONES QUE USAN onclick ───
+    window.cerrarPanel             = cerrarPanel;
+    window.cerrarModal             = cerrarModal;
+    window.validarMotivo           = validarMotivo;
+    window.ejecutarAccionManual    = ejecutarAccionManual;
+    window.prepararAccion          = prepararAccion;
+    window.abrirResumen            = abrirResumen;
+
     // 6. INTEGRACIÓN CON GEOTAB (API)
     geotab.addin.seguimiento = () => {
         return {
             initialize(api, state, callback) {
                 apiGlobal = api; 
                 api.getSession(s => { _usuarioLogueado = s.userName; });
-                
-                // ⏰ A. ENTRADA EN TIEMPO REAL: ACTIVACIÓN DEL RELOJ DEL BUNKER
-                const contenedorHora = document.getElementById("bunker-time");
-                if (contenedorHora) {
-                    setInterval(() => {
-                        const ahora = new Date();
-                        let hrs = ahora.getHours();
-                        let mins = ahora.getMinutes();
-                        let segs = ahora.getSeconds();
-                        
-                        hrs = hrs < 10 ? "0" + hrs : hrs;
-                        mins = mins < 10 ? "0" + mins : mins;
-                        segs = segs < 10 ? "0" + segs : segs;
-                        
-                        contenedorHora.innerText = hrs + ":" + mins + ":" + segs;
-                    }, 1000);
+
+                // 1. Primero liberar MyGeotab para que no se congele
+                try {
+                    callback();
+                } catch (e) {
+                    console.error("Error ejecutando callback de initialize:", e);
                 }
 
-                // 🎛️ B. ENGANCHE TÁCTIL: CLICS EN LA BOTONERA DE ESTADOS NAVISAF
-                const botonesEstado = document.querySelectorAll(".btn-filto-est");
-                botonesEstado.forEach(boton => {
-                    boton.addEventListener("click", function() {
-                        botonesEstado.forEach(b => {
-                            b.classList.remove("activo");
-                            b.style.opacity = "0.65";
-                        });
-                        this.classList.add("activo");
-                        this.style.opacity = "1";
-                        
-                        estadoFiltroActivo = this.getAttribute("data-estado");
+                // 2. Inicializar eventos una sola vez de forma diferida
+                setTimeout(() => {
+                    inicializarEventos(api);
+                    actualizar();
+                    setInterval(actualizar, 60000);
+                    datosCargados = true;
+                }, 0);
+            },
 
-                        // 🎯 OPERACIÓN ADICIONAL: Si presiona "Todos", limpia por completo las búsquedas escritas
-                        if (estadoFiltroActivo === "TODOS") {
-                            const txtPlaca = document.getElementById("txt-filtro-placa");
-                            const txtRuta = document.getElementById("txt-filtro-ruta");
-                            if (txtPlaca) txtPlaca.value = "";
-                            if (txtRuta) txtRuta.value = "";
-                        }
-                        
-                        filtrarYMostrarTabla();
-                    });
-                });
-
-                // 🔍 C. FILTRADO DINÁMICO INPUT POR INPUT (PLACAS Y RUTAS)
-                const inputPlaca = document.getElementById("txt-filtro-placa");
-                if (inputPlaca) {
-                    inputPlaca.addEventListener("input", filtrarYMostrarTabla);
+            focus(api, state) {
+                apiGlobal = api;
+                const debeForzar = necesitaRecargaAlVolver || !datosCargados;
+                necesitaRecargaAlVolver = false;
+                if (debeForzar) {
+                    actualizar();
                 }
+            },
 
-                const inputRuta = document.getElementById("txt-filtro-ruta");
-                if (inputRuta) {
-                    inputRuta.addEventListener("input", filtrarYMostrarTabla);
-                }
-
-                // Ejecución e intervalos base del Servidor
-                actualizar();
-                setInterval(actualizar, 60000);
-                callback();
+            blur(api, state) {
+                // NO limpiar tablas aquí. Solo marcar que al volver debe recargar.
+                necesitaRecargaAlVolver = true;
             }
         };
     };
 
     // Ejecución inicial de respaldo para entornos de pruebas locales
     actualizar();
+
+})();
 </script>
 </body>
 </html>
