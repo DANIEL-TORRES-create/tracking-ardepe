@@ -54,7 +54,7 @@
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <label id="lblVehiculo">3. VEHÍCULO (PLACA):</label>
-                    <input list="listaVehiculos" id="inputVehiculo" placeholder="Placa..." style="width: 100%;">
+                    <input list="listaVehiculos" id="inputVehiculo" name="prg-vehiculo-input" placeholder="Placa..." autocomplete="new-password" style="width: 100%;">
                     <datalist id="listaVehiculos"></datalist>
                     <label>4. CONDUCTOR ASIGNADO:</label>
                     <input list="listaConductores" id="inputConductor" placeholder="Conductor..." style="width: 100%;">
@@ -374,12 +374,13 @@
             const dispositivos = (res || []).filter(d =>
                 d.groups && d.groups.some(g => g.id === "b3353")
             );
-            console.log("Total dispositivos recibidos:", (res || []).length);
-            console.log("Dispositivos con b3353:", dispositivos.length);
-            console.log("Grupos del primer dispositivo:", JSON.stringify((res || [])[0]?.groups));
             placasValidas = dispositivos.map(d => d.name).filter(Boolean);
-            console.log("placasValidas:", placasValidas);
             placasValidas.forEach(p => { let o = document.createElement("option"); o.value = p; dl.appendChild(o); });
+            // Limpiar el input si el valor actual no está en la lista autorizada
+            const inputV = document.getElementById("inputVehiculo");
+            if (inputV && inputV.value && !placasValidas.includes(inputV.value)) {
+                inputV.value = "";
+            }
         }, (e) => { console.error("Error cargando vehículos:", e); });
 
         api.call("Get", { typeName: "User" }, (res) => {
@@ -448,8 +449,8 @@
             } else {
                 if (!v || r === "" || !s) return alert("Faltan datos");
                 // Validar que la placa esté en la lista válida del grupo autorizado
-                if (placasValidas.length > 0 && !placasValidas.includes(v)) {
-                    return alert("⚠️ La placa '" + v + "' no pertenece al grupo autorizado. Solo puede programar unidades asignadas a este cliente.");
+                if (!placasValidas.includes(v)) {
+                    return alert("⚠️ La placa '" + v + "' no está autorizada. Solo puede programar unidades asignadas a este cliente.");
                 }
             }
 
