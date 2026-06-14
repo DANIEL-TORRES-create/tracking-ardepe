@@ -374,7 +374,11 @@
             const dispositivos = (res || []).filter(d =>
                 d.groups && d.groups.some(g => g.id === "b3353")
             );
+            console.log("Total dispositivos recibidos:", (res || []).length);
+            console.log("Dispositivos con b3353:", dispositivos.length);
+            console.log("Grupos del primer dispositivo:", JSON.stringify((res || [])[0]?.groups));
             placasValidas = dispositivos.map(d => d.name).filter(Boolean);
+            console.log("placasValidas:", placasValidas);
             placasValidas.forEach(p => { let o = document.createElement("option"); o.value = p; dl.appendChild(o); });
         }, (e) => { console.error("Error cargando vehículos:", e); });
 
