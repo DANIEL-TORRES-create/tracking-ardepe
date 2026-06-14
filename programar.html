@@ -368,6 +368,9 @@
         api.call("Get", { typeName: "Device", search: {} }, (res) => {
             const dl = document.getElementById("listaVehiculos");
             dl.innerHTML = "";
+            // LOG TEMPORAL: ver estructura real de groups para ABM-783
+            const abm = (res || []).find(d => d.name === "ABM-783");
+            if (abm) console.log("GRUPOS DE ABM-783:", JSON.stringify(abm.groups));
             // Filtro exacto: solo unidades que tengan asignado el grupo b3353
             const dispositivos = (res || []).filter(d =>
                 d.groups && d.groups.some(g => g.id === "b3353")
