@@ -365,7 +365,7 @@
     function cargarDatosGeotab(api) {
         if (!api) return;
 
-        api.call("Get", { typeName: "Device", search: { groups: [{ id: "b2798" }, { id: "b279A" }] } }, (res) => {
+        api.call("Get", { typeName: "Device", search: { groups: [{ id: "b3353" }] } }, (res) => {
             const dl = document.getElementById("listaVehiculos");
             dl.innerHTML = "";
             placasValidas = (res || []).map(d => d.name).filter(Boolean);
