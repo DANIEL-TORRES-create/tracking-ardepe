@@ -293,8 +293,8 @@
             }
             
             let badgeColor = "";
-            if (v.estadoVisual === "RETRASADO") {
-                badgeColor = '<span style="background-color: #fee2e2; color: #b91c1c; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block; border:1px solid #fca5a5; animation: blinker 1.5s linear infinite;"><i class="fas fa-exclamation-triangle"></i> RETRASADO</span>';
+            if (v.estadoVisual === "ATRASADO") {
+                badgeColor = '<span style="background-color: #fee2e2; color: #b91c1c; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block; border:1px solid #fca5a5; animation: blinker 1.5s linear infinite;"><i class="fas fa-exclamation-triangle"></i> ATRASADO</span>';
             } else if (v.estadoVisual === "NO INICIADO") {
                 badgeColor = '<span style="background-color: #f1f5f9; color: #475569; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; display:inline-block; border:1px solid #cbd5e1;"><i class="far fa-clock"></i> NO INICIADO</span>';
             } else if (v.estadoVisual === "PROGRAMADO") {
@@ -529,7 +529,7 @@
         if (badge) {
             badge.className = "sat-badge-estado"; 
             if (estado === "EN CURSO") badge.classList.add("sat-status-en-curso");
-            else if (estado === "RETRASADO") badge.classList.add("sat-status-atrasado");
+            else if (estado === "ATRASADO") badge.classList.add("sat-status-atrasado");
             else badge.classList.add("sat-status-no-iniciado");
         }
 
