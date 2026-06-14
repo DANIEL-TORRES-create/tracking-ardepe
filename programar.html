@@ -365,10 +365,14 @@
     function cargarDatosGeotab(api) {
         if (!api) return;
 
-        api.call("Get", { typeName: "Device", search: { groups: [{ id: "b3353" }] } }, (res) => {
+        api.call("Get", { typeName: "Device", search: {} }, (res) => {
             const dl = document.getElementById("listaVehiculos");
             dl.innerHTML = "";
-            placasValidas = (res || []).map(d => d.name).filter(Boolean);
+            // Filtro exacto: solo unidades que tengan asignado el grupo b3353
+            const dispositivos = (res || []).filter(d =>
+                d.groups && d.groups.some(g => g.id === "b3353")
+            );
+            placasValidas = dispositivos.map(d => d.name).filter(Boolean);
             placasValidas.forEach(p => { let o = document.createElement("option"); o.value = p; dl.appendChild(o); });
         }, (e) => { console.error("Error cargando vehículos:", e); });
 
@@ -410,9 +414,6 @@
             console.error("Error general en carga segura:", e);
         } finally {
             datosCargando = false;
-            // Ocultar overlay de carga al terminar
-            var overlay = document.getElementById('prg-overlay-carga');
-            if (overlay) overlay.style.display = 'none';
         }
     }
 
@@ -616,10 +617,6 @@
                 // Al volver al add-in, forzar recarga si es necesario
                 const debeForzar = necesitaRecargaAlVolver || !datosCargados;
                 necesitaRecargaAlVolver = false;
-                if (debeForzar) {
-                    var overlay = document.getElementById('prg-overlay-carga');
-                    if (overlay) overlay.style.display = 'flex';
-                }
                 arranqueDiferido(api, debeForzar);
             },
 
@@ -633,12 +630,5 @@
 
 })();
 </script>
-<div id="prg-overlay-carga" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100vw; height:100vh; background:rgba(0,36,68,0.55); z-index:99999; justify-content:center; align-items:center; flex-direction:column; gap:16px; box-sizing:border-box; padding-left:160px;">
-    <div style="width:52px; height:52px; border:5px solid rgba(255,255,255,0.2); border-top-color:#38bdf8; border-radius:50%; animation:prg-spin 0.8s linear infinite;"></div>
-    <span style="color:#ffffff; font-family:Arial,sans-serif; font-size:13px; font-weight:700; letter-spacing:1px;">CARGANDO...</span>
-</div>
-<style>
-@keyframes prg-spin { to { transform: rotate(360deg); } }
-</style>
 </body>
 </html>
