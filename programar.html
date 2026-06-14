@@ -443,6 +443,10 @@
                 if (!id || !v) return alert("Faltan datos críticos del viaje en curso");
             } else {
                 if (!v || r === "" || !s) return alert("Faltan datos");
+                // Validar que la placa esté en la lista válida del grupo autorizado
+                if (placasValidas.length > 0 && !placasValidas.includes(v)) {
+                    return alert("⚠️ La placa '" + v + "' no pertenece al grupo autorizado. Solo puede programar unidades asignadas a este cliente.");
+                }
             }
 
             const btn = this;
