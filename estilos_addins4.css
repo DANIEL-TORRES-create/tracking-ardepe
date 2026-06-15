@@ -179,30 +179,39 @@ body {
     color: #b91c1c !important; 
 }
 
-/* ====================================================================
-   🎯 PEGALO AQUÍ AL FINAL (Debajo de .sat-badge-table.st-omitido)
-   ==================================================================== */
-.input-predictivo-pro {
+/* ── Fix: aislar estilos de input del histórico para no afectar al seguimiento ── */
+#his-txt-filtro-placa,
+#his-txt-filtro-ruta {
     background-color: #ffffff !important;
-    color: #1e293b !important;          
-    border: 1px solid #cbd5e1 !important; 
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
 }
 
-.input-predictivo-pro:focus {
+#his-txt-filtro-placa:focus,
+#his-txt-filtro-ruta:focus {
     background-color: #ffffff !important;
     color: #0f172a !important;
     border-color: var(--primary) !important;
     box-shadow: 0 0 0 3px rgba(0, 75, 147, 0.2) !important;
 }
 
-.input-predictivo-pro::placeholder {
-    color: #64748b !important;          /* Esto hace que "Buscar placa" se vea nítido */
-    opacity: 1 !important;              
+#his-txt-filtro-placa::placeholder,
+#his-txt-filtro-ruta::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
 }
 
-.input-predictivo-pro:-ms-input-placeholder {
-    color: #64748b !important;
+/* ── Sticky: header y bunker de controles histórico ── */
+.header-container {
+    position: sticky;
+    top: 0;
+    z-index: 300;
 }
-.input-predictivo-pro::-ms-input-placeholder {
-    color: #64748b !important;
+
+.bunker-controles-superiores {
+    position: sticky;
+    top: 70px;
+    z-index: 200;
+    border-radius: 0 0 14px 14px !important;
+    margin-bottom: 0 !important;
 }
