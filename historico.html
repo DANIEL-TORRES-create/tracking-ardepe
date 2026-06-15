@@ -810,8 +810,12 @@
                                 }
                             }
 
-                            if (horaRealLlegada !== "---" && hitoRealAnteriorSalida !== "---" && hitoPlanAnteriorSalida !== "---" && !hitoAnteriorTuvoLlegadaSinSalida) {
+                            // tiempoViajePlan: siempre que haya llegada real válida y datos planificados
+                            if (horaRealLlegada !== "---" && hitoPlanAnteriorSalida !== "---") {
                                 tiempoViajePlan = diffHorasPasivo(limpiarFechaSat(hitoPlanAnteriorSalida), limpiarFechaSat(plan.planHora));
+                            }
+                            // tiempoViajeReal: solo si el anterior tuvo salida válida (no bloqueado)
+                            if (horaRealLlegada !== "---" && hitoRealAnteriorSalida !== "---" && hitoPlanAnteriorSalida !== "---" && !hitoAnteriorTuvoLlegadaSinSalida) {
                                 tiempoViajeReal = diffHorasPasivo(limpiarFechaSat(hitoRealAnteriorSalida), limpiarFechaSat(horaRealLlegada));
                                 
                                 if (tiempoViajePlan !== "---" && tiempoViajeReal !== "---") {
