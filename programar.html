@@ -33,9 +33,30 @@
                   <label style="font-size: 12px !important;">📊 PANEL DE CARGA MASIVA EXCEL</label>
                   <button onclick="exportarPlantilla()" class="btn-descarga" style="padding: 5px 12px !important; font-size: 10px !important;">📥 Plantilla</button>
               </div>
-                <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%;">
-                    <input type="file" id="inputExcel" style="flex-grow: 1;">
-                    <button id="btnProcesarExcel" class="btn-lupa" style="height: 33px;">Validar y Subir</button>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px; width: 100%;">
+                    <!-- Zona de arrastre estilizada -->
+                    <label for="inputExcel" id="zonaArrastre" style="
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                        min-height: 70px;
+                        border: 2px dashed rgba(255,255,255,0.4);
+                        border-radius: 8px;
+                        background: rgba(255,255,255,0.08);
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        box-sizing: border-box;
+                        padding: 10px;
+                    ">
+                        <span style="font-size:22px; margin-bottom:4px;">📂</span>
+                        <span id="zonaArrastreTexto" style="color:#ffffff; font-size:11px; font-weight:700; letter-spacing:0.5px; text-align:center;">Arrastre su archivo aquí</span>
+                        <span style="color:rgba(255,255,255,0.6); font-size:10px; margin-top:2px;">o haga clic para seleccionar</span>
+                    </label>
+                    <!-- Input oculto - la lógica JS sigue leyendo fileInput.files[0] -->
+                    <input type="file" id="inputExcel" style="display:none;" accept=".xlsx,.xls">
+                    <button id="btnProcesarExcel" class="btn-lupa" style="height: 33px; width: 100%;">Validar y Subir</button>
                 </div>
                 <div id="errorLog" class="error-log"></div>
             </div>
@@ -192,6 +213,11 @@
         document.getElementById("btnProgramar").disabled = false;
         document.getElementById("errorLog").style.display = "none";
         document.getElementById("errorLog").innerHTML = "";
+        // Resetear zona de arrastre
+        var textoZona = document.getElementById("zonaArrastreTexto");
+        var zonaEl = document.getElementById("zonaArrastre");
+        if (textoZona) textoZona.textContent = "Arrastre su archivo aquí";
+        if (zonaEl) { zonaEl.style.borderColor = "rgba(255,255,255,0.4)"; zonaEl.style.background = "rgba(255,255,255,0.08)"; }
     };
 
     // ─── VALIDAR FECHA ───
@@ -611,6 +637,58 @@
             cargarDatosGeotabSeguro(apiGlobal, !!forzar);
         }, 80);
     }
+
+    // ─── DRAG & DROP Y TEXTO DE ARCHIVO SELECCIONADO ───
+    document.addEventListener("DOMContentLoaded", function() {
+        var inputExcel = document.getElementById("inputExcel");
+        var zona = document.getElementById("zonaArrastre");
+        var texto = document.getElementById("zonaArrastreTexto");
+
+        if (inputExcel && zona && texto) {
+            // Actualizar texto al seleccionar archivo con el selector
+            inputExcel.addEventListener("change", function() {
+                if (this.files && this.files[0]) {
+                    texto.textContent = "📄 " + this.files[0].name;
+                    zona.style.borderColor = "rgba(56,189,248,0.8)";
+                    zona.style.background = "rgba(56,189,248,0.1)";
+                } else {
+                    texto.textContent = "Arrastre su archivo aquí";
+                    zona.style.borderColor = "rgba(255,255,255,0.4)";
+                    zona.style.background = "rgba(255,255,255,0.08)";
+                }
+            });
+
+            // Drag over
+            zona.addEventListener("dragover", function(e) {
+                e.preventDefault();
+                this.style.borderColor = "#38bdf8";
+                this.style.background = "rgba(56,189,248,0.15)";
+            });
+
+            // Drag leave
+            zona.addEventListener("dragleave", function() {
+                if (!(inputExcel.files && inputExcel.files[0])) {
+                    this.style.borderColor = "rgba(255,255,255,0.4)";
+                    this.style.background = "rgba(255,255,255,0.08)";
+                }
+            });
+
+            // Drop
+            zona.addEventListener("drop", function(e) {
+                e.preventDefault();
+                var dt = e.dataTransfer;
+                if (dt && dt.files && dt.files[0]) {
+                    // Asignar el archivo al input
+                    var dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(dt.files[0]);
+                    inputExcel.files = dataTransfer.files;
+                    texto.textContent = "📄 " + dt.files[0].name;
+                    this.style.borderColor = "rgba(56,189,248,0.8)";
+                    this.style.background = "rgba(56,189,248,0.1)";
+                }
+            });
+        }
+    });
 
     // ─── EXPONER AL HTML SOLO LAS FUNCIONES QUE USAN onclick ───
     window.exportarPlantilla      = exportarPlantilla;
