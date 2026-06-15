@@ -272,6 +272,54 @@
         return JSON.stringify(resultado);
     }
 
+    // ─── VALIDAR DUPLICADO (misma placa + ruta + etdOrigen) ───
+    function validarDuplicado(placa, nombreRuta, etdOrigen) {
+        // Normalizar etdOrigen del nuevo viaje para comparar
+        // El input datetime-local devuelve "2026-04-15T22:00"
+        // El etdOrigen guardado viene como "2026-04-15 22:00" (sin T, sin comilla)
+        let etdNormalizado = etdOrigen.toString().replace("'", "").replace("T", " ").trim();
+        // Solo comparar fecha y hora HH:MM (sin segundos)
+        let etdCorto = etdNormalizado.substring(0, 16); // "2026-04-15 22:00"
+
+        let duplicado = viajesCache.find(function(v) {
+            if (!v.placa || !v.ruta || !v.etdOrigen) return false;
+            // Ignorar viajes FINALIZADOS o CANCELADOS
+            if (v.estado === "FINALIZADO" || v.estado === "CANCELADO") return false;
+
+            let mismaPLaca = v.placa.toString().trim().toUpperCase() === placa.toString().trim().toUpperCase();
+            let mismaRuta  = v.ruta.toString().trim().toUpperCase() === nombreRuta.toString().trim().toUpperCase();
+
+            // Normalizar etdOrigen del viaje existente
+            let etdExistente = v.etdOrigen.toString().replace("'", "").replace("T", " ").trim();
+            let etdExistenteCorto = etdExistente.substring(0, 16);
+            let mismaSalida = etdExistenteCorto === etdCorto;
+
+            return mismaPLaca && mismaRuta && mismaSalida;
+        });
+
+        return duplicado || null;
+    }
+
+    function mostrarAlertaDuplicado(dup, placa, ruta, salida) {
+        // Formatear la salida para mostrar al usuario
+        let salidaFormateada = salida.toString().replace("'","").replace("T"," ").trim().substring(0,16);
+        alert(
+            "⚠️ PROGRAMACIÓN DUPLICADA DETECTADA
+
+" +
+            "Esta combinación ya existe en el sistema:
+" +
+            "• Placa:  " + placa + "
+" +
+            "• Ruta:   " + ruta + "
+" +
+            "• Salida: " + salidaFormateada + "
+
+" +
+            "Por favor retire la unidad del listado o modifíquela desde el panel 'Programados para Edición'."
+        );
+    }
+
     // ─── CALCULAR ITINERARIO MANUAL (lógica original intacta) ───
     function calcular() {
         try {
@@ -494,6 +542,13 @@
                 if (!placasValidas.includes(v)) {
                     return alert("⚠️ La placa '" + v + "' no está autorizada. Solo puede programar unidades asignadas a este cliente.");
                 }
+                // Validar duplicado: misma placa + ruta + salida
+                const nombreRutaFinal = rutasMaestras[r].nombre + (document.getElementById("checkRetorno").checked ? "/RETORNO" : "");
+                const dup = validarDuplicado(v, nombreRutaFinal, s);
+                if (dup) {
+                    mostrarAlertaDuplicado(dup, v, nombreRutaFinal, s);
+                    return;
+                }
             }
 
             const btn = this;
@@ -580,6 +635,25 @@
 
                     btn.disabled = true;
                     const total = jsonData.length;
+                    let duplicadosExcel = [];
+
+                    // Pre-validar duplicados en todas las filas antes de procesar
+                    jsonData.forEach((f, i) => {
+                        let rutaCelda = String(f.RUTA || "").trim();
+                        let etdCelda = f.FECHA_ETD ? f.FECHA_ETD.toString().replace("'","").trim() : "";
+                        const dupExcel = validarDuplicado(f.PLACA, rutaCelda, etdCelda);
+                        if (dupExcel) {
+                            duplicadosExcel.push("Fila " + (i+2) + ": Placa '" + f.PLACA + "' / Ruta '" + rutaCelda + "' / Salida '" + etdCelda.substring(0,16) + "'");
+                        }
+                    });
+
+                    if (duplicadosExcel.length > 0) {
+                        log.style.display = "block";
+                        log.innerHTML = "<b>⚠️ Se detectaron programaciones duplicadas:</b><br>" + duplicadosExcel.join("<br>") + "<br><br>Retire esas filas del Excel o modifique las programaciones existentes.";
+                        btn.disabled = false;
+                        btn.innerText = "Validar y Subir";
+                        return;
+                    }
 
                     for (let [idx, f] of jsonData.entries()) {
                         btn.innerText = `⏳ Procesando ${idx + 1}/${total}...`;
