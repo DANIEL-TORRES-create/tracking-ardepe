@@ -998,3 +998,17 @@ textarea {
     color: #ffffff !important; 
     opacity: 0.90 !important; /* Brillo ejecutivo de alto impacto visual */
 }
+/* ── Sticky: header y bunker de controles seguimiento ── */
+.header-container {
+    position: sticky;
+    top: 0;
+    z-index: 300;
+}
+
+.bunker-controles-superiores {
+    position: sticky;
+    top: 78px;
+    z-index: 200;
+    border-radius: 0 0 14px 14px !important;
+    margin-bottom: 0 !important;
+}
