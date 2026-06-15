@@ -611,13 +611,21 @@
                     btn.disabled = true;
                     const total = jsonData.length;
 
-                    // Validar duplicados antes de procesar
+                    // Validar duplicados: contra el Sheet Y entre filas del mismo Excel
                     var dupErrores = [];
+                    var clavesEnExcel = {};
                     jsonData.forEach(function(f, i) {
                         var rutaCeldaDup = String(f.RUTA || "").trim();
                         var etdCeldaDup = f.FECHA_ETD ? f.FECHA_ETD.toString().replace("'","").trim() : "";
+                        var claveUnica = (f.PLACA + "|" + rutaCeldaDup + "|" + etdCeldaDup.substring(0,16)).toUpperCase();
+                        // Duplicado contra el Sheet ya guardado
                         if (validarDuplicado(f.PLACA, rutaCeldaDup, etdCeldaDup)) {
-                            dupErrores.push("Fila " + (i+2) + ": " + f.PLACA + " / " + rutaCeldaDup + " / " + etdCeldaDup.substring(0,16));
+                            dupErrores.push("Fila " + (i+2) + " (ya existe en sistema): " + f.PLACA + " / " + rutaCeldaDup + " / " + etdCeldaDup.substring(0,16));
+                        // Duplicado dentro del mismo Excel
+                        } else if (clavesEnExcel[claveUnica] !== undefined) {
+                            dupErrores.push("Fila " + (i+2) + " (duplicada con fila " + clavesEnExcel[claveUnica] + " del Excel): " + f.PLACA + " / " + rutaCeldaDup + " / " + etdCeldaDup.substring(0,16));
+                        } else {
+                            clavesEnExcel[claveUnica] = (i+2);
                         }
                     });
                     if (dupErrores.length > 0) {
