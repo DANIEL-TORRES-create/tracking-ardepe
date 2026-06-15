@@ -590,51 +590,46 @@
                     let errores = [];
                     const nombresRutas = rutasMaestras.map(r => r.nombre);
                     
+                    // ── VALIDACIÓN UNIFICADA ──
+                    var todosErrores = [];
+                    var clavesEnExcel = {};
                     jsonData.forEach((f, i) => {
                         let n = i + 2;
-                        if (!placasValidas.includes(f.PLACA)) errores.push(`Fila ${n}: Datos inválidos - Placa '${f.PLACA}' no autorizada.`);
-                        
                         let rutaCelda = String(f.RUTA || "").trim();
                         let rutaLimpiaParaValidar = rutaCelda;
                         if (rutaCelda.toUpperCase().endsWith("/RETORNO")) {
                             rutaLimpiaParaValidar = rutaCelda.substring(0, rutaCelda.toUpperCase().lastIndexOf("/RETORNO")).trim();
                         }
-                        
-                        if (!nombresRutas.includes(rutaLimpiaParaValidar)) errores.push(`Fila ${n}: Datos inválidos - Ruta '${rutaCelda}' no existe.`);
-                        if (!f.FECHA_ETD || !validarFechaReal(f.FECHA_ETD)) errores.push(`Fila ${n}: Datos inválidos - Fecha incorrecta o vacía.`);
-                    });
-                    
-                    if (errores.length > 0) { 
-                        log.style.display = "block"; 
-                        log.innerHTML = "<b>❌ Se encontraron errores en el archivo:</b><br>" + errores.join("<br>"); 
-                        return; 
-                    }
+                        let etdCelda = f.FECHA_ETD ? f.FECHA_ETD.toString().replace("'","").trim() : "";
+                        let filaValida = true;
 
-                    btn.disabled = true;
-                    const total = jsonData.length;
-
-                    // Validar duplicados: contra el Sheet Y entre filas del mismo Excel
-                    var dupErrores = [];
-                    var clavesEnExcel = {};
-                    jsonData.forEach(function(f, i) {
-                        var rutaCeldaDup = String(f.RUTA || "").trim();
-                        var etdCeldaDup = f.FECHA_ETD ? f.FECHA_ETD.toString().replace("'","").trim() : "";
-                        var claveUnica = (f.PLACA + "|" + rutaCeldaDup + "|" + etdCeldaDup.substring(0,16)).toUpperCase();
-                        // Duplicado contra el Sheet ya guardado
-                        if (validarDuplicado(f.PLACA, rutaCeldaDup, etdCeldaDup)) {
-                            dupErrores.push("Fila " + (i+2) + ": Ya existe en el sistema - Placa: " + f.PLACA + " / Ruta: " + rutaCeldaDup + " / Salida: " + etdCeldaDup.substring(0,16));
-                        // Duplicado dentro del mismo Excel
-                        } else if (clavesEnExcel[claveUnica] !== undefined) {
-                            dupErrores.push("Fila " + (i+2) + ": Duplicado con Fila " + clavesEnExcel[claveUnica] + " del mismo Excel - Placa: " + f.PLACA + " / Ruta: " + rutaCeldaDup + " / Salida: " + etdCeldaDup.substring(0,16));
-                        } else {
-                            clavesEnExcel[claveUnica] = (i+2);
+                        if (!placasValidas.includes(f.PLACA)) {
+                            todosErrores.push(`Fila ${n}: Placa '${f.PLACA}' no autorizada.`);
+                            filaValida = false;
+                        }
+                        if (!nombresRutas.includes(rutaLimpiaParaValidar)) {
+                            todosErrores.push(`Fila ${n}: Ruta '${rutaCelda}' no existe en las Maestras.`);
+                            filaValida = false;
+                        }
+                        if (!f.FECHA_ETD || !validarFechaReal(f.FECHA_ETD)) {
+                            todosErrores.push(`Fila ${n}: Fecha incorrecta o vacía.`);
+                            filaValida = false;
+                        }
+                        if (filaValida) {
+                            let claveUnica = (f.PLACA + "|" + rutaCelda + "|" + etdCelda.substring(0,16)).toUpperCase();
+                            if (validarDuplicado(f.PLACA, rutaCelda, etdCelda)) {
+                                todosErrores.push(`Fila ${n}: Ya existe en el sistema - Placa: ${f.PLACA} / Ruta: ${rutaCelda} / Salida: ${etdCelda.substring(0,16)}.`);
+                            } else if (clavesEnExcel[claveUnica] !== undefined) {
+                                todosErrores.push(`Fila ${n}: Duplicado con Fila ${clavesEnExcel[claveUnica]} del mismo Excel - Placa: ${f.PLACA} / Ruta: ${rutaCelda} / Salida: ${etdCelda.substring(0,16)}.`);
+                            } else {
+                                clavesEnExcel[claveUnica] = n;
+                            }
                         }
                     });
-                    if (dupErrores.length > 0) {
+
+                    if (todosErrores.length > 0) {
                         log.style.display = "block";
-                        log.innerHTML = "<b>⚠️ Programaciones duplicadas detectadas:</b><br>" + dupErrores.join("<br>") + "<br><br>Corrija el archivo antes de continuar.";
-                        btn.disabled = false;
-                        btn.innerText = "Validar y Subir";
+                        log.innerHTML = "<b>Se encontraron los siguientes problemas:</b><br><br>" + todosErrores.join("<br>") + "<br><br>Corrija el archivo y vuelva a subir.";
                         return;
                     }
 
