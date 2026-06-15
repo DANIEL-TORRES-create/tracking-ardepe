@@ -454,6 +454,8 @@
             let claseEstado = "hito-pendiente";
             if (p.deteccion === "SI") claseEstado = "hito-completado";
             if (p.deteccion === "FORZADO" || p.punto === "INICIO_MANUAL") claseEstado = "hito-alerta";
+            // Omitido: tiene detección pero sin salida o paso muy rápido
+            if (p.deteccion === "OMITIDO") claseEstado = "hito-pendiente";
 
             let marcaVisual = "";
             if (index === 0) {
@@ -730,6 +732,22 @@
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL");
+
+                    // Fix: hito intermedio sin salida GPS o pernocte ≤5 min -> OMITIDO
+                    if (esCompletado && !esFilaManual && index > 0 && index < itinerarioPlan.length - 1) {
+                        let salidaCheck = real ? String(real.hora_real_salida || "").replace("'","").trim() : "";
+                        let pernocteCheck = real ? String(real.hora_pernocte_real || "").replace("'","").trim() : "";
+                        let sinSalida = !salidaCheck || salidaCheck === "---" || salidaCheck === "";
+                        let pernocteMin = 0;
+                        if (pernocteCheck && pernocteCheck !== "---" && pernocteCheck !== "00:00" && pernocteCheck !== "0:00") {
+                            let pp = pernocteCheck.split(":");
+                            pernocteMin = (parseInt(pp[0],10)||0)*60 + (parseInt(pp[1],10)||0);
+                        }
+                        if (sinSalida || (pernocteMin > 0 && pernocteMin <= 5)) {
+                            esCompletado = false;
+                            esOmitido = true;
+                        }
+                    }
 
                     let numSecuencia = secuenciaCorrelativa;
                     if (esFilaManual) {
