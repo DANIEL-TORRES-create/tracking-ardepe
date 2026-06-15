@@ -34,8 +34,8 @@
                   <button onclick="exportarPlantilla()" class="btn-descarga" style="padding: 5px 12px !important; font-size: 10px !important;">📥 Plantilla</button>
               </div>
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px; width: 100%;">
-                    <!-- Zona de arrastre estilizada -->
-                    <label for="inputExcel" id="zonaArrastre" style="
+                    <!-- Zona de arrastre estilizada - div para soportar drag&drop nativo -->
+                    <div id="zonaArrastre" style="
                         display: flex;
                         flex-direction: column;
                         align-items: center;
@@ -46,14 +46,14 @@
                         border-radius: 8px;
                         background: rgba(255,255,255,0.08);
                         cursor: pointer;
-                        transition: all 0.2s ease;
+                        transition: border-color 0.2s ease, background 0.2s ease;
                         box-sizing: border-box;
                         padding: 10px;
                     ">
                         <span style="font-size:22px; margin-bottom:4px;">📂</span>
                         <span id="zonaArrastreTexto" style="color:#ffffff; font-size:11px; font-weight:700; letter-spacing:0.5px; text-align:center;">Arrastre su archivo aquí</span>
                         <span style="color:rgba(255,255,255,0.6); font-size:10px; margin-top:2px;">o haga clic para seleccionar</span>
-                    </label>
+                    </div>
                     <!-- Input oculto - la lógica JS sigue leyendo fileInput.files[0] -->
                     <input type="file" id="inputExcel" style="display:none;" accept=".xlsx,.xls">
                     <button id="btnProcesarExcel" class="btn-lupa" style="height: 33px; width: 100%;">Validar y Subir</button>
@@ -474,6 +474,7 @@
         document.getElementById("fechaSalida").onchange = calcular;
         document.getElementById("checkRetorno").onchange = calcular;
         document.getElementById("prg-btnCancelar").onclick = resetearFormularioProgramacion;
+        inicializarZonaArrastre();
 
         // ─── BOTÓN PROGRAMAR / ACTUALIZAR (lógica original intacta) ───
         document.getElementById("btnProgramar").onclick = function() {
@@ -639,56 +640,83 @@
     }
 
     // ─── DRAG & DROP Y TEXTO DE ARCHIVO SELECCIONADO ───
-    document.addEventListener("DOMContentLoaded", function() {
+    function inicializarZonaArrastre() {
         var inputExcel = document.getElementById("inputExcel");
         var zona = document.getElementById("zonaArrastre");
         var texto = document.getElementById("zonaArrastreTexto");
 
-        if (inputExcel && zona && texto) {
-            // Actualizar texto al seleccionar archivo con el selector
-            inputExcel.addEventListener("change", function() {
-                if (this.files && this.files[0]) {
-                    texto.textContent = "📄 " + this.files[0].name;
-                    zona.style.borderColor = "rgba(56,189,248,0.8)";
-                    zona.style.background = "rgba(56,189,248,0.1)";
-                } else {
-                    texto.textContent = "Arrastre su archivo aquí";
-                    zona.style.borderColor = "rgba(255,255,255,0.4)";
-                    zona.style.background = "rgba(255,255,255,0.08)";
-                }
-            });
+        if (!inputExcel || !zona || !texto) return;
 
-            // Drag over
-            zona.addEventListener("dragover", function(e) {
-                e.preventDefault();
-                this.style.borderColor = "#38bdf8";
+        // Click en la zona abre el selector de archivos
+        zona.addEventListener("click", function() {
+            inputExcel.click();
+        });
+
+        // Actualizar texto al seleccionar archivo con el selector
+        inputExcel.addEventListener("change", function() {
+            if (this.files && this.files[0]) {
+                texto.textContent = "📄 " + this.files[0].name;
+                zona.style.borderColor = "rgba(56,189,248,0.8)";
+                zona.style.background = "rgba(56,189,248,0.15)";
+            } else {
+                texto.textContent = "Arrastre su archivo aquí";
+                zona.style.borderColor = "rgba(255,255,255,0.4)";
+                zona.style.background = "rgba(255,255,255,0.08)";
+            }
+        });
+
+        // Drag enter - resaltar zona
+        zona.addEventListener("dragenter", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.style.borderColor = "#38bdf8";
+            this.style.background = "rgba(56,189,248,0.2)";
+            this.style.borderStyle = "solid";
+        });
+
+        // Drag over - necesario para permitir el drop
+        zona.addEventListener("dragover", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.style.borderColor = "#38bdf8";
+            this.style.background = "rgba(56,189,248,0.2)";
+            this.style.borderStyle = "solid";
+        });
+
+        // Drag leave - restaurar estilo
+        zona.addEventListener("dragleave", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!(inputExcel.files && inputExcel.files[0])) {
+                this.style.borderColor = "rgba(255,255,255,0.4)";
+                this.style.background = "rgba(255,255,255,0.08)";
+                this.style.borderStyle = "dashed";
+            }
+        });
+
+        // Drop - asignar archivo al input
+        zona.addEventListener("drop", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var archivos = e.dataTransfer && e.dataTransfer.files;
+            if (archivos && archivos.length > 0) {
+                try {
+                    var dt = new DataTransfer();
+                    dt.items.add(archivos[0]);
+                    inputExcel.files = dt.files;
+                } catch(err) {
+                    // Fallback para browsers que no soportan DataTransfer constructor
+                    Object.defineProperty(inputExcel, 'files', {
+                        value: archivos, writable: true
+                    });
+                }
+                texto.textContent = "📄 " + archivos[0].name;
+                this.style.borderColor = "rgba(56,189,248,0.8)";
                 this.style.background = "rgba(56,189,248,0.15)";
-            });
-
-            // Drag leave
-            zona.addEventListener("dragleave", function() {
-                if (!(inputExcel.files && inputExcel.files[0])) {
-                    this.style.borderColor = "rgba(255,255,255,0.4)";
-                    this.style.background = "rgba(255,255,255,0.08)";
-                }
-            });
-
-            // Drop
-            zona.addEventListener("drop", function(e) {
-                e.preventDefault();
-                var dt = e.dataTransfer;
-                if (dt && dt.files && dt.files[0]) {
-                    // Asignar el archivo al input
-                    var dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(dt.files[0]);
-                    inputExcel.files = dataTransfer.files;
-                    texto.textContent = "📄 " + dt.files[0].name;
-                    this.style.borderColor = "rgba(56,189,248,0.8)";
-                    this.style.background = "rgba(56,189,248,0.1)";
-                }
-            });
-        }
-    });
+                this.style.borderStyle = "solid";
+            }
+        });
+    }
 
     // ─── EXPONER AL HTML SOLO LAS FUNCIONES QUE USAN onclick ───
     window.exportarPlantilla      = exportarPlantilla;
