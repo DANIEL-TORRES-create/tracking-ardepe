@@ -519,7 +519,6 @@
             let claseEstado = "hito-pendiente";
             if (p.deteccion === "SI") claseEstado = "hito-completado";
             if (p.deteccion === "FORZADO" || p.punto === "INICIO_MANUAL" || p.punto === "CIERRE_MANUAL") claseEstado = "hito-alerta";
-            if (p.deteccion === "OMITIDO") claseEstado = "hito-pendiente";
 
             let marcaVisual = "";
             if (index === 0) {
@@ -733,27 +732,6 @@
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL");
-
-                    // Fix: hito intermedio sin salida GPS o pernocte ≤5 min -> OMITIDO
-                    // Solo aplica a hitos intermedios (no origen, no destino, no manuales)
-                    if (esCompletado && !esFilaManual && index > 0 && index < itinerarioPlan.length - 1) {
-                        let salidaCheck = real ? String(real.hora_real_salida || "").replace("'","").trim() : "";
-                        let pernocteRealCheck = real ? String(real.hora_pernocte_real || "").replace("'","").trim() : "";
-                        let sinSalida = !salidaCheck || salidaCheck === "---" || salidaCheck === "";
-                        
-                        // Parsear pernocte formato histórico: '0:02:00' o '00:02' o vacío
-                        let pernocteMin = 0;
-                        if (pernocteRealCheck && pernocteRealCheck !== "---" && pernocteRealCheck !== "0:00:00" && pernocteRealCheck !== "00:00" && pernocteRealCheck !== "0:00") {
-                            let pp = pernocteRealCheck.replace("'","").split(":");
-                            // Soporta HH:MM y HH:MM:SS
-                            pernocteMin = (parseInt(pp[0],10)||0)*60 + (parseInt(pp[1],10)||0);
-                        }
-                        
-                        if (sinSalida || (pernocteMin > 0 && pernocteMin <= 5)) {
-                            esCompletado = false;
-                            esOmitido = true;
-                        }
-                    }
                     
                     let numSecuencia = secuenciaCorrelativa++;
                     if (plan.punto === "INICIO_MANUAL") {
@@ -773,7 +751,8 @@
                     let labelTexto = esOmitido ? `<b>[${numSecuencia}] OMITIDO</b> - ${plan.punto}` : `<b>[${numSecuencia}]</b> ${plan.punto}`;
                     
                     let horaRealLlegada = real ? real.hora_real_llegada : (plan.realHora || "---");
-                    let horaRealSalida = real ? real.hora_real_salida : "---";
+                    let horaRealSalidaRaw = real ? String(real.hora_real_salida || "").replace("'","").trim() : "";
+                    let horaRealSalida = (horaRealSalidaRaw && horaRealSalidaRaw !== "---") ? real.hora_real_salida : "Sin registro";
                     let pernoctePlan = real ? real.hora_pernocte_planificada : "00:30";
                     let pernocteReal = real ? real.hora_pernocte_real : "---";
 
@@ -886,7 +865,7 @@
 
                         if (!esFilaManual) {
                             hitoPlanAnteriorSalida = plan.planHoraSalida || "---";
-                            if (horaRealSalida !== "---") hitoRealAnteriorSalida = horaRealSalida;
+                            if (horaRealSalida !== "---" && horaRealSalida !== "Sin registro") hitoRealAnteriorSalida = horaRealSalida;
                         }
                     }
 
@@ -907,7 +886,6 @@
                     }
 
                     if (esOmitido || (!esCompletado && tipoRegistro === "---")) {
-                        horaRealLlegada = "---"; horaRealSalida = "---";
                         distRealTramo = "---"; difKm = "---"; desvTiempoTexto = "---"; tiempoViajePlan = "---"; tiempoViajeReal = "---"; pernoctePlan = "---"; pernocteReal = "---";
                     }
 
