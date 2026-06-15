@@ -206,3 +206,36 @@ body {
 .input-predictivo-pro::-ms-input-placeholder {
     color: #64748b !important;
 }
+/* =========================================
+   STICKY: HEADER + CONTROLES + THEAD
+   ========================================= */
+
+/* 1. Fijar el header azul superior */
+.header-container {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 300 !important;
+}
+
+/* 2. Fijar la barra de controles azul */
+.bunker-controles-superiores {
+    position: sticky !important;
+    top: 70px !important; /* altura del header historico (sin reloj, un poco menos) */
+    z-index: 200 !important;
+    border-radius: 0 0 14px 14px !important;
+    margin-bottom: 0 !important;
+}
+
+/* 3. Fijar encabezados de la tabla */
+.monitor-table thead th {
+    position: sticky !important;
+    top: 155px !important; /* header(70) + controles(85) */
+    z-index: 100 !important;
+    background: #e1e4e8 !important;
+}
+
+/* 4. Permitir scroll en el body */
+body {
+    overflow-y: auto !important;
+    height: 100vh !important;
+}
