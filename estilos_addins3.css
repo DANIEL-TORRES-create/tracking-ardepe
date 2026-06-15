@@ -1021,7 +1021,7 @@ textarea {
 /* 3. Fijar encabezados de la tabla */
 .monitor-table thead th {
     position: sticky !important;
-    top: 5px !important; /* header(78) + controles(85) */
+    top: 2px !important; /* header(78) + controles(85) */
     z-index: 100 !important;
     background: #e1e4e8 !important;
 }
