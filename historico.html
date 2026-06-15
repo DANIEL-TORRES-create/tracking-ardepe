@@ -732,6 +732,31 @@
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL");
+
+                    // Fix P4: hito intermedio con entrada pero sin salida GPS -> OMITIDO
+                    // Solo aplica a hitos intermedios (no origen, no destino, no manuales)
+                    if (esCompletado && !esFilaManual && index > 0 && index < itinerarioPlan.length - 1) {
+                        let horaRealSalidaCheck = real ? String(real.hora_real_salida || "").replace("'","").trim() : "";
+                        let pernocteRealCheck = real ? String(real.hora_pernocte_real || "").replace("'","").trim() : "";
+                        let sinSalida = !horaRealSalidaCheck || horaRealSalidaCheck === "---" || horaRealSalidaCheck === "";
+                        
+                        // Si no tiene salida, revisar pernocte real
+                        if (sinSalida) {
+                            esCompletado = false;
+                            esOmitido = true;
+                        } else {
+                            // Si tiene salida, verificar si pernocte <= 5 minutos
+                            let pernocteMinutos = 0;
+                            if (pernocteRealCheck && pernocteRealCheck !== "---" && pernocteRealCheck !== "00:00" && pernocteRealCheck !== "0:00") {
+                                let partesP = pernocteRealCheck.split(":");
+                                pernocteMinutos = (parseInt(partesP[0], 10) || 0) * 60 + (parseInt(partesP[1], 10) || 0);
+                            }
+                            if (pernocteMinutos > 0 && pernocteMinutos <= 5) {
+                                esCompletado = false;
+                                esOmitido = true;
+                            }
+                        }
+                    }
                     
                     let numSecuencia = secuenciaCorrelativa++;
                     if (plan.punto === "INICIO_MANUAL") {
