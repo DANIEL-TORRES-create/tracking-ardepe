@@ -998,3 +998,36 @@ textarea {
     color: #ffffff !important; 
     opacity: 0.90 !important; /* Brillo ejecutivo de alto impacto visual */
 }
+/* =========================================
+   STICKY: HEADER + CONTROLES + THEAD
+   ========================================= */
+
+/* 1. Fijar el header azul superior */
+.header-container {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 300 !important;
+}
+
+/* 2. Fijar la barra de controles azul */
+.bunker-controles-superiores {
+    position: sticky !important;
+    top: 78px !important; /* altura del header */
+    z-index: 200 !important;
+    border-radius: 0 0 14px 14px !important; /* redondeo solo abajo al quedar pegado */
+    margin-bottom: 0 !important;
+}
+
+/* 3. Fijar encabezados de la tabla */
+.monitor-table thead th {
+    position: sticky !important;
+    top: 163px !important; /* header(78) + controles(85) */
+    z-index: 100 !important;
+    background: #e1e4e8 !important;
+}
+
+/* 4. Permitir scroll en el body para que el sticky funcione */
+body {
+    overflow-y: auto !important;
+    height: 100vh !important;
+}
