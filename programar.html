@@ -633,6 +633,9 @@
                         return;
                     }
 
+                    btn.disabled = true;
+                    const total = jsonData.length;
+
                     for (let [idx, f] of jsonData.entries()) {
                         btn.innerText = `⏳ Procesando ${idx + 1}/${total}...`;
                         let rutaCelda = String(f.RUTA || "").trim();
