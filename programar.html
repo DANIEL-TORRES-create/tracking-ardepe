@@ -152,6 +152,7 @@
     let arranqueProgramado = false;
     let necesitaRecargaAlVolver = true;
     let viajesCache = [];
+    let todosLosViajes = []; // Cache sin filtro de fecha para validar duplicados
 
     // ─── HELPER ───
     function $(id) {
@@ -277,7 +278,7 @@
     function validarDuplicado(placa, nombreRuta, etdOrigen) {
         let etdNormalizado = etdOrigen.toString().replace("'", "").replace("T", " ").trim();
         let etdCorto = etdNormalizado.substring(0, 16);
-        return viajesCache.find(function(v) {
+        return todosLosViajes.find(function(v) {
             if (!v.placa || !v.ruta || !v.etdOrigen) return false;
             if (v.estado === "FINALIZADO" || v.estado === "CANCELADO") return false;
             let mismaPLaca = v.placa.toString().trim().toUpperCase() === placa.toString().trim().toUpperCase();
@@ -353,6 +354,7 @@
             c.innerHTML = "";
             const filtrados = viajes.filter(v => v.etdOrigen && v.etdOrigen.toString().includes(f));
 
+            todosLosViajes = viajes; // Guardar todos sin filtro para validación de duplicados
             viajesCache = filtrados;
 
             if (filtrados.length === 0) {
