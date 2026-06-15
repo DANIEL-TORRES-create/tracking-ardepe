@@ -695,6 +695,7 @@
                 let odometroBaseAnterior = 0; 
                 let hitoRealAnteriorSalida = "---";
                 let hitoPlanAnteriorSalida = "---";
+                let hitoAnteriorTuvoLlegadaSinSalida = false;
 
                 rawDatosArray.forEach(h => {
                     let pNom = String(h.punto_nombre || "").trim().toUpperCase();
@@ -809,7 +810,7 @@
                                 }
                             }
 
-                            if (horaRealLlegada !== "---" && hitoRealAnteriorSalida !== "---" && hitoPlanAnteriorSalida !== "---") {
+                            if (horaRealLlegada !== "---" && hitoRealAnteriorSalida !== "---" && hitoPlanAnteriorSalida !== "---" && !hitoAnteriorTuvoLlegadaSinSalida) {
                                 tiempoViajePlan = diffHorasPasivo(limpiarFechaSat(hitoPlanAnteriorSalida), limpiarFechaSat(plan.planHora));
                                 tiempoViajeReal = diffHorasPasivo(limpiarFechaSat(hitoRealAnteriorSalida), limpiarFechaSat(horaRealLlegada));
                                 
@@ -868,7 +869,16 @@
 
                         if (!esFilaManual) {
                             hitoPlanAnteriorSalida = plan.planHoraSalida || "---";
-                            if (horaRealSalida !== "---" && horaRealSalida !== "Sin registro") hitoRealAnteriorSalida = horaRealSalida;
+                            let tieneLlegadaValida = (horaRealLlegada !== "---" && horaRealLlegada !== "Sin registro");
+                            let tieneSalidaValida = (horaRealSalida !== "---" && horaRealSalida !== "Sin registro");
+                            if (tieneSalidaValida) {
+                                hitoRealAnteriorSalida = horaRealSalida;
+                                hitoAnteriorTuvoLlegadaSinSalida = false; // salida válida → desbloquea siguiente
+                            } else if (tieneLlegadaValida && !tieneSalidaValida) {
+                                hitoAnteriorTuvoLlegadaSinSalida = true;  // llegada sin salida → bloquea siguiente
+                            } else {
+                                hitoAnteriorTuvoLlegadaSinSalida = false; // sin nada → no bloquea, usa última salida válida
+                            }
                         }
                     }
 
