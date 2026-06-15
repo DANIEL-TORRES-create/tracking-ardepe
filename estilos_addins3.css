@@ -1031,3 +1031,14 @@ body {
     overflow-y: auto !important;
     height: 100vh !important;
 }
+/* Fix: permitir sticky en thead */
+.monitor-table {
+    overflow: visible !important;
+}
+
+.monitor-table thead th {
+    position: sticky !important;
+    top: 2px !important;
+    z-index: 100 !important;
+    background: #e1e4e8 !important;
+}
