@@ -623,6 +623,7 @@
 
         let limpiarFechaSat = (strFecha) => {
             if (!strFecha || strFecha === "---" || strFecha === "--:--" || strFecha.toString().trim() === "") return "---";
+            if (strFecha === "Sin registro") return "Sin registro";
             let t = strFecha.toString().replace("'", "").trim();
 
             if (t.indexOf("1899") > -1) {
@@ -647,7 +648,7 @@
 
         let diffHorasPasivo = (horaInicio, horaFin) => {
             try {
-                if (!horaInicio || !horaFin || horaInicio === "---" || horaFin === "---" || horaInicio === "--:--" || horaFin === "--:--") return "---";
+                if (!horaInicio || !horaFin || horaInicio === "---" || horaFin === "---" || horaInicio === "--:--" || horaFin === "--:--" || horaInicio === "Sin registro" || horaFin === "Sin registro") return "---";
                 let strI = horaInicio.toString().replace(",", "").trim();
                 let strF = horaFin.toString().replace(",", "").trim();
                 
@@ -769,6 +770,8 @@
                     let semaforoViajeReal = "verde";
 
                     let normalizarFormatoFechaSinSegundos = (fechaStr) => {
+                        // Retornar "Sin registro" directamente sin procesar
+                        if (fechaStr === "Sin registro") return "Sin registro";
                         let limpia = limpiarFechaSat(fechaStr);
                         if (!limpia || limpia === "---") return "---";
                         
@@ -776,7 +779,7 @@
                         if (partes.length >= 2) {
                             let horaCompleta = partes[1];
                             let bloquesHora = horaCompleta.split(":");
-                            let horaMinutosLimpio = bloquesHora[0] + ":" + bloquesHora[1];
+                            let horaMinutosLimpio = bloquesHora[0] + ":" + (bloquesHora[1] || "00");
                             return `${partes[0].replace(",", "")}, ${horaMinutosLimpio}`;
                         }
                         return limpia;
