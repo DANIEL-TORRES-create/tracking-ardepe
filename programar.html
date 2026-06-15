@@ -354,8 +354,23 @@
         if (v.estado === "EN CURSO") {
             document.querySelectorAll("#inputVehiculo, #selectRuta, #fechaSalida, #checkRetorno").forEach(el => el.disabled = true);
         } else {
-            const idxRuta = rutasMaestras.findIndex(r => r.nombre === v.ruta);
-            if(idxRuta !== -1) document.getElementById("selectRuta").value = idxRuta;
+            // Detectar si la ruta guardada tiene sufijo /RETORNO o /RET
+            let nombreRutaBase = v.ruta || "";
+            let esRetorno = false;
+
+            if (nombreRutaBase.toUpperCase().endsWith("/RETORNO")) {
+                esRetorno = true;
+                nombreRutaBase = nombreRutaBase.substring(0, nombreRutaBase.toUpperCase().lastIndexOf("/RETORNO")).trim();
+            } else if (nombreRutaBase.toUpperCase().endsWith("/RET")) {
+                esRetorno = true;
+                nombreRutaBase = nombreRutaBase.substring(0, nombreRutaBase.toUpperCase().lastIndexOf("/RET")).trim();
+            }
+
+            const idxRuta = rutasMaestras.findIndex(r => r.nombre === nombreRutaBase);
+            if (idxRuta !== -1) {
+                document.getElementById("selectRuta").value = idxRuta;
+                document.getElementById("checkRetorno").checked = esRetorno;
+            }
             document.getElementById("fechaSalida").value = v.etdOrigen.toString().replace("'","").replace(" ","T");
             calcular();
         }
@@ -476,7 +491,7 @@
                     vehiculo: v, 
                     conductor: c || "Sin Conductor", 
                     etdOrigen: estaEnCurso ? "" : "'" + s.replace('T', ' '), 
-                    nombreRuta: (r !== "" && !estaEnCurso) ? rutasMaestras[r].nombre : "", 
+                    nombreRuta: (r !== "" && !estaEnCurso) ? (rutasMaestras[r].nombre + (document.getElementById("checkRetorno").checked ? "/RETORNO" : "")) : "", 
                     itinerario: JSON.stringify(itinerario) 
                 }) 
             })
