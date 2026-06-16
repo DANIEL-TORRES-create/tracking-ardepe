@@ -207,10 +207,6 @@
     
     // 2. RENDERIZADO DE LA TABLA MONITOR PRINCIPAL
     window.renderizarSeguimiento = function(viajes) {
-        if (viajes && viajes.mantenimiento === true) {
-            document.body.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#002244;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:99999;"><div style="font-size:48px;margin-bottom:20px;">🔧</div><h1 style="color:#38bdf8;font-family:Lexend,sans-serif;font-size:28px;font-weight:900;letter-spacing:2px;margin:0;">SISTEMA EN MANTENIMIENTO</h1><p style="color:#93c5fd;font-family:Lexend,sans-serif;font-size:13px;margin-top:12px;">Por favor espere. El sistema estará disponible pronto.</p></div>';
-            return;
-        }
         // Ocultar overlay de carga al recibir datos
         var overlay = document.getElementById('seg-overlay-carga');
         if (overlay) overlay.style.display = 'none';
