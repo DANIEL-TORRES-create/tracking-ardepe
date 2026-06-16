@@ -696,6 +696,7 @@
                 let hitoRealAnteriorSalida = "---";
                 let hitoPlanAnteriorSalida = "---";
                 let hitoAnteriorTuvoLlegadaSinSalida = false;
+                let ultimoHitoRealValidoPlan = null;
 
                 rawDatosArray.forEach(h => {
                     let pNom = String(h.punto_nombre || "").trim().toUpperCase();
@@ -885,6 +886,7 @@
                             } else {
                                 hitoAnteriorTuvoLlegadaSinSalida = false; // sin nada → no bloquea, usa última salida válida
                             }
+                            ultimoHitoRealValidoPlan = plan;
                         }
                     }
 
