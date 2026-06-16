@@ -790,8 +790,10 @@
                         
                         if (index === 0 || plan.punto === "CIERRE_MANUAL") {
                             distPlanKm = "---"; 
-                        } else {
-                            let nodoBasePlan = itinerarioPlan[index - 1];
+                       } else {
+                            // Usar el último hito válido como base, no el inmediatamente anterior
+                            // para que hitos omitidos no reduzcan incorrectamente la distancia plan
+                            let nodoBasePlan = ultimoHitoRealValidoPlan || itinerarioPlan[index - 1];
                             distPlanKm = Math.max(0, (parseFloat(plan.distanciaPlan) || 0) - (parseFloat(nodoBasePlan.distanciaPlan) || 0));
                         }
 
