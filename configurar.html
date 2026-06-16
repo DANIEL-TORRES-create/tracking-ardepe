@@ -93,6 +93,7 @@
     let rutaActual = [];
     let idRutaActiva = null;
     let apiGlobal = null;
+    let rutasNombresExistentes = []; // Cache de nombres de rutas para validar duplicados
 
     // ─── FLAGS DE CONTROL DE CICLO DE VIDA ───
     let eventosInicializados = false;
@@ -142,6 +143,7 @@
             var overlay = document.getElementById('cfg-overlay-carga');
             if (overlay) overlay.style.display = 'none';
             listaUI.innerHTML = "";
+            rutasNombresExistentes = data.map(r => r.nombre.trim().toUpperCase());
             data.forEach(r => {
                 const row = listaUI.insertRow();
                 let ptsArray = JSON.parse(r.puntos);
@@ -239,6 +241,10 @@
             const nombre = document.getElementById("nombreRuta").value.trim();
             const filas = document.querySelectorAll("#cuerpoRuta tr");
             if (!nombre || rutaActual.length === 0) return alert("Faltan datos");
+            // Validar nombre duplicado solo al crear (no al editar)
+            if (!idRutaActiva && rutasNombresExistentes.includes(nombre.trim().toUpperCase())) {
+                return alert("⚠️ Ya existe una ruta con el nombre '" + nombre + "'. Use un nombre diferente o edite la ruta existente.");
+            }
 
             const puntosFinales = rutaActual.map((p, i) => {
                 const inputs = filas[i].querySelectorAll("input");
