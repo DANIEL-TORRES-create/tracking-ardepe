@@ -21,7 +21,7 @@
 <div class="card-container">
     <h2 class="titulo-seccion">📅 Control de Programación y Edición</h2>
     
-    <!-- 🎛️ CONTENEDOR DE DOS COLUMNAS EN ACCIÓN CORREGIDO -->
+    <!-- 🏛️ CONTENEDOR DE DOS COLUMNAS EN ACCIÓN CORREGIDO -->
     <div class="bunker-split-container">
         
         <!-- [VENTANA IZQUIERDA (50%)]: OPERACIONES DE DESPACHO -->
@@ -83,7 +83,7 @@
                 </div>
             </div>
 
-            <!-- Previsualización del Itinerario Calculado -->
+            <!-- Previsuálización del Itinerario Calculado -->
             <table class="tabla-constructor">
                 <thead>
                     <tr>
@@ -108,11 +108,21 @@
         <!-- [VENTANA DERECHA (50%)]: PANEL DE HISTORIAL VIVO -->
         <div class="columna-derecha-pro">
             <div class="seccion-lista">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
-                    <h3 style="margin: 0; color: #004b93; font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: 0.3px;">🗂️ PROGRAMADOS PARA EDICIÓN</h3>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <input type="date" id="filtroFechaLista" style="padding: 5px !important; border: 1px solid #cbd5e1 !important; font-size: 11px !important; border-radius: 4px; color:#334155; background:#ffffff !important; height:28px; box-sizing:border-box;">
-                        <button onclick="cargarViajesExistentes()" class="btn-lupa" style="padding: 0 12px !important; font-size: 11px !important; height:28px;">🔍 Buscar</button>
+                <div style="margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h3 style="margin: 0; color: #004b93; font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: 0.3px;">🗂️ PROGRAMADOS PARA EDICIÓN</h3>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <input type="date" id="filtroFechaLista" style="padding: 5px !important; border: 1px solid #cbd5e1 !important; font-size: 11px !important; border-radius: 4px; color:#334155; background:#ffffff !important; height:28px; box-sizing:border-box;">
+                            <button onclick="cargarViajesExistentes()" class="btn-lupa" style="padding: 0 12px !important; font-size: 11px !important; height:28px;">🔍 Buscar</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" id="prg-filtro-placa" placeholder="🔍 Buscar placa..." oninput="prg_filtrarLista()" style="width: 100%; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; color: #334155; box-sizing: border-box; height: 28px;">
+                        </div>
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" id="prg-filtro-ruta" placeholder="🔍 Buscar ruta..." oninput="prg_filtrarLista()" style="width: 100%; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; color: #334155; box-sizing: border-box; height: 28px;">
+                        </div>
                     </div>
                 </div>
                 
@@ -134,7 +144,6 @@
 
     </div>
 </div>
-
 <script>
 (function () {
     "use strict";
@@ -777,6 +786,20 @@
     window.exportarPlantilla      = exportarPlantilla;
     window.cargarViajesExistentes = cargarViajesExistentes;
     window.iniciarEdicion         = iniciarEdicion;
+
+    // ─── BUSCADORES PLACA Y RUTA EN LISTA PROGRAMADOS ───
+    window.prg_filtrarLista = function() {
+        const filtroPlaca = document.getElementById("prg-filtro-placa").value.trim().toUpperCase();
+        const filtroRuta  = document.getElementById("prg-filtro-ruta").value.trim().toUpperCase();
+        const filas = document.querySelectorAll("#cuerpoListaViajes tr");
+        filas.forEach(function(fila) {
+            const placa = fila.cells[0] ? fila.cells[0].innerText.toUpperCase() : "";
+            const ruta  = fila.cells[2] ? fila.cells[2].innerText.toUpperCase() : "";
+            const coincide = (filtroPlaca === "" || placa.includes(filtroPlaca)) &&
+                             (filtroRuta  === "" || ruta.includes(filtroRuta));
+            fila.style.display = coincide ? "" : "none";
+        });
+    };
 
     // ─── CICLO DE VIDA DEL ADD-IN ───
     geotab.addin.programar = (api, state) => {
