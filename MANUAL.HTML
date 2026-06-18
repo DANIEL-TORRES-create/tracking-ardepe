@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Uso - NAVISAF Route Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Lexend', Arial, sans-serif;
+            background: #f0f4f8;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        .nrt-header {
+            background: linear-gradient(90deg, #002244, #004b93);
+            padding: 14px 32px;
+            border-bottom: 4px solid #38bdf8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+
+        .nrt-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nrt-header-title {
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nrt-header-sub {
+            color: #93c5fd;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+        }
+
+        .nrt-logo {
+            height: 38px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+        }
+
+        /* ── ÍNDICE ANCLA ── */
+        .nrt-indice {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 32px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 74px;
+            z-index: 900;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .nrt-btn-indice {
+            background: #f1f5f9;
+            border: 1.5px solid #cbd5e1;
+            color: #334155;
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'Lexend', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nrt-btn-indice:hover {
+            background: #004b93;
+            border-color: #004b93;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0,75,147,0.25);
+        }
+
+        .nrt-btn-indice.principal {
+            background: #004b93;
+            border-color: #004b93;
+            color: #ffffff;
+            font-size: 13px;
+        }
+
+        .nrt-btn-indice.principal:hover {
+            background: #003366;
+            box-shadow: 0 4px 14px rgba(0,75,147,0.4);
+        }
+
+        /* ── CONTENIDO PRINCIPAL ── */
+        .nrt-body {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 30px 24px 60px;
+        }
+
+        /* ── SECCIÓN ── */
+        .nrt-seccion {
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            margin-bottom: 28px;
+            overflow: hidden;
+        }
+
+        .nrt-seccion-header {
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .nrt-seccion-header:hover { background: #f8fafc; }
+
+        .nrt-seccion-icono {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .nrt-seccion-info { flex: 1; }
+
+        .nrt-seccion-titulo {
+            font-size: 16px;
+            font-weight: 800;
+            color: #004b93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nrt-seccion-desc {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .nrt-chevron {
+            font-size: 18px;
+            color: #94a3b8;
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+
+        .nrt-chevron.abierto { transform: rotate(180deg); }
+
+        .nrt-seccion-cuerpo {
+            padding: 0 28px 24px;
+            border-top: 1px solid #f1f5f9;
+            display: none;
+        }
+
+        .nrt-seccion-cuerpo.visible { display: block; }
+
+        /* ── BLOQUES INTERNOS ── */
+        .nrt-bloque {
+            margin-top: 20px;
+        }
+
+        .nrt-bloque-titulo {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nrt-bloque-titulo::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        /* ── BULLETS ── */
+        .nrt-lista {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nrt-lista li {
+            font-size: 13px;
+            color: #334155;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .nrt-lista li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        .nrt-lista li strong {
+            color: #0f172a;
+        }
+
+        /* ── ALERTAS ── */
+        .nrt-alerta {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-top: 14px;
+            line-height: 1.5;
+        }
+
+        .nrt-alerta.amarillo {
+            background: #fefce8;
+            border-left: 4px solid #eab308;
+            color: #713f12;
+        }
+
+        .nrt-alerta.azul {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            color: #1e3a8a;
+        }
+
+        .nrt-alerta.verde {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            color: #14532d;
+        }
+
+        .nrt-alerta.rojo {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            color: #7f1d1d;
+        }
+
+        /* ── BADGES DE ESTADO ── */
+        .nrt-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .nrt-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nrt-badge.programado { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .nrt-badge.no-iniciado { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .nrt-badge.retrasado { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .nrt-badge.en-curso { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .nrt-badge.automatico { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .nrt-badge.vencido { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .nrt-badge.cancelado { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .nrt-badge.finalizado-manual { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+
+        /* ── TABLA DE ACCIONES ── */
+        .nrt-tabla-acciones {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 12.5px;
+        }
+
+        .nrt-tabla-acciones th {
+            background: #f8fafc;
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 800;
+            color: #475569;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .nrt-tabla-acciones td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            vertical-align: top;
+            line-height: 1.5;
+        }
+
+        .nrt-tabla-acciones tr:last-child td { border-bottom: none; }
+
+        /* ── GRID 2 COLUMNAS ── */
+        .nrt-grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 14px;
+        }
+
+        .nrt-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .nrt-card-titulo {
+            font-size: 12px;
+            font-weight: 800;
+            color: #004b93;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .nrt-card p {
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        /* ── SEPARADOR ── */
+        .nrt-sep {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 18px 0;
+        }
+
+        /* ── INTRO GENERAL (sección 0) ── */
+        .nrt-intro-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .nrt-intro-card {
+            background: linear-gradient(135deg, #f0f7ff, #e6f1fa);
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .nrt-intro-card-icono { font-size: 28px; margin-bottom: 8px; }
+        .nrt-intro-card-nombre { font-size: 12px; font-weight: 800; color: #004b93; text-transform: uppercase; }
+        .nrt-intro-card-desc { font-size: 11px; color: #475569; margin-top: 4px; line-height: 1.4; }
+
+        /* ── PASO A PASO ── */
+        .nrt-pasos {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .nrt-paso {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .nrt-paso-num {
+            background: #004b93;
+            color: #ffffff;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .nrt-paso-texto {
+            font-size: 12.5px;
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        .nrt-paso-texto strong { color: #0f172a; }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="nrt-header">
+    <div class="nrt-header-left">
+        <div class="nrt-header-title">🛰️ NAVISAF Route Tracking</div>
+        <div class="nrt-header-sub">MANUAL DE USO — SISTEMA DE MONITOREO DE RUTAS Y OPERACIONES</div>
+    </div>
+</div>
+
+<!-- ÍNDICE ANCLA -->
+<div class="nrt-indice">
+    <a href="#sec-intro" class="nrt-btn-indice principal">🏠 ¿Qué es este sistema?</a>
+    <a href="#sec-configurar" class="nrt-btn-indice">🛠️ Configurar Rutas</a>
+    <a href="#sec-programar" class="nrt-btn-indice">📅 Programar Viajes</a>
+    <a href="#sec-tablero" class="nrt-btn-indice">🚚 Tablero de Control</a>
+    <a href="#sec-historico" class="nrt-btn-indice">📂 Consulta Histórica</a>
+</div>
+
+<!-- CUERPO -->
+<div class="nrt-body">
+
+    <!-- ── SECCIÓN 0: INTRO ── -->
+    <div class="nrt-seccion" id="sec-intro">
+        <div class="nrt-seccion-header" onclick="nrt_toggle('cuerpo-intro', this)">
+            <div class="nrt-seccion-icono">🏠</div>
+            <div class="nrt-seccion-info">
+                <div class="nrt-seccion-titulo">¿Qué es NAVISAF Route Tracking?</div>
+                <div class="nrt-seccion-desc">Descripción general del sistema y consideraciones globales</div>
+            </div>
+            <div class="nrt-chevron abierto">▼</div>
+        </div>
+        <div class="nrt-seccion-cuerpo visible" id="cuerpo-intro">
+
+            <div class="nrt-bloque">
+                <p style="font-size:13.5px; color:#334155; line-height:1.8;">
+                    <strong>NAVISAF Route Tracking</strong> es un sistema de monitoreo y control de viajes de transporte integrado con la plataforma <strong>MyGeotab</strong>. Permite planificar rutas, programar viajes, hacer seguimiento en tiempo real y consultar el historial de operaciones, todo desde un solo lugar.
+                </p>
+            </div>
+
+            <div class="nrt-intro-grid">
+                <div class="nrt-intro-card">
+                    <div class="nrt-intro-card-icono">🛠️</div>
+                    <div class="nrt-intro-card-nombre">Configurar</div>
+                    <div class="nrt-intro-card-desc">Crea y gestiona las rutas maestras con sus puntos de control</div>
+                </div>
+                <div class="nrt-intro-card">
+                    <div class="nrt-intro-card-icono">📅</div>
+                    <div class="nrt-intro-card-nombre">Programar</div>
+                    <div class="nrt-intro-card-desc">Asigna vehículos, conductores y fechas de salida a cada ruta</div>
+                </div>
+                <div class="nrt-intro-card">
+                    <div class="nrt-intro-card-icono">🚚</div>
+                    <div class="nrt-intro-card-nombre">Tablero de Control</div>
+                    <div class="nrt-intro-card-desc">Monitoreo en tiempo real de todos los viajes activos</div>
+                </div>
+                <div class="nrt-intro-card">
+                    <div class="nrt-intro-card-icono">📂</div>
+                    <div class="nrt-intro-card-nombre">Consulta Histórica</div>
+                    <div class="nrt-intro-card-desc">Revisa el registro completo de viajes finalizados por fecha</div>
+                </div>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">⚙️ Comportamiento del sistema</div>
+                <ul class="nrt-lista">
+                    <li>El tablero de control se <strong>actualiza automáticamente cada 60 segundos</strong>.</li>
+                    <li>El sistema <strong>registra el paso por geocercas cada 5 minutos</strong> mediante la API de MyGeotab.</li>
+                    <li>Los viajes <strong>programados que no iniciaron</strong> son cerrados automáticamente por el sistema <strong>entre las 00:00 y 01:00 horas del día siguiente</strong> y se mueven al Historial como <em>Vencidos</em>.</li>
+                    <li>Todas las intervenciones manuales quedan registradas en el <strong>log de auditoría</strong> del viaje.</li>
+                </ul>
+            </div>
+
+            <div class="nrt-alerta amarillo">
+                ⚠️ <span><strong>Si no aparece una zona o una placa</strong> en alguno de los add-ins, coordinar con el <strong>Fleet Manager a cargo</strong>. Las zonas y vehículos son administrados directamente desde MyGeotab y deben estar correctamente configurados y asignados al grupo correspondiente.</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── SECCIÓN 1: CONFIGURAR ── -->
+    <div class="nrt-seccion" id="sec-configurar">
+        <div class="nrt-seccion-header" onclick="nrt_toggle('cuerpo-configurar', this)">
+            <div class="nrt-seccion-icono">🛠️</div>
+            <div class="nrt-seccion-info">
+                <div class="nrt-seccion-titulo">1. Configurar Rutas</div>
+                <div class="nrt-seccion-desc">Crear y gestionar rutas maestras con puntos de control GPS</div>
+            </div>
+            <div class="nrt-chevron">▼</div>
+        </div>
+        <div class="nrt-seccion-cuerpo" id="cuerpo-configurar">
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">📌 ¿Qué es una ruta maestra?</div>
+                <p style="font-size:13px; color:#475569; line-height:1.7;">
+                    Es la plantilla base de un recorrido. Define los <strong>puntos de control</strong> (geocercas), las distancias entre tramos, los tiempos estimados y los tiempos de pernocte en cada punto. Una vez creada, puede ser usada para programar múltiples viajes.
+                </p>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">🗺️ ¿Qué es una geocerca?</div>
+                <p style="font-size:13px; color:#475569; line-height:1.7;">
+                    Es una zona geográfica virtual definida en MyGeotab. El sistema detecta automáticamente cuando un vehículo entra o sale de ella. Cada punto de control del itinerario debe ser una geocerca activa en la plataforma.
+                </p>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">🔢 Pasos para crear una ruta</div>
+                <div class="nrt-pasos">
+                    <div class="nrt-paso"><div class="nrt-paso-num">1</div><div class="nrt-paso-texto">Ingresa el <strong>nombre oficial de la ruta</strong> (ej: LIMA - HUANCAVELICA). Este nombre debe ser único.</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">2</div><div class="nrt-paso-texto">Busca y selecciona la <strong>geocerca de origen</strong> en el buscador. Haz clic en <em>Añadir Punto</em>. Aparecerá en la tabla como Punto 1 sin distancia ni tiempo (es el origen).</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">3</div><div class="nrt-paso-texto">Selecciona el siguiente punto. El sistema calculará automáticamente la <strong>distancia y tiempo estimado</strong> por carretera real usando el enrutador OSRM.</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">4</div><div class="nrt-paso-texto">Ajusta los valores de <strong>Dist (Km)</strong>, <strong>Tiempo Tramo</strong> y <strong>Pernocte</strong> si es necesario. El mapa se actualiza en tiempo real.</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">5</div><div class="nrt-paso-texto">Repite para todos los puntos del itinerario. Al terminar, haz clic en <strong>Guardar Ruta</strong>.</div></div>
+                </div>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">🗂️ Panel derecho — Historial de rutas</div>
+                <ul class="nrt-lista">
+                    <li>Muestra todas las rutas creadas con su nombre, cantidad de puntos y fecha de creación.</li>
+                    <li>El botón ✏️ carga la ruta en el editor para <strong>modificar km, tiempos o pernoctes</strong>. El mapa se redibuja automáticamente con la ruta completa.</li>
+                    <li>Usa el buscador superior para filtrar rutas por nombre.</li>
+                </ul>
+            </div>
+
+            <div class="nrt-alerta amarillo">
+                ⚠️ <span><strong>Si no aparece una geocerca</strong> en el buscador, significa que no existe en MyGeotab o no está asignada al tipo de zona correcto. Coordinar con el <strong>Fleet Manager</strong>.</span>
+            </div>
+
+            <div class="nrt-alerta azul">
+                💡 <span>El mapa lateral aparece automáticamente al agregar el primer punto y muestra la ruta real de carretera entre cada par de puntos. Se puede hacer zoom libremente mientras se construye el itinerario.</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── SECCIÓN 2: PROGRAMAR ── -->
+    <div class="nrt-seccion" id="sec-programar">
+        <div class="nrt-seccion-header" onclick="nrt_toggle('cuerpo-programar', this)">
+            <div class="nrt-seccion-icono">📅</div>
+            <div class="nrt-seccion-info">
+                <div class="nrt-seccion-titulo">2. Programar Viajes</div>
+                <div class="nrt-seccion-desc">Registro manual, retorno y carga masiva por Excel</div>
+            </div>
+            <div class="nrt-chevron">▼</div>
+        </div>
+        <div class="nrt-seccion-cuerpo" id="cuerpo-programar">
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">✏️ Registro manual</div>
+                <div class="nrt-pasos">
+                    <div class="nrt-paso"><div class="nrt-paso-num">1</div><div class="nrt-paso-texto">Selecciona la <strong>Ruta Maestra</strong> del listado.</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">2</div><div class="nrt-paso-texto">Si el viaje es de <strong>retorno</strong>, marca el check <em>¿RET?</em> — el itinerario se invertirá automáticamente.</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">3</div><div class="nrt-paso-texto">Ingresa la <strong>Fecha y Hora de Salida (ETD)</strong>.</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">4</div><div class="nrt-paso-texto">Selecciona el <strong>vehículo (placa)</strong> y el <strong>conductor</strong>. Solo aparecen las unidades autorizadas para este cliente.</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">5</div><div class="nrt-paso-texto">Verifica el itinerario calculado y haz clic en <strong>Confirmar Viaje</strong>.</div></div>
+                </div>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">🔄 Viajes de retorno</div>
+                <ul class="nrt-lista">
+                    <li>Al marcar <em>¿RET?</em>, la ruta se invierte: el destino se convierte en origen y viceversa.</li>
+                    <li>En la carga masiva Excel, agrega <strong>/RETORNO</strong> al final del nombre de la ruta (ej: <em>LIMA-ICA/RETORNO</em>).</li>
+                    <li>El sistema guarda el retorno como una ruta independiente con su propio seguimiento.</li>
+                </ul>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">📊 Carga masiva por Excel</div>
+                <ul class="nrt-lista">
+                    <li>Descarga la <strong>Plantilla Excel</strong> desde el botón 📥 dentro del Panel de Carga Masiva.</li>
+                    <li>Completa las columnas: <strong>PLACA / CONDUCTOR / RUTA / FECHA_ETD</strong>.</li>
+                    <li>La fecha debe llevar una comilla simple al inicio: <em>'2026-06-15 22:00</em></li>
+                    <li>Arrastra el archivo o haz clic en la zona de carga. Luego presiona <strong>Validar y Subir</strong>.</li>
+                    <li>El sistema valida primero que todas las placas y rutas existan. Si hay errores, los muestra en rojo antes de procesar.</li>
+                </ul>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">📋 Panel derecho — Programados para Edición</div>
+                <ul class="nrt-lista">
+                    <li>Filtra por fecha para ver los viajes programados ese día.</li>
+                    <li>El botón ✏️ permite editar un viaje <strong>antes de que inicie</strong>: cambiar conductor, fecha o ruta.</li>
+                    <li>Si el viaje ya está <strong>EN CURSO</strong>, solo se puede modificar el conductor.</li>
+                    <li>Usa los buscadores de placa y ruta para filtrar la lista.</li>
+                </ul>
+            </div>
+
+            <div class="nrt-alerta amarillo">
+                ⚠️ <span><strong>No se puede programar</strong> la misma placa + ruta + fecha/hora dos veces. El sistema detecta duplicados y los bloquea.</span>
+            </div>
+
+            <div class="nrt-alerta amarillo">
+                ⚠️ <span><strong>Si no aparece una placa</strong> en el listado, coordinar con el <strong>Fleet Manager</strong>. Solo las unidades asignadas al grupo autorizado son visibles.</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── SECCIÓN 3: TABLERO ── -->
+    <div class="nrt-seccion" id="sec-tablero">
+        <div class="nrt-seccion-header" onclick="nrt_toggle('cuerpo-tablero', this)">
+            <div class="nrt-seccion-icono">🚚</div>
+            <div class="nrt-seccion-info">
+                <div class="nrt-seccion-titulo">3. Tablero de Control</div>
+                <div class="nrt-seccion-desc">Monitoreo en tiempo real, estados, acciones y vistas de detalle</div>
+            </div>
+            <div class="nrt-chevron">▼</div>
+        </div>
+        <div class="nrt-seccion-cuerpo" id="cuerpo-tablero">
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">🔴 Estados de un viaje</div>
+                <div class="nrt-badges">
+                    <span class="nrt-badge programado">📅 PROGRAMADO</span>
+                    <span class="nrt-badge no-iniciado">🕒 NO INICIADO</span>
+                    <span class="nrt-badge retrasado">⚠️ RETRASADO</span>
+                    <span class="nrt-badge en-curso">🚚 EN CURSO</span>
+                </div>
+                <table class="nrt-tabla-acciones" style="margin-top:16px;">
+                    <tr>
+                        <th>Estado</th>
+                        <th>Significado</th>
+                    </tr>
+                    <tr>
+                        <td><span class="nrt-badge programado">📅 PROGRAMADO</span></td>
+                        <td>El viaje está programado para un día futuro. Aún no es hoy.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="nrt-badge no-iniciado">🕒 NO INICIADO</span></td>
+                        <td>El viaje es para hoy y aún está en hora. El vehículo no ha partido.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="nrt-badge retrasado">⚠️ RETRASADO</span></td>
+                        <td>El viaje es para hoy pero ya pasó su hora de salida sin haberse iniciado.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="nrt-badge en-curso">🚚 EN CURSO</span></td>
+                        <td>El GPS detectó que el vehículo pasó por el origen. El viaje está activo.</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">⚙️ Control del viaje — Acciones manuales</div>
+                <table class="nrt-tabla-acciones">
+                    <tr>
+                        <th>Botón</th>
+                        <th>Cuándo usarlo</th>
+                        <th>Qué hace</th>
+                    </tr>
+                    <tr>
+                        <td>▶️ <strong>Iniciar</strong></td>
+                        <td>El vehículo salió pero <strong>no pasó por la geocerca de origen</strong> (no fue detectado automáticamente).</td>
+                        <td>Marca el viaje como EN CURSO manualmente. Queda registrado en auditoría.</td>
+                    </tr>
+                    <tr>
+                        <td>✅ <strong>Finalizar</strong></td>
+                        <td>El vehículo llegó a destino pero <strong>no pasó por la geocerca final</strong> (no fue detectado).</td>
+                        <td>Cierra el viaje, lo mueve al Historial como Finalizado Manual.</td>
+                    </tr>
+                    <tr>
+                        <td>🚫 <strong>Cancelar</strong></td>
+                        <td>El viaje <strong>no va a realizarse</strong> (cancelación operativa, problema mecánico, etc.).</td>
+                        <td>Cancela el viaje y lo mueve al Historial como Cancelado Manual.</td>
+                    </tr>
+                </table>
+                <div class="nrt-alerta azul" style="margin-top:12px;">
+                    💡 <span>Todas las acciones manuales requieren ingresar un <strong>motivo mínimo de 10 caracteres</strong>. Este motivo queda registrado en el log de auditoría del viaje.</span>
+                </div>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">👁️ Vistas de detalle</div>
+                <div class="nrt-grid2">
+                    <div class="nrt-card">
+                        <div class="nrt-card-titulo">📋 Vista Resumen</div>
+                        <p>Abre un panel lateral con el <strong>timeline de hitos</strong> del viaje. Muestra cada punto de control con su hora planificada y hora real de paso. Identifica hitos completados, pendientes e intervenciones manuales.</p>
+                    </div>
+                    <div class="nrt-card">
+                        <div class="nrt-card-titulo">🔍 Vista Detalle Satelital</div>
+                        <p>Abre una ventana completa con <strong>mapa en tiempo real</strong> mostrando la posición del vehículo, las geocercas del itinerario y la ruta recorrida. Incluye tabla detallada con km, tiempos, desviaciones y pernoctes por tramo.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">🔍 Filtros del tablero</div>
+                <ul class="nrt-lista">
+                    <li><strong>Botones de estado</strong> (Todos / Atrasado / En Curso / No Iniciado / Programado) → filtran la tabla por estado del viaje.</li>
+                    <li><strong>Buscar Placa</strong> → filtra la tabla mostrando solo los viajes de esa unidad.</li>
+                    <li><strong>Buscar Ruta</strong> → filtra por nombre de ruta.</li>
+                    <li>Los filtros son combinables: puedes filtrar por estado <em>y</em> por placa al mismo tiempo.</li>
+                </ul>
+            </div>
+
+            <div class="nrt-alerta verde">
+                ✅ <span>El tablero se <strong>actualiza automáticamente cada 60 segundos</strong>. El GPS registra el paso por geocercas <strong>cada 5 minutos</strong>. No es necesario recargar la página manualmente.</span>
+            </div>
+
+            <div class="nrt-alerta rojo">
+                🔴 <span><strong>Cierre automático:</strong> Los viajes programados para hoy que <strong>no hayan iniciado</strong> son cerrados por el sistema automáticamente <strong>entre las 00:00 y 01:00 hrs del día siguiente</strong>. Se mueven al Historial como <em>Vencidos</em>.</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── SECCIÓN 4: HISTÓRICO ── -->
+    <div class="nrt-seccion" id="sec-historico">
+        <div class="nrt-seccion-header" onclick="nrt_toggle('cuerpo-historico', this)">
+            <div class="nrt-seccion-icono">📂</div>
+            <div class="nrt-seccion-info">
+                <div class="nrt-seccion-titulo">4. Consulta Histórica</div>
+                <div class="nrt-seccion-desc">Registro de viajes finalizados, estados y exportación</div>
+            </div>
+            <div class="nrt-chevron">▼</div>
+        </div>
+        <div class="nrt-seccion-cuerpo" id="cuerpo-historico">
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">🔍 Cómo consultar</div>
+                <div class="nrt-pasos">
+                    <div class="nrt-paso"><div class="nrt-paso-num">1</div><div class="nrt-paso-texto">Selecciona la <strong>fecha</strong> que quieres consultar usando el selector de fecha.</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">2</div><div class="nrt-paso-texto">Haz clic en <strong>🔍 Buscar</strong>. Se cargarán todos los viajes registrados en esa fecha.</div></div>
+                    <div class="nrt-paso"><div class="nrt-paso-num">3</div><div class="nrt-paso-texto">Filtra por <strong>estado</strong>, <strong>placa</strong> o <strong>ruta</strong> para encontrar el viaje específico.</div></div>
+                </div>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">🏷️ Estados en el Histórico</div>
+                <div class="nrt-badges">
+                    <span class="nrt-badge automatico">🤖 AUTOMÁTICO</span>
+                    <span class="nrt-badge vencido">⏳ VENCIDO</span>
+                    <span class="nrt-badge cancelado">🚫 CANCELADO</span>
+                    <span class="nrt-badge finalizado-manual">👤 FINALIZADO MANUAL</span>
+                </div>
+                <table class="nrt-tabla-acciones" style="margin-top:16px;">
+                    <tr>
+                        <th>Estado</th>
+                        <th>Significado</th>
+                    </tr>
+                    <tr>
+                        <td><span class="nrt-badge automatico">🤖 AUTOMÁTICO</span></td>
+                        <td>El viaje completó su recorrido y fue cerrado automáticamente por el GPS al detectar la llegada al destino final.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="nrt-badge vencido">⏳ VENCIDO</span></td>
+                        <td>El viaje estaba programado pero no inició. El sistema lo cerró automáticamente entre las 00:00 y 01:00 hrs del día siguiente.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="nrt-badge cancelado">🚫 CANCELADO</span></td>
+                        <td>Un operador canceló el viaje manualmente desde el Tablero de Control.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="nrt-badge finalizado-manual">👤 FINALIZADO MANUAL</span></td>
+                        <td>Un operador finalizó el viaje manualmente (el GPS no detectó la llegada al destino).</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="nrt-bloque">
+                <div class="nrt-bloque-titulo">👁️ Vistas disponibles</div>
+                <div class="nrt-grid2">
+                    <div class="nrt-card">
+                        <div class="nrt-card-titulo">📋 Vista Resumen</div>
+                        <p>Panel lateral con el <strong>timeline histórico</strong> de hitos del viaje. Muestra qué puntos fueron detectados, cuáles fueron omitidos y qué intervenciones manuales hubo.</p>
+                    </div>
+                    <div class="nrt-card">
+                        <div class="nrt-card-titulo">🔍 Vista Detalle + Excel</div>
+                        <p>Tabla completa con todos los tramos: km planificados vs reales, tiempos, desviaciones y pernoctes. Incluye botón <strong>🟢 Exportar Excel</strong> para descargar el informe del viaje.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nrt-alerta azul">
+                💡 <span>La barra de progreso en la tabla principal muestra el <strong>porcentaje de cumplimiento</strong> del itinerario: cuántos puntos de control fueron detectados vs el total planificado.</span>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    "use strict";
+
+    // Toggle de secciones colapsables
+    window.nrt_toggle = function(idCuerpo, headerEl) {
+        var cuerpo = document.getElementById(idCuerpo);
+        var chevron = headerEl.querySelector('.nrt-chevron');
+        if (!cuerpo || !chevron) return;
+        var abierto = cuerpo.classList.contains('visible');
+        if (abierto) {
+            cuerpo.classList.remove('visible');
+            chevron.classList.remove('abierto');
+        } else {
+            cuerpo.classList.add('visible');
+            chevron.classList.add('abierto');
+        }
+    };
+
+    // Scroll suave a sección al hacer clic en el índice
+    document.querySelectorAll('.nrt-btn-indice[href^="#"]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var target = document.querySelector(this.getAttribute('href'));
+            if (!target) return;
+            // Abrir la sección si está cerrada
+            var cuerpo = target.querySelector('.nrt-seccion-cuerpo');
+            var chevron = target.querySelector('.nrt-chevron');
+            if (cuerpo && !cuerpo.classList.contains('visible')) {
+                cuerpo.classList.add('visible');
+                if (chevron) chevron.classList.add('abierto');
+            }
+            // Scroll suave
+            setTimeout(function() {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+        });
+    });
+
+    // Ciclo de vida MyGeotab (por si se usa como add-in)
+    if (typeof geotab !== 'undefined') {
+        geotab.addin.manual = function(api, state) {
+            return {
+                initialize: function(api, state, callback) {
+                    try { callback(); } catch(e) {}
+                },
+                focus: function(api, state) {},
+                blur: function(api, state) {}
+            };
+        };
+    }
+
+})();
+</script>
+
+</body>
+</html>
