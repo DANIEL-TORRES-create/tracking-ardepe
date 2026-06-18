@@ -1,0 +1,413 @@
+/* =========================================
+   MANUAL DE USO — NAVISAF ROUTE TRACKING
+   manual.css
+   ========================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Lexend', Arial, sans-serif;
+            background: #f0f4f8;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        .nrt-header {
+            background: linear-gradient(90deg, #002244, #004b93);
+            padding: 14px 32px;
+            border-bottom: 4px solid #38bdf8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+
+        .nrt-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nrt-header-title {
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nrt-header-sub {
+            color: #93c5fd;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+        }
+
+        .nrt-logo {
+            height: 38px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+        }
+
+        /* ── ÍNDICE ANCLA ── */
+        .nrt-indice {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 32px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 74px;
+            z-index: 900;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .nrt-btn-indice {
+            background: #f1f5f9;
+            border: 1.5px solid #cbd5e1;
+            color: #334155;
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'Lexend', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nrt-btn-indice:hover {
+            background: #004b93;
+            border-color: #004b93;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0,75,147,0.25);
+        }
+
+        .nrt-btn-indice.principal {
+            background: #004b93;
+            border-color: #004b93;
+            color: #ffffff;
+            font-size: 13px;
+        }
+
+        .nrt-btn-indice.principal:hover {
+            background: #003366;
+            box-shadow: 0 4px 14px rgba(0,75,147,0.4);
+        }
+
+        /* ── CONTENIDO PRINCIPAL ── */
+        .nrt-body {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 30px 24px 60px;
+        }
+
+        /* ── SECCIÓN ── */
+        .nrt-seccion {
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            margin-bottom: 28px;
+            overflow: hidden;
+        }
+
+        .nrt-seccion-header {
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .nrt-seccion-header:hover { background: #f8fafc; }
+
+        .nrt-seccion-icono {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .nrt-seccion-info { flex: 1; }
+
+        .nrt-seccion-titulo {
+            font-size: 16px;
+            font-weight: 800;
+            color: #004b93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nrt-seccion-desc {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .nrt-chevron {
+            font-size: 18px;
+            color: #94a3b8;
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+
+        .nrt-chevron.abierto { transform: rotate(180deg); }
+
+        .nrt-seccion-cuerpo {
+            padding: 0 28px 24px;
+            border-top: 1px solid #f1f5f9;
+            display: none;
+        }
+
+        .nrt-seccion-cuerpo.visible { display: block; }
+
+        /* ── BLOQUES INTERNOS ── */
+        .nrt-bloque {
+            margin-top: 20px;
+        }
+
+        .nrt-bloque-titulo {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nrt-bloque-titulo::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        /* ── BULLETS ── */
+        .nrt-lista {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nrt-lista li {
+            font-size: 13px;
+            color: #334155;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .nrt-lista li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        .nrt-lista li strong {
+            color: #0f172a;
+        }
+
+        /* ── ALERTAS ── */
+        .nrt-alerta {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-top: 14px;
+            line-height: 1.5;
+        }
+
+        .nrt-alerta.amarillo {
+            background: #fefce8;
+            border-left: 4px solid #eab308;
+            color: #713f12;
+        }
+
+        .nrt-alerta.azul {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            color: #1e3a8a;
+        }
+
+        .nrt-alerta.verde {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            color: #14532d;
+        }
+
+        .nrt-alerta.rojo {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            color: #7f1d1d;
+        }
+
+        /* ── BADGES DE ESTADO ── */
+        .nrt-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .nrt-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nrt-badge.programado { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .nrt-badge.no-iniciado { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .nrt-badge.retrasado { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .nrt-badge.en-curso { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .nrt-badge.automatico { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .nrt-badge.vencido { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .nrt-badge.cancelado { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .nrt-badge.finalizado-manual { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+
+        /* ── TABLA DE ACCIONES ── */
+        .nrt-tabla-acciones {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 12.5px;
+        }
+
+        .nrt-tabla-acciones th {
+            background: #f8fafc;
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 800;
+            color: #475569;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .nrt-tabla-acciones td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            vertical-align: top;
+            line-height: 1.5;
+        }
+
+        .nrt-tabla-acciones tr:last-child td { border-bottom: none; }
+
+        /* ── GRID 2 COLUMNAS ── */
+        .nrt-grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 14px;
+        }
+
+        .nrt-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .nrt-card-titulo {
+            font-size: 12px;
+            font-weight: 800;
+            color: #004b93;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .nrt-card p {
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        /* ── SEPARADOR ── */
+        .nrt-sep {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 18px 0;
+        }
+
+        /* ── INTRO GENERAL (sección 0) ── */
+        .nrt-intro-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .nrt-intro-card {
+            background: linear-gradient(135deg, #f0f7ff, #e6f1fa);
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .nrt-intro-card-icono { font-size: 28px; margin-bottom: 8px; }
+        .nrt-intro-card-nombre { font-size: 12px; font-weight: 800; color: #004b93; text-transform: uppercase; }
+        .nrt-intro-card-desc { font-size: 11px; color: #475569; margin-top: 4px; line-height: 1.4; }
+
+        /* ── PASO A PASO ── */
+        .nrt-pasos {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .nrt-paso {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .nrt-paso-num {
+            background: #004b93;
+            color: #ffffff;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .nrt-paso-texto {
+            font-size: 12.5px;
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        .nrt-paso-texto strong { color: #0f172a; }
