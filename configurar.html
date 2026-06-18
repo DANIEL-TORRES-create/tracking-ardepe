@@ -339,15 +339,15 @@
 
             // Detectar si este tramo ya existe en sentido inverso (retorno)
             // Si existe, aplicar desfase lateral para que las líneas no se superpongan
-            const claveTramo = coordInicio[0].toFixed(4) + ',' + coordInicio[1].toFixed(4) + '-' + coordFin[0].toFixed(4) + ',' + coordFin[1].toFixed(4);
-            const claveInversa = coordFin[0].toFixed(4) + ',' + coordFin[1].toFixed(4) + '-' + coordInicio[0].toFixed(4) + ',' + coordInicio[1].toFixed(4);
+            const claveTramo = coordInicio[0].toFixed(6) + ',' + coordInicio[1].toFixed(6) + '-' + coordFin[0].toFixed(6) + ',' + coordFin[1].toFixed(6);
+            const claveInversa = coordFin[0].toFixed(6) + ',' + coordFin[1].toFixed(6) + '-' + coordInicio[0].toFixed(6) + ',' + coordInicio[1].toFixed(6);
             let yaExisteInverso = false;
             _cfgLineasGrupo.eachLayer(function(layer) {
-                if (layer._cfgClaveTramo === claveInversa) yaExisteInverso = true;
+                  if (layer._cfgClaveTramo === claveInversa) yaExisteInverso = true;
             });
 
-            // Desfase de 0.003 grados (~300m) si es tramo de retorno
-            const offsetGrados = yaExisteInverso ? 0.0002 : 0;
+            // Desfase de 0.003 grados (~5m) si es tramo de retorno
+            const offsetGrados = yaExisteInverso ? 0.00005 : 0;
             const caminoFinal = offsetGrados > 0
                 ? camino.map(c => [c[0] + offsetGrados, c[1] + offsetGrados])
                 : camino;
