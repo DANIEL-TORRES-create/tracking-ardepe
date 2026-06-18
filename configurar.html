@@ -243,8 +243,8 @@
             row.innerHTML = `
                 <td>${i + 1}</td>
                 <td style="text-align: left; font-weight: bold;">${item.name}</td>
-                <td>${esPrimero ? '-' : '<input type="number" step="0.01" class="input-tiempo" style="width:80px; text-align:right;" value="' + item.km + '" onchange="const num = parseFloat(this.value) || 0; rutaActual[' + i + '].km = num.toFixed(2); cfg_actualizarLabelTramo(' + i + ');">'}</td>
-                <td>${esPrimero ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '" onchange="rutaActual[' + i + '].tiempo = this.value; cfg_actualizarLabelTramo(' + i + ');">'}</td>
+                <td>${esPrimero ? '-' : '<input type="number" step="0.01" class="input-tiempo" style="width:80px; text-align:right;" value="' + item.km + '" oninput="const num = parseFloat(this.value) || 0; rutaActual[' + i + '].km = num.toFixed(2); cfg_actualizarLabelTramo(' + i + ');" onchange="const num2 = parseFloat(this.value) || 0; rutaActual[' + i + '].km = num2.toFixed(2); cfg_actualizarLabelTramo(' + i + ');">'}</td>
+                <td>${esPrimero ? '-' : '<input type="text" class="input-tiempo" value="' + item.tiempo + '" oninput="rutaActual[' + i + '].tiempo = this.value; cfg_actualizarLabelTramo(' + i + ');" onchange="rutaActual[' + i + '].tiempo = this.value; cfg_actualizarLabelTramo(' + i + ');">'}</td>
                 <td><input type="text" class="input-tiempo" value="${item.pernocte}"></td>
                 <td><button onclick="borrar(${i})" style="color:red; background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button></td>
             `;
@@ -336,19 +336,65 @@
             if (!json.routes || json.routes.length === 0) return;
 
             const camino = json.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-            const linea = L.polyline(camino, { color: '#004b93', weight: 4, opacity: 0.85 });
+
+            // Detectar si este tramo ya existe en sentido inverso (retorno)
+            // Si existe, aplicar desfase lateral para que las líneas no se superpongan
+            let yaExisteInverso = false;
+            _cfgLineasGrupo.eachLayer(function(layer) {
+                if (layer._cfgTramoIdxInverso === idx) yaExisteInverso = true;
+            });
+
+            // Desfase de 0.003 grados (~300m) si es tramo de retorno
+            const offsetGrados = yaExisteInverso ? 0.003 : 0;
+            const caminoFinal = offsetGrados > 0
+                ? camino.map(c => [c[0] + offsetGrados, c[1] + offsetGrados])
+                : camino;
+
+            // Color diferente para tramos de retorno
+            const colorLinea = yaExisteInverso ? '#e67e22' : '#004b93';
+            const dashArray = yaExisteInverso ? '8, 4' : null;
+
+            const linea = L.polyline(caminoFinal, {
+                color: colorLinea,
+                weight: 4,
+                opacity: 0.85,
+                dashArray: dashArray
+            });
             linea._cfgTramoIdx = idx;
+            // Guardar referencia inversa para detectar retornos futuros
+            linea._cfgTramoIdxInverso = null;
+            // Marcar el tramo origen→destino para detectar si viene el retorno
+            const claveTramo = coordInicio[0].toFixed(4) + ',' + coordInicio[1].toFixed(4) + '-' + coordFin[0].toFixed(4) + ',' + coordFin[1].toFixed(4);
+            const claveInversa = coordFin[0].toFixed(4) + ',' + coordFin[1].toFixed(4) + '-' + coordInicio[0].toFixed(4) + ',' + coordInicio[1].toFixed(4);
+            linea._cfgClaveTramo = claveTramo;
             linea.addTo(_cfgLineasGrupo);
 
-            // Calcular punto medio del camino para el label
-            const midIdx = Math.floor(camino.length / 2);
-            const midPt = camino[midIdx] || coordInicio;
+            // Marcar tramos existentes con clave inversa
+            _cfgLineasGrupo.eachLayer(function(layer) {
+                if (layer._cfgClaveTramo === claveInversa) {
+                    layer._cfgTramoIdxInverso = idx;
+                }
+            });
 
-            const labelHtml = `<div class="cfg-label-tramo">Km: ${kmTexto} / Tiempo: ${tiempoTexto}</div>`;
-            const labelIcon = L.divIcon({ html: labelHtml, className: '', iconAnchor: [60, 12] });
-            const labelMarker = L.marker(midPt, { icon: labelIcon, interactive: false });
-            labelMarker._cfgTramoIdx = idx;
-            labelMarker.addTo(_cfgLabelsGrupo);
+            // Punto medio para el tooltip con flecha
+            const midIdx = Math.floor(caminoFinal.length / 2);
+            const midPt = caminoFinal[midIdx] || coordInicio;
+
+            // Tooltip Leaflet nativo con flecha — se reposiciona solo al hacer zoom
+            const tooltipMarker = L.circleMarker(midPt, {
+                radius: 1, color: 'transparent', fillColor: 'transparent', interactive: false
+            });
+            tooltipMarker._cfgTramoIdx = idx;
+            tooltipMarker.addTo(_cfgLabelsGrupo);
+            tooltipMarker.bindTooltip(
+                `Km: ${kmTexto} / Tiempo: ${tiempoTexto}`,
+                {
+                    permanent: true,
+                    direction: 'top',
+                    className: 'cfg-label-tramo',
+                    offset: [0, -4]
+                }
+            ).openTooltip();
 
         } catch(e) {
             console.error("Error dibujando tramo OSRM:", e);
