@@ -588,6 +588,11 @@
                     console.error("Error ejecutando callback de initialize:", e);
                 }
                 setTimeout(() => {
+                    // Inyectar estilos del mapa por JS para evitar caché
+                    var estiloMapa = document.createElement('style');
+                    estiloMapa.innerHTML = '#cfg-mapa-ruta { display: none; position: fixed !important; top: 80px !important; right: 0 !important; width: 50% !important; height: 500px !important; z-index: 99999 !important; border-radius: 12px !important; border: 2px solid #004b93 !important; background: #e2e8f0 !important; box-shadow: 0 8px 24px rgba(0,75,147,0.18) !important; }';
+                    document.head.appendChild(estiloMapa);
+
                     inicializarEventos();
                     cargarZonasGeotab(api);
                     cargarRutas();
