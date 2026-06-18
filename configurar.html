@@ -347,7 +347,7 @@
             });
 
             // Desfase de 0.003 grados (~300m) si es tramo de retorno
-            const offsetGrados = yaExisteInverso ? 0.003 : 0;
+            const offsetGrados = yaExisteInverso ? 0.0002 : 0;
             const caminoFinal = offsetGrados > 0
                 ? camino.map(c => [c[0] + offsetGrados, c[1] + offsetGrados])
                 : camino;
