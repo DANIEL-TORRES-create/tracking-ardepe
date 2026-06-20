@@ -474,12 +474,18 @@
                         </strong>
                     </div>
                     <div style="font-size: 11.5px; color: #64748b; margin-top: 5px; font-family: sans-serif; line-height: 1.5;">
+                        ${(p.punto === "CIERRE_MANUAL" || p.punto === "CANCELADO_MANUAL") ? `
+                        <div style="color: #0f172a;">
+                            <i class="fas fa-flag-checkered" style="width: 14px; color: var(--primary);"></i> Cierre Realizado: <b style="font-size: 12px; font-weight: 700;">${p.realHora || '---'}</b>
+                        </div>
+                        ` : `
                         <div style="margin-bottom: 2px;">
-                            <i class="far fa-clock" style="width: 14px;"></i> Horario Planificado: <b style="color: #334155;">${p.planHora}</b>
+                            <i class="far fa-clock" style="width: 14px;"></i> ${(index === 0 || p.punto === "INICIO_MANUAL") ? "Salida Plan:" : "Llegada Plan:"} <b style="color: #334155;">${p.planHora}</b>
                         </div>
                         <div style="color: #0f172a;">
-                            <i class="fas fa-satellite-dish" style="width: 14px; color: var(--primary);"></i> Paso Real: <b style="font-size: 12px; font-weight: 700;">${p.realHora || '---'}</b>
+                            <i class="fas fa-satellite-dish" style="width: 14px; color: var(--primary);"></i> ${(index === 0 || p.punto === "INICIO_MANUAL") ? "Salida Real:" : "Llegada Real:"} <b style="font-size: 12px; font-weight: 700;">${p.realHora || '---'}</b>
                         </div>
+                        `}
                     </div>
                 </li>
             `;
