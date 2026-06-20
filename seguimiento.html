@@ -181,7 +181,7 @@
     "use strict";
 
     // ─── VARIABLES CENTRALES (aisladas dentro del IIFE para evitar redeclaraciones) ───
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwpD1pTE937XwSm_R3ZPjZbqu6QVfJu1WjVSVYrkUbS9l2gn3fi1VJaYF8QQDiNokiO/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwUUfNbaq4tkx05vUxjpJNtbxqJi_Q9WWnxMINupHHSWpU129H9x5wY6Jbf0SNrEE0e/exec";
 
     let _usuarioLogueado = "Monitor";
     let _viajeSeleccionado = null;
@@ -677,7 +677,7 @@
             function consultarCentroidesZonas() {
                 apiGlobal.call("Get", {
                     typeName: "Zone",
-                    search: { zoneTypeIds: ["b442"] } 
+                    search: { zoneTypeIds: ["b4A3"] } 
                 }, function(zonasGeotab) {
                     dibujarTodoElModalSatelital(zonasGeotab);
                 }, function(err) {
