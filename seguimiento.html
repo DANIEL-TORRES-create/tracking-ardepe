@@ -939,7 +939,7 @@
                         punto: plan.planHora && plan.planHora.toString().toUpperCase().includes("MANUAL") ? plan.punto : plan.punto, 
                         conductor: conductorVisualFila, 
                         tipo: tipoRegistro, 
-                        planLlegada: (plan.punto === "INICIO_MANUAL") ? "---" : (plan.planHora || "---"),
+                        planLlegada: (plan.punto === "INICIO_MANUAL") ? "---" : (plan.planHoraLlegada || plan.planHora || "---"),
                         realLlegada: horaRealLlegada, 
                         desvTiempo: desvTiempoTexto, 
                         semTiempo: semaforoTiempo,
