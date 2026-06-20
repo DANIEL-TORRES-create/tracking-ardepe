@@ -166,7 +166,7 @@
     "use strict";
 
     // ─── VARIABLES CENTRALES (aisladas dentro del IIFE para evitar redeclaraciones) ───
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNiLU063QEua2YTtal-N17jky4JEwKomUoBkzpqCrVyOD39ILSvkqufCL4TAY1iu4A/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwUUfNbaq4tkx05vUxjpJNtbxqJi_Q9WWnxMINupHHSWpU129H9x5wY6Jbf0SNrEE0e/exec";
 
     let apiGlobal = null;
 
@@ -617,7 +617,10 @@
         if (window._satMarcadoresHitosGrupo) _satMapa.removeLayer(window._satMarcadoresHitosGrupo);
         window._satMarcadoresHitosGrupo = L.layerGroup().addTo(_satMapa);
 
-        let itinerarioPlan = JSON.parse(decodeURIComponent(itinerarioDecoded || "[]"));
+        let itinerarioPlan = JSON.parse(decodeURIComponent(itinerarioDecoded || "[]")).map(p => ({
+            ...p,
+            orden: p.orden || null
+        }));
         const nombreCallbackTemporal = "cb_satelital_" + Date.now();
         const mesesMap = { "JAN":"01", "FEB":"02", "MAR":"03", "APR":"04", "MAY":"05", "JUN":"06", "JUL":"07", "AUG":"08", "SEP":"09", "OCT":"10", "NOV":"11", "DEC":"12" };
 
@@ -731,7 +734,18 @@
                 let esOrigenOmitido = itinerarioPlan.length > 0 && itinerarioPlan[0].deteccion === "NO" && tieneInicioManualActivo;
 
                 itinerarioPlan.forEach((plan, index) => {
-                    let real = rawDatosArray.find(h => h.punto_nombre && h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim());
+                    let real = null;
+                    if (plan.orden) {
+                        real = rawDatosArray.find(h => 
+                            h.punto_nombre && h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim() &&
+                            String(h.orden || "").trim() === String(plan.orden).trim()
+                        );
+                    }
+                    if (!real) {
+                        real = rawDatosArray.find(h => 
+                            h.punto_nombre && h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()
+                        );
+                    }
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL" || plan.punto === "CIERRE_MANUAL" || plan.punto === "CANCELADO_MANUAL");
