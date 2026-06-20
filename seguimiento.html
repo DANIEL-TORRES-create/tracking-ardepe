@@ -591,7 +591,8 @@
                     planHoraSalida: p.planHoraSalida || p.etd || "---",
                     realHora: p.realHora || "---",
                     deteccion: p.deteccion || "NO",
-                    distanciaPlan: parseFloat(p.distanciaPlan || p.km || p.kilometros || 0)
+                    distanciaPlan: parseFloat(p.distanciaPlan || p.km || p.kilometros || 0),
+                    orden: p.orden || null
                 };
             });
         } catch(e) { console.error("Error itinerario satelital:", e); }
@@ -726,7 +727,20 @@
                 let puntosParaRutaOSRM = []; 
 
                 itinerarioPlan.forEach((plan, index) => {
-                    let real = Array.isArray(datosSeguimiento) ? datosSeguimiento.find(h => h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()) : null;
+                    let real = null;
+                    if (Array.isArray(datosSeguimiento)) {
+                        if (plan.orden) {
+                            real = datosSeguimiento.find(h => 
+                                h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim() &&
+                                String(h.orden || "").trim() === String(plan.orden).trim()
+                            );
+                        }
+                        if (!real) {
+                            real = datosSeguimiento.find(h => 
+                                h.punto_nombre.toString().toUpperCase().trim() === plan.punto.toString().toUpperCase().trim()
+                            );
+                        }
+                    }
                     let esCompletado = (plan.deteccion === "SI" || plan.deteccion === "FORZADO" || !!real);
                     let esOmitido = !esCompletado && (index < ultimoIndiceCompletado);
                     let esFilaManual = (plan.punto === "INICIO_MANUAL");
